@@ -1,0 +1,39 @@
+package com.p02.training.repository;
+
+import com.p02.training.entity.User;
+import com.p02.training.entity.enums.UserRole;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+/**
+ * Uses {@code @Query} for case-insensitive lookups because Spring Data's IgnoreCase generates
+ * {@code upper(...)}, which cannot use the unique indexes on {@code LOWER(username)} and
+ * {@code LOWER(email)}.
+ */
+public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
+
+    /** TR01 login. */
+    @Query("select u from User u where lower(u.username) = lower(:username)")
+    Optional<User> findByUsernameIgnoringCase(@Param("username") String username);
+
+    /** TR01 USER_DUPLICATE. */
+    @Query("select count(u) > 0 from User u where lower(u.username) = lower(:username)")
+    boolean existsByUsernameIgnoringCase(@Param("username") String username);
+
+    /** TR01 USER_DUPLICATE on create (A-17). */
+    @Query("select count(u) > 0 from User u where lower(u.email) = lower(:email)")
+    boolean existsByEmailIgnoringCase(@Param("email") String email);
+
+    /** TR01 USER_DUPLICATE when an Admin edits a user's email. */
+    @Query("select count(u) > 0 from User u where lower(u.email) = lower(:email) and u.id <> :excludedId")
+    boolean existsByEmailIgnoringCaseAndIdNot(@Param("email") String email, @Param("excludedId") Long excludedId);
+
+    /** TR01 LAST_ADMIN. */
+    long countByRoleAndActiveTrue(UserRole role);
+
+    /** First Admin bootstrap (A-23): true for any Admin, active or not. */
+    boolean existsByRole(UserRole role);
+}

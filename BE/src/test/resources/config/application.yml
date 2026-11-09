@@ -1,0 +1,7 @@
+# Test classpath only, so the application jar never contains this file.
+#
+# Turns on the test profile for every Spring context, including IDE runs and tests with no
+# @ActiveProfiles. It adds to the main application.yml and does not replace it.
+spring:
+  profiles:
+    include: test

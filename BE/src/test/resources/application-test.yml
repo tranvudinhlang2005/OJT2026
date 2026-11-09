@@ -1,0 +1,21 @@
+# Test database settings. config/application.yml activates this profile for every test.
+#
+# The URL is a literal on purpose, so DB_URL can never decide where tests run.
+# TestDatabaseGuard stops the context if anything overrides it, such as SPRING_DATASOURCE_URL.
+#
+# Credentials stay in the environment and are never committed:
+#   DB_PASSWORD  required, has no default
+#   DB_USERNAME  optional, defaults to postgres
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/p02_training_test
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: true
+    baseline-on-migrate: false
