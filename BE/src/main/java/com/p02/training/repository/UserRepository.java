@@ -2,9 +2,12 @@ package com.p02.training.repository;
 
 import com.p02.training.entity.User;
 import com.p02.training.entity.enums.UserRole;
+import jakarta.persistence.LockModeType;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -36,4 +39,20 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     /** First Admin bootstrap (A-23): true for any Admin, active or not. */
     boolean existsByRole(UserRole role);
+
+    /**
+     * TR01 writes to one account (login counters, logout, password, role, status). The row lock stops
+     * concurrent changes, such as two failed logins, from overwriting each other.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<User> findLockedById(Long id);
+
+    /**
+     * TR01 LAST_ADMIN: locks every active account with this role, in id order. Role and status
+     * changes take this lock before locking their target, so two Admins demoting or deactivating
+     * each other at the same time are serialised and cannot remove the last active Admin.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from User u where u.role = :role and u.active = true order by u.id")
+    List<User> lockActiveByRole(@Param("role") UserRole role);
 }

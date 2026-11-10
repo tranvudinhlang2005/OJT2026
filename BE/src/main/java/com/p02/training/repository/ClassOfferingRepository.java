@@ -38,6 +38,15 @@ public interface ClassOfferingRepository
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<ClassOffering> findLockedById(Long id);
 
+    /**
+     * TR05, TR06: the class's current instructor id, read as a scalar so no entity enters the
+     * persistence context. Services read it before locking the instructor and then the class
+     * (spec 0.5), and compare it with the locked row. Empty when the class has no instructor or
+     * does not exist.
+     */
+    @Query("select i.id from ClassOffering c left join c.instructor i where c.id = :classId")
+    Optional<Long> findInstructorIdById(@Param("classId") Long classId);
+
     /** TR05 CLASS_CODE_DUPLICATE on create. */
     boolean existsByClassCode(String classCode);
 

@@ -2,6 +2,7 @@ package com.p02.training.repository;
 
 import com.p02.training.entity.Enrollment;
 import com.p02.training.entity.enums.EnrollmentStatus;
+import com.p02.training.repository.projection.EnrollmentKeys;
 import jakarta.persistence.LockModeType;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -16,6 +17,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
+
+    /** TR12: the owner and class of an enrollment, read before the locks are taken. */
+    @Query("select e.student.id as studentId, e.classOffering.id as classId from Enrollment e where e.id = :id")
+    Optional<EnrollmentKeys> findKeysById(@Param("id") Long id);
 
     /** TR12: lock from spec 0.5. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)

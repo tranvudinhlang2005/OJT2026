@@ -111,7 +111,7 @@ I identified these by reading the spec's flows, not by starting from a number. E
 | Role | Fixed values in D04; stored on the user | `CHECK` values |
 | Refresh tokens, JWT blacklist | Revocation uses `token_version` only (0.2) | Not needed |
 | CSRF tokens | Cookie double-submit (0.2) | Not stored |
-| Login rate-limit counters | 30 requests per minute per IP (D03); storage not stated | Not in the database, [A-26](database-ambiguities.md#a-26-rate-limit-storage) |
+| Login rate-limit counters | 30 login requests per IP per fixed 60-second window (D03, A-26) | Not in the database: in memory, [A-26](database-ambiguities.md#a-26-login-rate-limit) |
 | Enrollment history | D06 reuses the same row | Not needed; `app_security_log` records actions |
 | Unlock and return history | Only `unlock_reason` and `return_reason`, plus logs | Not needed |
 | Dashboard data | Computed by query (TR18) | Not stored |
@@ -522,10 +522,10 @@ erDiagram
 | `id` | `BIGINT` identity | NOT NULL | Identity | PK | - | I/A | A-04, A-10 |
 | `student_id` | `BIGINT` | NOT NULL | - | FK to enrollment, Unique pair [I] | - | S/I | TR15; A-10 approved |
 | `class_id` | `BIGINT` | NOT NULL | - | FK to enrollment, Unique pair [I] | - | I/I | TR15; A-10 approved |
-| `midterm_score` | `NUMERIC(4,2)` | NULL | - | - | 0-10 [I] | S/I | TR15, D14: nullable, 2 decimals; clearing is A-27 |
+| `midterm_score` | `NUMERIC(4,2)` | NULL | - | - | 0-10 [I] | S/I | TR15, D14: nullable, 2 decimals; clearing while DRAFT, A-27 |
 | `final_score` | `NUMERIC(4,2)` | NULL | - | - | 0-10 [I] | S/I | TR15, D14 |
-| `total_score` | `NUMERIC(4,2)` | NULL | - | - | 0-10 [I] | S/I | D14: set when both scores exist; **recalculation A-27 unresolved**, rounding A-28 unresolved |
-| `attendance_rate` | `NUMERIC(5,2)` | NULL | - | - | 0-100 [I] | S/I | D15, TR16: set at confirmation; rounding A-28 unresolved |
+| `total_score` | `NUMERIC(4,2)` | NULL | - | - | 0-10 [I] | S/I | D14: set when both scores exist; recalculated on every save, null unless both scores (A-27); rounding HALF_UP (A-28) |
+| `attendance_rate` | `NUMERIC(5,2)` | NULL | - | - | 0-100 [I] | S/I | D15, TR16: set at confirmation; rounding HALF_UP (A-28) |
 | `final_status` | `VARCHAR(20)` | NOT NULL | `'IN_PROGRESS'` | - | 3 values [I] | S/I | TR15, TR16 |
 | `created_at` | `TIMESTAMPTZ` | NOT NULL | `NOW()` | - | - | A/A | Technical metadata; A-22 |
 | `updated_at` | `TIMESTAMPTZ` | NOT NULL | `NOW()` | - | - | A/A | Technical metadata; A-22 |
@@ -685,41 +685,42 @@ Added under A-22 where technically appropriate. These are **technical metadata**
 
 **They don't replace business timestamps.** `enrolled_at`, `cancelled_at`, `completed_at`, `marked_at`, `submitted_at`, `confirmed_at`, `started_at`, `closed_at` and `locked_at` remain the source for business questions. For example, re-enrolling resets `enrolled_at` (D06), while `created_at` keeps the first registration.
 
-## 12. First Admin bootstrap (design only)
+## 12. First Admin bootstrap
 
-**Approved as a design under A-23. Not implemented.** No schema change is needed.
+**Decided under A-23: one-time CLI bootstrap. Implemented** in `com.p02.training.bootstrap`. No schema change. It replaces the earlier environment-variable startup design, which was not implemented. Operator steps: [admin-bootstrap-and-recovery.md](../operations/admin-bootstrap-and-recovery.md).
 
-**Inputs:** `APP_BOOTSTRAP_ADMIN_USERNAME`, `APP_BOOTSTRAP_ADMIN_EMAIL`, `APP_BOOTSTRAP_ADMIN_FULL_NAME`, `APP_BOOTSTRAP_ADMIN_PASSWORD`.
+**Entry point:** `java -jar <app>.jar bootstrap-admin`. `TrainingManagementApplication.main` dispatches this first argument to `AdminBootstrapCommand`, which starts the application context without a web server and with lazy bean initialisation, runs once and exits. Any other start runs the server and never creates an account. There is no HTTP endpoint.
 
-**Behaviour at startup, after Flyway has run:**
+**Behaviour:**
 
 | Situation | Result |
 |---|---|
-| A `TRAINING_ADMIN` row exists, active or not | Create nothing. If the variables are still set, warn that they should be removed |
-| No Admin, all four variables set and valid | Create one Admin |
-| No Admin, no variables set | Start normally and warn that no Admin exists |
-| Only some variables set, or a value fails validation | Stop startup with a message naming the variable, never its value |
+| A `TRAINING_ADMIN` row exists, active or not | Refused before asking for a password. Exit code 1 |
+| No Admin | Prompts for username, full name, email and password (twice, without echo), asks for `yes`, creates one Admin. Exit code 0 |
+| Invalid input, mismatched passwords, not confirmed | Nothing created. Exit code 1 |
+| No interactive terminal | Refused. Exit code 2 |
+| Startup or database failure | Nothing created. Exit code 3 |
 
-**Creating the Admin, in one transaction:**
+**Creating the Admin, in one transaction** (`AdminBootstrapService.createInitialAdmin`):
 
-1. Take a PostgreSQL advisory lock, so two instances starting together can't both create one.
-2. Check again that no `TRAINING_ADMIN` row exists.
-3. Validate against TR01: username 4-50 characters of `a-z 0-9 . _`, a valid email, and a password of 8-64 characters with upper case, lower case and a digit. Also reject a password over bcrypt's 72-byte limit, which multi-byte characters could reach.
-4. Hash the password with the existing BCrypt `PasswordEncoder`.
+1. Validate against TR01 with the same rules as `POST /users` (`CreateUserRequest` constraints and `PasswordService`): username 4-50 characters of `a-z 0-9 . _`, a valid email, a full name, and a password of 8-64 characters with upper case, lower case and a digit, at most 72 bytes.
+2. Take the transaction-level advisory lock `pg_advisory_xact_lock` with key `0x50303241444D494E` (the ASCII bytes of "P02ADMIN"), so concurrent runs are serialised.
+3. Check again that no `TRAINING_ADMIN` row exists, and that the username and email are free.
+4. Hash the password with the application's BCrypt `PasswordEncoder`.
 5. Insert `users` with `role = 'TRAINING_ADMIN'` and no Student or Instructor profile.
-6. Write `USER_CREATE` to `app_security_log`, with no credential in `details`.
+6. Write `USER_CREATE` to `app_security_log`: `username` is the new account, `details = {userId, role, source: "CLI_BOOTSTRAP"}`, no IP, no credential or hash.
 
 **Security requirements**
 
-- The password is never logged, returned, stored in plain text or written to `app_security_log`.
-- Never add it to a `toString()`, exception message or debug output. If a config object holds it, that object must exclude it from `toString()`.
+- The password is read only from the terminal without echo, never from arguments, environment variables or files. It is never printed, logged, returned or written to `app_security_log`. The character arrays read from the console are cleared after use.
 - No default credentials, and no credential or hash in Git, migrations or `application.yml`.
-- No HTTP endpoint. Startup is the only path.
-- Remove the variables after first use, and change the password through `PATCH /auth/password`. The spec has no forced password change, and none is added here.
+- The spec has no forced password change, and none is added; the holder can change it through `PATCH /auth/password`.
 
-**Planned tests:** creates one Admin; does nothing when any Admin exists, including an inactive one; two instances starting together create one; partial or invalid variables stop startup; the password doesn't appear in captured logs; the stored value is a BCrypt hash that matches.
+**Recovery** when no Admin can sign in is a separate operator-only procedure in the operator guide: an approved, audited database change that restores one existing Admin with a new temporary password. It never deletes Admin rows or bypasses the bootstrap's refusal.
 
-**Not decided:** who holds these credentials, and how to recover if every Admin account becomes unusable. This mechanism deliberately won't create a second Admin in that case.
+**Tests still to write:** creates one Admin; refuses when any Admin exists, including an inactive one; two concurrent runs create one; invalid input and weak passwords create nothing; the log entry holds no credential; the stored value is a BCrypt hash that matches.
+
+**Organisational, outside the repository:** who holds the first Admin's credentials.
 
 ## 13. Decisions applied
 
@@ -737,7 +738,7 @@ The full status of every item is in [database-ambiguities.md](database-ambiguiti
 | Confirmed unique `LOWER(email)` | A-17 approved |
 | Narrowed `app_security_log.username` from `VARCHAR(255)` to `VARCHAR(50)` | A-21c approved: only real usernames are stored |
 | Unlock locks `ClassOffering`, then `Session` (no schema effect) | A-25 approved |
-| **Not applied:** the `total_score` `CHECK` | A-27 unresolved |
+| **Not applied:** the `total_score` `CHECK` | A-27 decided; enforced in the service, schema frozen |
 
 ## 14. Compatibility review
 

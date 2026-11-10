@@ -3,6 +3,7 @@
 #   DB_URL           optional, defaults to the local p02_training database
 #   DB_USERNAME      optional, defaults to postgres
 #   FRONTEND_ORIGIN  optional, the only origin allowed by CORS
+#   JWT_SECRET       required, HS256 signing key of at least 32 bytes; no default, never commit it
 #   SERVER_PORT      optional, defaults to 8080
 
 spring:
@@ -42,6 +43,10 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  # A-26: the login rate limit and security logs use the direct remote address. Explicit, because
+  # Spring Boot would otherwise trust X-Forwarded-For on a detected cloud platform. Behind a trusted
+  # reverse proxy, set "native" and server.tomcat.remoteip.internal-proxies to that proxy only.
+  forward-headers-strategy: none
   # Last line of defence for errors that never reach GlobalExceptionHandler.
   error:
     include-message: never
@@ -57,3 +62,5 @@ app:
   business-zone: Asia/Ho_Chi_Minh
   cors:
     allowed-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+  jwt:
+    secret: ${JWT_SECRET}

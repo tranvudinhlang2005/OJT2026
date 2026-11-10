@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface StudentRepository extends JpaRepository<Student, Long>, JpaSpecificationExecutor<Student> {
 
@@ -20,6 +22,13 @@ public interface StudentRepository extends JpaRepository<Student, Long>, JpaSpec
 
     /** Finds the Student for the logged-in user (TR04, TR10, TR12, TR17). */
     Optional<Student> findByUser_Id(Long userId);
+
+    /**
+     * TR10, TR12: the logged-in student's id, read as a scalar so the Student row is first loaded by
+     * the locking query and its status is read fresh.
+     */
+    @Query("select s.id from Student s where s.user.id = :userId")
+    Optional<Long> findIdByUserId(@Param("userId") Long userId);
 
     /** TR10, TR12: lock from spec 0.5. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)

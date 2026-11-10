@@ -1,6 +1,7 @@
 package com.p02.training.repository;
 
 import com.p02.training.entity.AssessmentResult;
+import com.p02.training.entity.enums.FinalStatus;
 import com.p02.training.entity.enums.GradingStatus;
 import com.p02.training.repository.projection.ClassOutcomeCount;
 import com.p02.training.repository.projection.OutcomeTotals;
@@ -41,6 +42,24 @@ public interface AssessmentResultRepository extends JpaRepository<AssessmentResu
             + "from AssessmentResult r join r.classOffering c where c.gradingStatus = :gradingStatus and "
             + DashboardFilter.ON_CLASS)
     OutcomeTotals sumOutcomesForDashboard(@Param("gradingStatus") GradingStatus gradingStatus,
+            @Param("semester") String semester, @Param("courseId") Long courseId,
+            @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    /**
+     * TR18 summary for Managers (D21, A-32): the same aggregate as {@link #sumOutcomesForDashboard},
+     * but only over classes that each have at least {@code minResults} confirmed results (PASSED or
+     * FAILED). A smaller class contributes to neither the counts nor the attendance average, so no
+     * combination of filters can reveal its figures. The per-class count is a correlated subquery,
+     * evaluated per class inside the same filtered query.
+     */
+    @Query("select " + OUTCOMES + ", avg(r.attendanceRate) as averageAttendanceRate "
+            + "from AssessmentResult r join r.classOffering c where c.gradingStatus = :gradingStatus and "
+            + DashboardFilter.ON_CLASS + """
+             and (select count(r2) from AssessmentResult r2
+                  where r2.classOffering = c and r2.finalStatus in :countedStatuses) >= :minResults
+            """)
+    OutcomeTotals sumOutcomesForDashboardOverClassesWithAtLeast(@Param("gradingStatus") GradingStatus gradingStatus,
+            @Param("countedStatuses") Collection<FinalStatus> countedStatuses, @Param("minResults") long minResults,
             @Param("semester") String semester, @Param("courseId") Long courseId,
             @Param("from") LocalDate from, @Param("to") LocalDate to);
 

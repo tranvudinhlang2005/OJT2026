@@ -14,6 +14,9 @@ public interface CourseRepository extends JpaRepository<Course, Long>, JpaSpecif
     /** TR02 COURSE_CODE_DUPLICATE on edit. */
     boolean existsByCodeAndIdNot(String code, Long excludedId);
 
-    /** TR03: every course assigned to an instructor must exist and be active. */
+    /**
+     * TR03: a course newly assigned to an instructor must be active. Courses the instructor already
+     * has may stay assigned after they become inactive (A-29).
+     */
     List<Course> findByIdInAndActiveTrue(Collection<Long> ids);
 }

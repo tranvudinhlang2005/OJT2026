@@ -8,11 +8,10 @@
 
 | Status | Count | Items |
 |---|---|---|
-| **Decided** | 15 | A-01, A-02, A-03, A-04, A-05, A-06, A-07, A-09, A-10, A-13, A-16, A-17, A-21, A-22, A-25 |
-| **Approved design, not implemented** | 1 | A-23 |
+| **Decided** | 24 | A-01, A-02, A-03, A-04, A-05, A-06, A-07, A-09, A-10, A-13, A-16, A-17, A-21, A-22, A-23, A-24, A-25, A-26, A-27, A-28, A-29, A-30, A-31, A-32 |
 | **Technical default applied** | 5 | A-11, A-12, A-18, A-19, A-20 |
-| **Default applied, business question remains** | 3 | A-14, A-15, A-26 |
-| **Unresolved, following the literal spec** | 4 | A-08, A-24, A-27, A-28 |
+| **Default applied, business question remains** | 2 | A-14, A-15 |
+| **Unresolved, following the literal spec** | 1 | A-08 |
 
 | ID | Question | Status | Position |
 |---|---|---|---|
@@ -38,12 +37,16 @@
 | A-20 | IP type | Default applied | `VARCHAR(45)` |
 | A-21 | Security log | **Decided** | Java enum; failed-login username only if it matches an account |
 | A-22 | Columns not in the spec | **Decided** | Timestamps added; others not added |
-| A-23 | First Admin | **Approved design** | Not implemented |
-| A-24 | Values after state changes | **Unresolved** | Nothing cleared unless the spec says so |
+| A-23 | First Admin | **Decided** | One-time CLI bootstrap, implemented; operator recovery documented |
+| A-24 | Values after state changes | **Decided** | Reasons and lock/submission details are kept; nothing cleared unless the spec says so |
 | A-25 | Confirm versus unlock | **Decided** | Unlock locks `ClassOffering`, then `Session` |
-| A-26 | Rate-limit storage | Default, question remains | In memory; scope unconfirmed |
-| A-27 | Clearing a score | **Unresolved** | TR15 and D18 as written; no `CHECK` |
-| A-28 | Rounding method | **Unresolved** | Not in the schema |
+| A-26 | Login rate limit | **Decided** | Login only; 30 per IP per fixed 60 s; 429 with Retry-After; in memory |
+| A-27 | Clearing a score | **Decided** | Clear only while DRAFT; reason when an existing score changes; total null unless both scores |
+| A-28 | Rounding method | **Decided** | HALF_UP, 2 decimals, for totals and attendance rates |
+| A-29 | Inactive course on an instructor | **Decided** | Kept if already assigned; never newly assigned; removable unless in use |
+| A-30 | Enrolling in a non-open class | **Decided** | Missing, soft-deleted or `DRAFT`: 404; any other non-open class, `CANCELLED` included: 409 `CLASS_NOT_OPEN` |
+| A-31 | Who may read a class's sessions | **Decided** (approved Option 1: TR06 literal) | Admin all; Instructor only assigned classes, any status; Student and Manager published classes |
+| A-32 | Dashboard summary privacy for Managers | **Decided** (Decision B) | Manager completion and attendance aggregates exclude classes with fewer than 5 confirmed results; Admin unchanged |
 
 ---
 
@@ -151,19 +154,155 @@ Added where technically appropriate. Usage is in [database-design.md](database-d
 
 **Not added, and outside the V1 scope:** `room.name`, `course.description`, `student.phone`, `class_offering.cancelled_at`, `session.unlocked_by`, `session.unlocked_at`. The spec doesn't require them, and a later migration can add them.
 
+### A-23. First Admin
+
+**Decided: one-time CLI bootstrap**, approved by the team, which replaces the earlier environment-variable startup design. Implemented; no schema change.
+
+- **Command:** `java -jar <app>.jar bootstrap-admin`, run by an operator in an interactive terminal. Normal startup never creates an account, and there is no registration endpoint.
+- **Input:** username, full name, email and password typed at the prompt; the password is read twice without echo and never accepted from arguments, environment variables or files. TR01's validation and password rules apply.
+- **Refusal:** if any `TRAINING_ADMIN` exists, active or not.
+- **Concurrency:** a PostgreSQL transaction-level advisory lock, then a second "no Admin" check, so concurrent runs can't create two Admins.
+- **Hashing and audit:** the application's BCrypt `PasswordEncoder`; `USER_CREATE` in `app_security_log` with `source: CLI_BOOTSTRAP` and no credential or hash.
+- **Recovery** when no Admin can sign in is a separate, operator-only, audited procedure. It never re-runs or weakens the bootstrap.
+
+Details: [database-design.md section 12](database-design.md#12-first-admin-bootstrap) and the operator guide [admin-bootstrap-and-recovery.md](../operations/admin-bootstrap-and-recovery.md). Code: `com.p02.training.bootstrap`.
+
+**Organisational, outside the repository:** naming the person or role who holds the first Admin's credentials.
+
+### A-24. Values after a state change
+
+**Decided by the team; implemented in TR14 and TR16.** No schema change.
+
+- `return_reason`, `unlock_reason`, `submitted_at`, `submitted_by`, `locked_by` and `locked_at` are never cleared automatically by a later state change. They are kept unless the spec explicitly says to clear one (as it does for `cancelled_at` in TR10).
+- Unlocking a session (TR14) sets `attendance_locked = false` and `unlock_reason`, and keeps `locked_by` and `locked_at`. Locking again overwrites `locked_by` and `locked_at` and keeps the last `unlock_reason`.
+- Returning results (TR16) sets `return_reason` and keeps `submitted_at` and `submitted_by`; submitting again overwrites the submission fields and keeps the last `return_reason`.
+- The audit history (`app_security_log`, `grade_audit_log`) keeps every change.
+
 ### A-25. Race between confirm and unlock
 
 Unlock locks `ClassOffering`, then `Session`, then re-reads `grading_status`. Because TR16 confirm also takes the `ClassOffering` lock first, unlock waits and then correctly returns `GRADING_CONFIRMED`. This follows the order in spec 0.5 and needs no schema change. It needs a concurrency test alongside SEC-TC-203.
 
----
+**Implemented (TR14, TR16):** confirm locks `ClassOffering`, then every session of the class in ascending id order, and does all checks and updates in that transaction; unlock locks `ClassOffering`, then the one session. Saving and locking attendance lock only the `Session` (TR14 text); they cannot race confirmation, because confirmation holds every session lock and requires every session locked.
 
-## Approved design, not implemented
 
-### A-23. First Admin
+### A-26. Login rate limit
 
-The full design is in [database-design.md](database-design.md#12-first-admin-bootstrap-design-only). No schema change is needed.
+**Decided and implemented.** No table and no schema change.
 
-**Still needed before TR01:** who holds these credentials, and a recovery procedure if every Admin account becomes unusable. The spec covers neither.
+| Aspect | Decision |
+|---|---|
+| Scope | `POST /api/v1/auth/login` only. `/auth/csrf`, `/auth/me`, `/auth/logout` and every other endpoint are not limited |
+| Limit | 30 requests per client IP per fixed 60-second window. The window starts at the IP's first counted request |
+| Refusal | 429 `TOO_MANY_REQUESTS` in the standard error body, with `Retry-After` in whole seconds until the window ends |
+| Refused requests | Neither counted nor restart the window |
+| What counts | Every login request that passes the CSRF check, whatever its outcome (success, 401, 422) |
+| Client IP | The direct remote address. `X-Forwarded-For` is not trusted; `server.forward-headers-strategy: none` is explicit. Trusted-proxy support is opt-in through configuration |
+| Storage | In memory, for the single-instance OJT deployment. Resets on restart; not shared between instances. Expired entries are removed every 60 seconds, or sooner (at most once per second) above 10,000 tracked IPs |
+| Account lockout | Separate and unchanged: 5 consecutive failed logins lock the account for 15 minutes (D03), stored per account in `users` |
+
+Code: `LoginRateLimiter`, `LoginRateLimitFilter`, `ClientIp` in `com.p02.training.security`.
+
+**Revisit if** the application runs on more than one instance (the counters would then need shared storage), or runs behind a reverse proxy (configure trusted-proxy support, or every client shares the proxy's address).
+
+### A-27. Clearing a score
+
+**Decided by the team; implemented in TR15.** No schema change.
+
+- **Spec:** TR15: "điểm là null hoặc nằm trong [0..10]", and "Khi đủ cả 2 điểm thì tính total_score". D18: editing an existing value requires a reason.
+- **Decision:**
+  - A score may be cleared, by sending `null`, only while `grading_status = DRAFT`. Each save carries the values to store, so `null` for an existing score clears it.
+  - Changing an existing non-null score, to another value or to `null`, requires a reason (D18); a first entry does not.
+  - Every changed score writes one `grade_audit_log` row with the old value, the new value (`NULL` for a clear), the score type, the user, the reason and the IP.
+  - `total_score` is recalculated in the same save: `NULL` if either score is `NULL`, otherwise D14 with A-28 rounding.
+  - No score can change once the results are `SUBMITTED` or `CONFIRMED` (`GRADING_NOT_EDITABLE`).
+- **Schema:** the proposed `CHECK (total_score IS NULL OR both scores present)` is still **not** applied, because the schema is frozen; the service enforces the rule. Adding it would need a new migration.
+
+### A-28. Rounding method
+
+**Decided by the team; implemented in TR15 and TR16.** No schema change.
+
+- `RoundingMode.HALF_UP`, to 2 decimal places, for `total_score` (D14) and `attendance_rate` (D15), using `BigDecimal` with the mode set explicitly (`GradeCalculator`).
+- The same calculation is used when TR15 saves scores and when TR16 confirms results.
+- TR16 compares the rounded values with `min_attendance_pct` and `pass_score` without rounding again ("Không làm tròn thêm khi so sánh").
+
+
+### A-29. Inactive course already assigned to an instructor
+
+**Decided and implemented** (TR03, `PUT /instructors/{id}/courses`). No schema change.
+
+**Problem:** TR03 says every `courseId` must exist and be active. Read literally, once a course was deactivated (TR02) an Admin could no longer resubmit an instructor's course list containing it, yet could not remove it either while the instructor still taught one of its classes.
+
+| Case | Result |
+|---|---|
+| A course the instructor already has, now inactive, is in the request | Kept. An unchanged list is accepted |
+| A course the instructor does not have yet is inactive | 422 `VALIDATION_ERROR` "Môn học không hợp lệ": an inactive course is never newly assigned |
+| An id that is not a course | 422 `VALIDATION_ERROR` |
+| An assigned course (active or inactive) is left out of the request | Removed, unless the instructor teaches one of its `DRAFT`, `OPEN` or `IN_PROGRESS` classes: then 409 `INSTRUCTOR_COURSE_IN_USE`, naming the course codes |
+| Active courses | Unchanged behaviour |
+
+**How "already assigned" is decided:** only from the database's `instructor_course` rows, read after the `Instructor` row lock is taken (spec 0.5), never from the request. A request therefore cannot present a new inactive course as an existing one, and concurrent requests for the same instructor run one after the other. Only the difference is written, and `INSTRUCTOR_CHANGE` is logged in the same transaction.
+
+**Concurrency with TR02:** a course deactivated after the active check but before commit ends as an existing assignment to an inactive course, which this decision allows; a course deleted in that interval is reported as 422.
+
+Code: `InstructorService.assignCourses`.
+
+### A-30. Enrolling in a class that is not open (TR10)
+
+**Decided by the team; matches the implementation.** No code or schema change.
+
+**Spec:** 0.4 defines `NOT_FOUND` as "ID không tồn tại hoặc đã xóa mềm", and says an object whose existence is not public returns 404, with "lớp DRAFT khi Student gọi" as the example. TR10 checks "Lớp tồn tại, chưa xóa mềm", then "status = OPEN và hôm nay < startDate", and lists "Lớp không tồn tại hoặc không hiển thị với Student" → 404 and "Lớp không OPEN / đã đến ngày khai giảng" → 409 `CLASS_NOT_OPEN`.
+
+**Question:** whether a `CANCELLED` class counts as "not visible to Student" (404) or "not OPEN" (409). A class cancelled straight from `DRAFT` was never published; one cancelled from `OPEN` was.
+
+| Class, by its current stored status | Result |
+|---|---|
+| Does not exist, or soft-deleted | 404 `NOT_FOUND` |
+| `DRAFT` | 404 `NOT_FOUND`: its existence is not public |
+| `OPEN`, today before `start_date` | Enrollment proceeds to the remaining TR10 checks |
+| `OPEN` on or after `start_date` | 409 `CLASS_NOT_OPEN` |
+| `IN_PROGRESS`, `CLOSED`, `CANCELLED` | 409 `CLASS_NOT_OPEN` |
+
+**Rationale:** the spec names `DRAFT` as the non-public example and gives every other non-open class `CLASS_NOT_OPEN`. The schema keeps no status history, so a class cancelled from `DRAFT` cannot be told apart from one cancelled after publication. The decision therefore uses only the current stored status and never infers an earlier one.
+
+**Accepted consequence:** a student who sends the id of a class cancelled straight from `DRAFT` learns that the id exists (409, not 404). Such an id was never shown to students.
+
+Code: `EnrollmentService.enroll`.
+
+### A-31. Who may read a class's sessions (TR06)
+
+**Decided / approved by the team: Option 1 (TR06 literal).** No schema change. Code: `SessionService.canView`.
+
+**Spec:** TR06, `GET /classes/{id}/sessions`: "Admin, Instructor (Assigned), Student/Manager (lớp Public)". Part 3 legend: "Assigned = lớp được phân công · Public = lớp đã công bố". There is no Part 3 row for reading sessions, so TR06 is the only rule for this endpoint.
+
+| Role | Sessions visible |
+|---|---|
+| `TRAINING_ADMIN` | Every class |
+| `INSTRUCTOR` | Only classes currently assigned to that instructor, in any status, `CANCELLED` included. Not unassigned published classes |
+| `STUDENT`, `TRAINING_MANAGER` | Published classes: `OPEN`, `IN_PROGRESS`, `CLOSED` |
+
+A class outside the caller's scope is 404, as if it did not exist (spec 0.4).
+
+**TR06 and TR09 define different scopes for different endpoints.** TR09 (class list and detail) lets an instructor see "Public + Assigned" (Part 3) and, in its scope table, "Lớp OPEN / IN_PROGRESS / CLOSED + lớp mình được giao (mọi trạng thái trừ CANCELLED)". TR06 does not inherit that rule. So an instructor can view an unassigned published class in TR09 but not its sessions, and can read the sessions of their own cancelled class, which TR09 does not list. TR09 is unchanged.
+
+**Before this decision** the implementation applied the TR09 rule to sessions as well; it was corrected to the literal TR06 rule.
+
+### A-32. Dashboard summary privacy for Managers (TR18, D21)
+
+**Decided by the team: Decision B. Implemented.** No schema change.
+
+**Spec:** D21: "Manager xem tỷ lệ hoàn thành theo lớp: nhóm dưới 5 kết quả thì ẩn số liệu". TR18: "Manager: lớp có dưới 5 kết quả CONFIRMED thì completionRate = null (D21). Admin thấy đầy đủ" and "Chỉ trả số tổng hợp".
+
+**Problem in the previous implementation:** `/dashboard/classes` hid a small class's completion rate from Managers, but `/dashboard/summary` computed `completionRate` and `averageAttendanceRate` over every matching confirmed class for every role. A Manager could narrow the filters (`courseId`, `semester`, `from`, `to`) to a single small class and read its exact figures, or compare two summaries that differ by one small class and derive its figures from the difference, even when each summary had 5 or more results.
+
+**Decision B:**
+
+- **Threshold:** a class with fewer than 5 CONFIRMED results (PASSED + FAILED in a class whose `grading_status` is `CONFIRMED`) is a small class. The count is per class, never over the aggregate.
+- **Manager:** `completionRate` and `averageAttendanceRate` in the summary are computed only over matching, non-soft-deleted confirmed classes with at least 5 confirmed results. Small classes are excluded from both the numerator and the denominator, whatever the filters. If no class qualifies, both metrics are `null`, as for any empty data.
+- **Admin:** unchanged; the aggregates cover every matching confirmed class.
+- **Other metrics** (class counts by status, total enrollments, fill rate) are unchanged for both roles: D21 concerns completion and attendance.
+- The per-class list (`/dashboard/classes`) keeps hiding a small class's `completionRate` from Managers.
+
+Code: `DashboardService.summary`, `AssessmentResultRepository.sumOutcomesForDashboardOverClassesWithAtLeast` (one aggregate query, with the per-class count as a correlated subquery).
 
 ---
 
@@ -218,15 +357,6 @@ Surrogate `id` on `attendance` and `assessment_result`, each with a unique pair.
 | `semester` | Free `VARCHAR(20)`; the spec says only not empty | Is there a required format? |
 | Maximum length of reasons | No limit; the spec gives minimums only | Should there be a cap? |
 
-### A-26. Rate-limit storage
-
-**Applied:** in memory, with no table. This holds for one application instance.
-
-**Still a question, before TR01:**
-
-- D03 says "30 request/phút/IP", while TR01 applies it within login ("Vượt 30 lần đăng nhập/phút"). Does it cover login only, or every API?
-- Will production run more than one instance?
-
 ---
 
 ## Unresolved, following the literal spec
@@ -240,22 +370,3 @@ No behaviour is invented for these. V1 is applied as it stands, so any schema ch
 - **Design:** `TIMESTAMPTZ NOT NULL`, with a `CHECK` that its Vietnam-local date is at most `start_date`. This applies D05 literally and allows that time.
 - **Limitation:** if 00:00 is chosen instead, the `CHECK` must be tightened by a migration, and any existing rows would need correcting first.
 
-### A-24. Values after a state change
-
-- **Spec:** says nothing about clearing `return_reason`, `submitted_at`, `submitted_by`, `locked_by`, `locked_at` or `unlock_reason`.
-- **Design:** nothing is cleared unless the spec says so, as with `cancelled_at` in TR10. No `CHECK` forbids either choice.
-- **Limitation:** an old `return_reason` can remain after re-submitting. Decide before TR14 and TR16 if the UI would show it.
-
-### A-27. Clearing a score
-
-- **Spec:** TR15: "điểm là null hoặc nằm trong [0..10]", and "Khi đủ cả 2 điểm thì tính total_score". D18: editing an existing value requires a reason.
-- **Unresolved:** whether `null` clears or leaves a score unchanged, whether clearing needs a reason, and how `total_score` is recalculated.
-- **Design:** the columns allow `NULL`, and `grade_audit_log.new_score` can record a clear. The proposed `CHECK` is **not** applied.
-- **Limitation:** a stale `total_score` is possible while grading is `DRAFT`. TR15's submit check requires both scores, and TR16 recalculates totals at confirmation, so a stale total can't reach a confirmed result. **It needs an answer before TR15**, because the PUT handler must treat `null` one way or the other.
-
-### A-28. Rounding method
-
-- **Spec:** D14: "round(midterm × w1 + final × w2, 2)". TR16: rate "làm tròn 2 chữ số". No method is named.
-- **Unresolved:** whether `HALF_UP` is the officially accepted method.
-- **Design:** no schema effect.
-- **Limitation:** it decides a pass only on an exact tie, which default weights of 0.4 and 0.6 can't produce, but others can. **It needs an answer before TR15.**

@@ -34,9 +34,24 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
             from Session s join s.room r join s.classOffering c join c.course co
             """;
 
-    /** TR14: lock from spec 0.5. */
+    /**
+     * TR06: the session's class id, read as a scalar before the locks are taken in the spec 0.5
+     * order. Empty when the session does not exist.
+     */
+    @Query("select s.classOffering.id from Session s where s.id = :sessionId")
+    Optional<Long> findClassIdById(@Param("sessionId") Long sessionId);
+
+    /** TR06, TR14: lock from spec 0.5. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Session> findLockedById(Long id);
+
+    /**
+     * TR16 confirmation (A-25): locks every session of a class in ascending id order, after the
+     * caller has locked the ClassOffering, so confirmation and unlocking cannot interleave or deadlock.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from Session s where s.classOffering.id = :classId order by s.id")
+    List<Session> lockAllByClassId(@Param("classId") Long classId);
 
     /** TR05, TR06: a class's sessions in time order, with their rooms in one query. */
     @EntityGraph(attributePaths = "room")

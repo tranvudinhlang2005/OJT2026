@@ -36,8 +36,16 @@
 | A-17 | Email uniqueness | Case-insensitive, unique on `LOWER(email)` | **APPROVED** |
 | A-21 | Security log | Proposed columns; Java enum; failed-login username only if it matches an account | **APPROVED** |
 | A-22 | Columns not in the spec | `created_at`, `updated_at` where appropriate | **APPROVED** |
-| A-25 | Confirm versus unlock | Unlock locks `ClassOffering`, then `Session`, then re-reads | **APPROVED** |
-| A-23 | First Admin | One-time environment-variable bootstrap with BCrypt | **APPROVED DESIGN** |
+| A-25 | Confirm versus unlock | Unlock locks `ClassOffering`, then `Session`, then re-reads; confirm locks `ClassOffering`, then all sessions in id order | **APPROVED, IMPLEMENTED** |
+| A-23 | First Admin | One-time CLI bootstrap (`bootstrap-admin`) with BCrypt; operator-only recovery | **APPROVED, IMPLEMENTED** |
+| A-26 | Login rate limit | `POST /auth/login` only; 30 per IP per fixed 60 s; 429 with `Retry-After`; in memory; direct remote address | **APPROVED, IMPLEMENTED** |
+| A-29 | Inactive course on an instructor (TR03) | Existing assignments may stay; never newly assigned; removable unless a DRAFT, OPEN or IN_PROGRESS class uses it | **APPROVED, IMPLEMENTED** |
+| A-30 | Enrolling in a non-open class (TR10) | By current stored status only: missing, soft-deleted or `DRAFT` → 404; any other non-open class, `CANCELLED` included, and `OPEN` from `start_date` → 409 `CLASS_NOT_OPEN` | **APPROVED, IMPLEMENTED** |
+| A-24 | Values after state changes | Reasons, lock and submission details are kept; nothing cleared unless the spec says so | **APPROVED, IMPLEMENTED** |
+| A-27 | Clearing a score | Clear only while DRAFT; reason when an existing score changes; every change in `grade_audit_log`; total null unless both scores | **APPROVED, IMPLEMENTED** |
+| A-28 | Rounding method | HALF_UP, 2 decimals, for totals and attendance rates, the same in TR15 and TR16 | **APPROVED, IMPLEMENTED** |
+| A-31 | Who may read a class's sessions (TR06) | Option 1 (TR06 literal): Admin all classes; Instructor only classes assigned to them, any status including `CANCELLED`; Student and Manager published classes. Independent of TR09's class visibility | **APPROVED, IMPLEMENTED** |
+| A-32 | Dashboard summary privacy for Managers (TR18, D21) | Decision B: for Managers, `completionRate` and `averageAttendanceRate` exclude every class with fewer than 5 confirmed results from numerator and denominator; null if none qualifies; Admin and the other metrics unchanged | **APPROVED, IMPLEMENTED** |
 
 ### Technical defaults
 
@@ -50,16 +58,12 @@
 | A-20 | IP address type | `VARCHAR(45)` | **DEFAULT APPLIED** |
 | A-14 | Unnamed columns | Free text; lists and formats unconfirmed | **DEFAULT, QUESTION REMAINS** |
 | A-15 | Lengths and types | `credits`, `duration_hours` and `topic` follow the literal spec | **DEFAULT, QUESTION REMAINS** |
-| A-26 | Rate-limit storage | In memory; scope unconfirmed | **DEFAULT, QUESTION REMAINS** |
 
 ### Unresolved, following the literal spec
 
 | ID | Decision | What the design does | Needed by | Status |
 |---|---|---|---|---|
 | A-08 | Is 18:00 on `start_date` valid? | D05's limit on the Vietnam date, which allows it | Before go-live | **UNRESOLVED** |
-| A-27 | Clearing a score | `null` allowed; no `total_score` `CHECK` | TR15 | **UNRESOLVED** |
-| A-28 | Rounding method | Nothing in the schema | TR15 | **UNRESOLVED** |
-| A-24 | Values after state changes | Nothing cleared unless the spec says so | TR14, TR16 | **UNRESOLVED** |
 
 ---
 
@@ -71,7 +75,7 @@
 - **Recommendation:** a one-time startup step. If no `TRAINING_ADMIN` row exists and bootstrap environment variables are set, it creates one Admin with a bcrypt hash and logs `USER_CREATE`. If an Admin already exists, it does nothing. If none exists and the variables are missing, the application starts with no Admin and logs a clear warning.
 - **Why:** a seed migration would place a credential or hash in a file or repeat it across environments. Environment variables keep secrets out of Git and need no schema change.
 - **Impact:** backend only, in TR01. No schema change. The spec has no forced password change, and I'm not adding one; the Admin should change it through `PATCH /auth/password`.
-- **Status: APPROVED DESIGN, not implemented.** The approved form is in [database-design.md](database-design.md#12-first-admin-bootstrap-design-only). It won't create an Admin if any exists, including an inactive one. Who holds the credentials, and recovery if every Admin account becomes unusable, are still undecided.
+- **Status: APPROVED AND IMPLEMENTED, as a one-time CLI bootstrap.** The team chose a dedicated CLI command over the startup step recommended above: nothing happens at startup, and the password is typed interactively instead of being placed in environment variables. It refuses if any Admin exists, including an inactive one, and an advisory lock prevents two concurrent runs from creating two Admins. Recovery when no Admin can sign in is a separate operator-only procedure. See [database-design.md](database-design.md#12-first-admin-bootstrap) and [admin-bootstrap-and-recovery.md](../operations/admin-bootstrap-and-recovery.md).
 
 ### A-07. Class soft deletion
 
@@ -157,7 +161,7 @@
   - Add `CHECK (total_score IS NULL OR (midterm_score IS NOT NULL AND final_score IS NOT NULL))`.
 - **Why:** it prevents a stale total, and the database rejects any inconsistent row.
 - **Impact:** the frontend must send current values, because leaving a score `null` would be read as a clear. TR15's submit check already blocks incomplete students. This adds one `CHECK` to the draft.
-- **Status: UNRESOLVED.** The `CHECK` is **not** in the SQL. TR15 and D18 are followed as written. A stale total is possible while grading is `DRAFT`, but TR16 recalculates totals at confirmation, so it can't reach a confirmed result.
+- **Status: APPROVED AND IMPLEMENTED** (TR15), as recommended above except the `CHECK`: `null` clears a score while `DRAFT`, a reason is required when an existing score changes, every change is in `grade_audit_log`, and `total_score` is recalculated (null unless both scores). The `CHECK` is **not** added, because the schema is frozen; the service enforces the rule.
 
 ### A-28. Rounding method (new)
 
@@ -165,7 +169,7 @@
 - **Recommendation:** `HALF_UP` for both, using `BigDecimal` with the rounding mode set explicitly.
 - **Why:** it's the common expectation for marks and matches PostgreSQL's `round()` on `NUMERIC`.
 - **Impact:** it can decide a pass, but only on an exact tie. Default weights of 0.4 and 0.6 can't produce one, while other course weights can: with 0.25 and 0.75, scores of 4.98 and 5.00 give exactly 4.995. `HALF_UP` makes that 5.00, a pass at a threshold of 5.0, while rounding down would fail it. No schema change.
-- **Status: UNRESOLVED.** `HALF_UP` is a proposal, not the accepted method. It needs an answer before TR15.
+- **Status: APPROVED AND IMPLEMENTED.** `HALF_UP`, 2 decimals, for totals and attendance rates, the same in TR15 and TR16 (`GradeCalculator`).
 
 ### A-25. Concurrent grade confirmation and session unlocking
 
@@ -174,7 +178,7 @@
 - **Recommendation:** unlock locks `ClassOffering`, then `Session`, then re-reads `grading_status`. It waits for confirm, then correctly returns `GRADING_CONFIRMED`.
 - **Why:** one extra lock that follows the existing order, leaving the business rule unchanged.
 - **Impact:** backend only. Add a concurrency test alongside SEC-TC-203.
-- **Status: APPROVED.** No schema effect. It applies when TR14 is implemented.
+- **Status: APPROVED AND IMPLEMENTED** (TR14, TR16). Confirm also locks every session in ascending id order after the class. No schema effect.
 
 ---
 
@@ -216,8 +220,8 @@ The last column shows whether a business answer is still needed.
 | A-18 | TR02: only condition is no `ClassOffering` | `ON DELETE CASCADE` on `instructor_course.course_id`. Follows the literal text | Stricter blocking would be a new rule | No |
 | A-19 | TR15 names `score_type`, no values | `MIDTERM`, `FINAL`, the only scores people enter | Internal values | No |
 | A-20 | TR15 and TR18 need an IP | `VARCHAR(45)`, as `INET` needs custom mapping | Service validates the format | No |
-| A-24 | Clearing not stated | Follows the literal spec: nothing is cleared unless the spec says so | Service only | **Yes: unresolved** |
-| A-26 | D03: 30 requests per minute per IP; TR01 applies it to login | Storage: in memory. Scope isn't assumed | Doesn't work across several instances | **Yes: login only, or every API?** |
+| A-24 | Clearing not stated | Nothing is cleared unless the spec says so | Service only | **No: approved** |
+| A-26 | D03: 30 requests per minute per IP; TR01 applies it to login | Login only, fixed 60-second window per IP, in memory | Doesn't work across several instances | **No: approved** |
 
 ---
 
@@ -253,11 +257,7 @@ Deferring these doesn't require changing the V1 structure.
 
 | Item | Defer until | Why it's safe |
 |---|---|---|
-| A-23 First Admin | Before TR01 | No schema effect |
-| A-25 Unlock locking | Before TR14 | Service only |
-| A-24 Values after state changes | Before TR14, TR16 | Service only |
-| A-28 Rounding | Before TR15 | Service only |
-| A-26 Rate-limit storage | Before multi-instance | No table needed in memory |
+| A-26 Shared rate-limit storage | Before running more than one instance | No table needed while in memory |
 | A-07 Soft-delete trigger and code reuse | After MVP | Column already exists; **keeping the column isn't deferred** |
 | A-22 `room.name`, `course.description`, `student.phone` | After MVP | Added with a simple migration |
 | A-14 Lists for department or homeroom | After MVP | Text can migrate to a list |
@@ -266,9 +266,9 @@ Deferring these doesn't require changing the V1 structure.
 | Append-only protection for logs | Before production | Permissions or a trigger, added later |
 | Separate database roles | Before production | No table changes |
 | `keyword=` search index | When performance requires | The matching rule isn't specified |
-| Proxy and real client IP (`forward-headers-strategy`) | At deployment | Depends on hosting, and affects rate limits and logged IPs |
+| Trusted proxy for the real client IP (`forward-headers-strategy`, now explicitly `none`) | At deployment, if behind a proxy | Depends on hosting, and affects rate limits and logged IPs |
 
-**V1 is applied.** A-08, A-15 and A-27 follow the literal spec, and any schema change they need must be a new migration.
+**V1 is applied.** A-08 and A-15 follow the literal spec, and any schema change they need must be a new migration.
 
 ---
 
@@ -281,6 +281,6 @@ Deferring these doesn't require changing the V1 structure.
 - Added `DEFAULT TRUE` to 4 `is_active` columns and `DEFAULT 'ACTIVE'` to `student.status` (A-16).
 - Narrowed `app_security_log.username` to `VARCHAR(50)` (A-21c).
 
-**Not applied:** the `total_score` `CHECK` (A-27 unresolved).
+**Not applied:** the `total_score` `CHECK` (A-27 is decided, but the schema is frozen, so the service enforces it).
 
 **Suggested spec corrections, for you to decide:** 2.1 `completed_at`, Part 1's "needs approval" sentence, the soft-delete wording in 0.4, D09, TR08-TR10 and TR18, which has no effect in the MVP under A-07, and A-09's `version` field in the TR14 and TR15 GET responses.

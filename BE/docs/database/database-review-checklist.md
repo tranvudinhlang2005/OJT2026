@@ -15,7 +15,7 @@ No decision conflicts with a table, column or constraint.
 | ID | Confirmed decision | Reflected in the design | Result |
 |---|---|---|---|
 | D02 | Sessions, revocation by `token_version` | `users.token_version`; no token table | Pass |
-| D03 | 5 failures lock for 15 minutes; rate limit | `users.failed_login_count`, `locked_until`. Rate-limit scope is A-26 | Pass |
+| D03 | 5 failures lock for 15 minutes; rate limit | `users.failed_login_count`, `locked_until`. Login rate limit decided in A-26 (no table) | Pass |
 | D04 | Role changes only between Admin and Manager | `ck_users_role`; `uq_student_user`, `uq_instructor_user` | Pass |
 | D05 | `cancel_deadline` required, `≤ start_date` | `NOT NULL`; `ck_co_cancel_deadline` | Pass; time of day is A-08 |
 | D06 | Re-enrolling reuses the row | `uq_enrollment_student_class`; `ck_enrollment_cancelled` | Pass |
@@ -51,11 +51,10 @@ No decision conflicts with a table, column or constraint.
 
 | Status | Items |
 |---|---|
-| Decided | A-01, A-02, A-03, A-04, A-05, A-06, A-07, A-09, A-10, A-13, A-16, A-17, A-21, A-22, A-25 |
-| Approved design, not implemented | A-23 |
+| Decided | A-01, A-02, A-03, A-04, A-05, A-06, A-07, A-09, A-10, A-13, A-16, A-17, A-21, A-22, A-23, A-24, A-25, A-26, A-27, A-28, A-29, A-30, A-31, A-32 |
 | Technical default applied | A-11, A-12, A-18, A-19, A-20 |
-| Default applied, business question remains | A-14, A-15, A-26 |
-| Unresolved, following the literal spec | A-08, A-24, A-27, A-28 |
+| Default applied, business question remains | A-14, A-15 |
+| Unresolved, following the literal spec | A-08 |
 
 ## 3. Tables
 
@@ -97,7 +96,7 @@ All 137 columns were checked.
 | Rules stated by the spec as database constraints are present | Pass | D07, 2.1 weights and grading values, D06, TR14 |
 | Security log can't reject an event because of `action` | Pass | No `CHECK` on `action` |
 | Enum-like values use `VARCHAR` + `CHECK` | Pass | `app_security_log.action` is the approved exception |
-| The A-27 `CHECK` is absent while the decision is unresolved | Pass | Documented in the SQL |
+| The A-27 `CHECK` is absent; A-27 is decided and enforced in the service | Pass | Schema frozen; documented in the SQL |
 | Every non-unique index has a query in the spec | Pass | 14 indexes |
 | Identifiers are 63 characters or fewer; names are unique; no unquoted reserved words | Pass | Script-checked |
 | `keyword=` search | Deferred | No index, because the matching rule isn't specified |
@@ -178,7 +177,15 @@ All 137 columns were checked.
 - [x] V1 applied to `p02_training` and `p02_training_test`
 - [x] Test configuration in place
 - [x] 13 JPA entities implemented and validated
-- [ ] Before TR01: A-23 (operations), A-26 (scope)
-- [ ] Before TR14, TR16: A-24
-- [ ] Before TR15: A-27, A-28
+- [x] A-23: one-time CLI bootstrap implemented; recovery procedure documented
+- [x] A-26: login-only rate limit, 30 per IP per fixed 60 s, implemented
+- [x] A-29: inactive courses already assigned to an instructor may stay; never newly assigned (TR03)
+- [x] A-30: TR10 on a non-open class: 404 for missing, soft-deleted or DRAFT; 409 CLASS_NOT_OPEN otherwise, CANCELLED included
+- [x] A-31: approved Option 1 (TR06 literal): Instructor reads sessions of assigned classes only, any status; not TR09
+- [x] A-24: reasons, lock and submission details are kept (TR14, TR16)
+- [x] A-25: confirm and unlock lock ClassOffering, then sessions (TR14, TR16)
+- [x] A-27: clearing a score while DRAFT, with reason and audit; total null unless both scores (TR15)
+- [x] A-28: HALF_UP, 2 decimals, in TR15 and TR16
+- [x] TR14-TR18 implemented in code; compiled only, not yet run against a database
+- [x] A-32: TR18 summary for Managers excludes classes with fewer than 5 confirmed results (D21, Decision B); compiled only, not runtime-tested
 - [ ] Before go-live: A-08, production PostgreSQL version, separate database roles

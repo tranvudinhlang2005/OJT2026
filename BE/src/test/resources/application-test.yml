@@ -19,3 +19,9 @@ spring:
     validate-on-migrate: true
     clean-disabled: true
     baseline-on-migrate: false
+
+# Test-only signing key, so contexts start without JWT_SECRET. It only signs tokens for the
+# disposable test database and must never be used anywhere else.
+app:
+  jwt:
+    secret: test-only-jwt-signing-key-not-for-production-use
