@@ -8,6 +8,7 @@ export const ROUTES = {
     ROOT: '/admin',
     DASHBOARD: '/admin',
     USERS: '/admin/users',
+    COURSES_ROOMS: '/admin/courses-rooms',
     CLASSES: '/admin/classes',
     APPROVALS: '/admin/approvals',
   },

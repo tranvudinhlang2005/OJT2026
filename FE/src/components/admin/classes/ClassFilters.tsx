@@ -5,6 +5,7 @@ interface ClassFiltersProps {
   filter: ClassFilter;
   courses: CourseSummary[];
   semesters: string[];
+  canManage?: boolean;
   onFilterChange: (newFilter: ClassFilter) => void;
   onCreateClick: () => void;
   onRefreshClick: () => void;
@@ -15,6 +16,7 @@ export function ClassFilters({
   filter,
   courses,
   semesters,
+  canManage = true,
   onFilterChange,
   onCreateClick,
   onRefreshClick,
@@ -64,14 +66,16 @@ export function ClassFilters({
             <span>Làm mới</span>
           </button>
 
-          <button
-            type="button"
-            onClick={onCreateClick}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 shadow-xs transition"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Tạo lớp học mới</span>
-          </button>
+          {canManage && (
+            <button
+              type="button"
+              onClick={onCreateClick}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 shadow-xs transition"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Tạo lớp học mới</span>
+            </button>
+          )}
         </div>
       </div>
 

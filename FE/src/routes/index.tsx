@@ -12,10 +12,10 @@ function RootRedirect() {
   if (!isAuthenticated) {
     return <Navigate to={ROUTES.AUTH.LOGIN} replace />;
   }
-  if (role === 'teacher') {
+  if (role === 'INSTRUCTOR') {
     return <Navigate to={ROUTES.TEACHER.SCHEDULE} replace />;
   }
-  if (role === 'student') {
+  if (role === 'STUDENT') {
     return <Navigate to={ROUTES.STUDENT.SCHEDULE} replace />;
   }
   return <Navigate to={ROUTES.ADMIN.DASHBOARD} replace />;
@@ -40,9 +40,9 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
   },
 
-  // 3. Phân hệ Admin (Protected - chỉ dành cho vai trò 'admin')
+  // 3. Phân hệ Quản trị & Quản lý Đào tạo (Admin & Manager)
   {
-    element: <ProtectedRoute allowedRoles={['admin']} />,
+    element: <ProtectedRoute allowedRoles={['TRAINING_ADMIN', 'TRAINING_MANAGER']} />,
     errorElement: <RouteErrorBoundary />,
     children: [
       {
@@ -57,10 +57,10 @@ export const router = createBrowserRouter([
             },
           },
           {
-            path: 'users',
+            path: 'courses-rooms',
             lazy: async () => {
-              const { default: UsersPage } = await import('../pages/admin/UsersPage');
-              return { Component: UsersPage };
+              const { default: CoursesRoomsPage } = await import('../pages/admin/CoursesRoomsPage');
+              return { Component: CoursesRoomsPage };
             },
           },
           {
@@ -71,20 +71,39 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'users',
+            element: <ProtectedRoute allowedRoles={['TRAINING_ADMIN']} />,
+            children: [
+              {
+                index: true,
+                lazy: async () => {
+                  const { default: UsersPage } = await import('../pages/admin/UsersPage');
+                  return { Component: UsersPage };
+                },
+              },
+            ],
+          },
+          {
             path: 'approvals',
-            lazy: async () => {
-              const { default: ApprovalsPage } = await import('../pages/admin/ApprovalsPage');
-              return { Component: ApprovalsPage };
-            },
+            element: <ProtectedRoute allowedRoles={['TRAINING_ADMIN']} />,
+            children: [
+              {
+                index: true,
+                lazy: async () => {
+                  const { default: ApprovalsPage } = await import('../pages/admin/ApprovalsPage');
+                  return { Component: ApprovalsPage };
+                },
+              },
+            ],
           },
         ],
       },
     ],
   },
 
-  // 4. Phân hệ Giảng viên (Protected - chỉ dành cho vai trò 'teacher')
+  // 4. Phân hệ Giảng viên (Protected - chỉ dành cho vai trò 'INSTRUCTOR')
   {
-    element: <ProtectedRoute allowedRoles={['teacher']} />,
+    element: <ProtectedRoute allowedRoles={['INSTRUCTOR']} />,
     errorElement: <RouteErrorBoundary />,
     children: [
       {
@@ -127,9 +146,9 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // 5. Phân hệ Sinh viên (Protected - chỉ dành cho vai trò 'student')
+  // 5. Phân hệ Sinh viên (Protected - chỉ dành cho vai trò 'STUDENT')
   {
-    element: <ProtectedRoute allowedRoles={['student']} />,
+    element: <ProtectedRoute allowedRoles={['STUDENT']} />,
     errorElement: <RouteErrorBoundary />,
     children: [
       {

@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router';
 import {
     LayoutDashboard,
     Users,
+    BookOpen,
     CalendarDays,
     CheckSquare,
     GraduationCap,
@@ -11,17 +12,20 @@ import { ROUTES } from '../routes/paths';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 
-const menuItems = [
-    { label: 'Tổng quan', path: ROUTES.ADMIN.DASHBOARD, icon: LayoutDashboard, end: true },
-    { label: 'Tài khoản & Hồ sơ', path: ROUTES.ADMIN.USERS, icon: Users },
-    { label: 'Lớp & Lịch học', path: ROUTES.ADMIN.CLASSES, icon: CalendarDays },
-    { label: 'Xét duyệt kết quả', path: ROUTES.ADMIN.APPROVALS, icon: CheckSquare },
-];
-
 export function AdminSidebar() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
+
+    const isManager = user?.role === 'TRAINING_MANAGER';
+
+    const menuItems = [
+        { label: 'Tổng quan', path: ROUTES.ADMIN.DASHBOARD, icon: LayoutDashboard, end: true },
+        ...(!isManager ? [{ label: 'Tài khoản & Hồ sơ', path: ROUTES.ADMIN.USERS, icon: Users }] : []),
+        { label: 'Khóa học & Phòng học', path: ROUTES.ADMIN.COURSES_ROOMS, icon: BookOpen },
+        { label: 'Lớp & Lịch học', path: ROUTES.ADMIN.CLASSES, icon: CalendarDays },
+        ...(!isManager ? [{ label: 'Xét duyệt kết quả', path: ROUTES.ADMIN.APPROVALS, icon: CheckSquare }] : []),
+    ];
 
     const handleLogout = () => {
         logout();
@@ -37,15 +41,19 @@ export function AdminSidebar() {
                     <GraduationCap className="w-5 h-5" />
                 </div>
                 <div>
-                    <span className="font-bold text-white text-base tracking-wide block leading-none">Admin Portal</span>
-                    <span className="text-[11px] text-slate-400 mt-1 block">Quản trị hệ thống</span>
+                    <span className="font-bold text-white text-base tracking-wide block leading-none">
+                        {isManager ? 'Manager Portal' : 'Admin Portal'}
+                    </span>
+                    <span className="text-[11px] text-slate-400 mt-1 block">
+                        {isManager ? 'Quản lý Đào tạo' : 'Quản trị hệ thống'}
+                    </span>
                 </div>
             </div>
 
-            {/* Nav List (4 nút chính) */}
+            {/* Nav List */}
             <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
                 <div className="px-3 pb-2 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
-                    Menu Quản Trị
+                    {isManager ? 'Menu Giám Sát' : 'Menu Quản Trị'}
                 </div>
                 {menuItems.map((item) => {
                     const Icon = item.icon;
@@ -68,15 +76,17 @@ export function AdminSidebar() {
                 })}
             </nav>
 
-            {/* User Profile & Đăng xuất (Đưa xuống đáy Sidebar thay vì Header) */}
+            {/* User Profile & Đăng xuất */}
             <div className="p-4 border-t border-slate-800 bg-slate-950/40">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 rounded-full bg-indigo-500/20 text-indigo-400 font-semibold flex items-center justify-center text-sm border border-indigo-500/30 shrink-0">
-                            AD
+                        <div className="w-9 h-9 rounded-full bg-indigo-500/20 text-indigo-400 font-semibold flex items-center justify-center text-xs border border-indigo-500/30 shrink-0">
+                            {isManager ? 'MGR' : 'AD'}
                         </div>
                         <div className="truncate">
-                            <p className="text-sm font-medium text-slate-200 truncate">{user?.name || 'Quản trị viên'}</p>
+                            <p className="text-sm font-medium text-slate-200 truncate">
+                                {user?.name || (isManager ? 'Cán bộ Đào tạo' : 'Quản trị viên')}
+                            </p>
                             <p className="text-xs text-slate-500 truncate">{user?.email || 'admin@edu.vn'}</p>
                         </div>
                     </div>

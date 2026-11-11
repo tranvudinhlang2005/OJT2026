@@ -39,17 +39,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           user = JSON.parse(userJson);
         } else if (storedRole) {
           // Khôi phục user mẫu nếu chỉ có storedRole
-          const mockNames: Record<string, string> = {
-            admin: 'Quản trị viên',
-            teacher: 'ThS. Trần Văn Hùng',
-            student: 'Nguyễn Văn An (B21DCCN001)',
-            educator: 'Cán bộ Đào tạo',
+          const mockNames: Record<UserRole, string> = {
+            TRAINING_ADMIN: 'Quản trị viên Hệ thống',
+            TRAINING_MANAGER: 'Cán bộ Quản lý Đào tạo',
+            INSTRUCTOR: 'ThS. Trần Văn Hùng',
+            STUDENT: 'Nguyễn Văn An (B21DCCN001)',
           };
-          const mockEmails: Record<string, string> = {
-            admin: 'admin@edu.vn',
-            teacher: 'hungtv@edu.vn',
-            student: 'an.nv@edu.vn',
-            educator: 'daotao@edu.vn',
+          const mockEmails: Record<UserRole, string> = {
+            TRAINING_ADMIN: 'admin@edu.vn',
+            TRAINING_MANAGER: 'daotao@edu.vn',
+            INSTRUCTOR: 'hungtv@edu.vn',
+            STUDENT: 'an.nv@edu.vn',
           };
           user = {
             id: `${storedRole}-1`,

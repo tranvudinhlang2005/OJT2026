@@ -8,6 +8,7 @@ import { AssignInstructorModal } from '../../components/admin/classes/AssignInst
 import { ClassDetailModal } from '../../components/admin/classes/ClassDetailModal';
 import { CancelClassModal } from '../../components/admin/classes/CancelClassModal';
 import { DeleteClassModal } from '../../components/admin/classes/DeleteClassModal';
+import { ChangeCapacityModal } from '../../components/admin/classes/ChangeCapacityModal';
 import { classService } from '../../services/classService';
 import type {
   ClassOffering,
@@ -18,10 +19,14 @@ import type {
   CreateClassPayload,
   UpdateClassPayload,
 } from '../../types/classOffering';
+import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 
 export default function ClassesPage() {
+  const { user } = useAuth();
   const { toast } = useToast();
+
+  const canManage = user?.role === 'TRAINING_ADMIN';
 
   const [classes, setClasses] = useState<ClassOffering[]>([]);
   const [allClasses, setAllClasses] = useState<ClassOffering[]>([]);
@@ -42,6 +47,7 @@ export default function ClassesPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedClassForEdit, setSelectedClassForEdit] = useState<ClassOffering | null>(null);
   const [selectedClassForAssign, setSelectedClassForAssign] = useState<ClassOffering | null>(null);
+  const [selectedClassForCapacity, setSelectedClassForCapacity] = useState<ClassOffering | null>(null);
   const [selectedClassForDetail, setSelectedClassForDetail] = useState<ClassOffering | null>(null);
   const [selectedClassForCancel, setSelectedClassForCancel] = useState<ClassOffering | null>(null);
   const [selectedClassForDelete, setSelectedClassForDelete] = useState<ClassOffering | null>(null);
@@ -147,6 +153,19 @@ export default function ClassesPage() {
     }
   };
 
+  // Thao tác Điều chỉnh sĩ số tối đa (TR05)
+  const handleChangeCapacity = async (id: string, maxCapacity: number) => {
+    try {
+      await classService.changeCapacity(id, maxCapacity);
+      toast.success('Đã cập nhật sĩ số tối đa thành công');
+      await loadClassesData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi khi đổi sĩ số';
+      toast.error(msg);
+      throw err;
+    }
+  };
+
   // Thao tác Bắt đầu lớp (Start: OPEN -> IN_PROGRESS)
   const handleStartClass = async (cls: ClassOffering) => {
     try {
@@ -216,6 +235,7 @@ export default function ClassesPage() {
         filter={filter}
         courses={courses}
         semesters={distinctSemesters}
+        canManage={canManage}
         onFilterChange={setFilter}
         onCreateClick={() => setIsCreateModalOpen(true)}
         onRefreshClick={loadClassesData}
@@ -226,9 +246,11 @@ export default function ClassesPage() {
       <ClassTable
         classes={classes}
         isLoading={isLoading}
+        canManage={canManage}
         onViewDetails={(cls) => setSelectedClassForDetail(cls)}
         onEdit={(cls) => setSelectedClassForEdit(cls)}
         onAssignInstructor={(cls) => setSelectedClassForAssign(cls)}
+        onChangeCapacity={(cls) => setSelectedClassForCapacity(cls)}
         onPublish={handlePublishClass}
         onStart={handleStartClass}
         onClose={handleCloseClass}
@@ -252,6 +274,14 @@ export default function ClassesPage() {
         classOffering={selectedClassForEdit}
         onClose={() => setSelectedClassForEdit(null)}
         onSubmit={handleUpdateClass}
+      />
+
+      {/* Change Capacity */}
+      <ChangeCapacityModal
+        isOpen={!!selectedClassForCapacity}
+        classOffering={selectedClassForCapacity}
+        onClose={() => setSelectedClassForCapacity(null)}
+        onSubmit={handleChangeCapacity}
       />
 
       {/* Assign Instructor */}

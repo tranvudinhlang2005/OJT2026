@@ -9,15 +9,18 @@ import {
   UserCheck,
   Eye,
   AlertCircle,
+  Users,
 } from 'lucide-react';
 import type { ClassOffering, ClassStatus } from '../../../types/classOffering';
 
 interface ClassTableProps {
   classes: ClassOffering[];
   isLoading: boolean;
+  canManage?: boolean;
   onViewDetails: (cls: ClassOffering) => void;
   onEdit: (cls: ClassOffering) => void;
   onAssignInstructor: (cls: ClassOffering) => void;
+  onChangeCapacity?: (cls: ClassOffering) => void;
   onPublish: (cls: ClassOffering) => void;
   onStart: (cls: ClassOffering) => void;
   onClose: (cls: ClassOffering) => void;
@@ -28,9 +31,11 @@ interface ClassTableProps {
 export function ClassTable({
   classes,
   isLoading,
+  canManage = true,
   onViewDetails,
   onEdit,
   onAssignInstructor,
+  onChangeCapacity,
   onPublish,
   onStart,
   onClose,
@@ -214,91 +219,108 @@ export function ClassTable({
                         <Eye className="h-4 w-4" />
                       </button>
 
-                      {/* Phân công / Đổi giảng viên */}
-                      {['DRAFT', 'OPEN'].includes(cls.status) && (
-                        <button
-                          type="button"
-                          onClick={() => onAssignInstructor(cls)}
-                          className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition"
-                          title="Phân công giảng viên"
-                        >
-                          <UserCheck className="h-4 w-4" />
-                        </button>
-                      )}
+                      {/* Các thao tác Quản trị (Ẩn nếu là TRAINING_MANAGER) */}
+                      {canManage && (
+                        <>
+                          {/* Điều chỉnh sĩ số tối đa */}
+                          {['DRAFT', 'OPEN'].includes(cls.status) && onChangeCapacity && (
+                            <button
+                              type="button"
+                              onClick={() => onChangeCapacity(cls)}
+                              className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition"
+                              title="Điều chỉnh sĩ số tối đa"
+                            >
+                              <Users className="h-4 w-4" />
+                            </button>
+                          )}
 
-                      {/* Chỉnh sửa */}
-                      {['DRAFT', 'OPEN'].includes(cls.status) && (
-                        <button
-                          type="button"
-                          onClick={() => onEdit(cls)}
-                          className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-slate-100 rounded-lg transition"
-                          title="Sửa thông tin lớp"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                      )}
+                          {/* Phân công / Đổi giảng viên */}
+                          {['DRAFT', 'OPEN'].includes(cls.status) && (
+                            <button
+                              type="button"
+                              onClick={() => onAssignInstructor(cls)}
+                              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition"
+                              title="Phân công giảng viên"
+                            >
+                              <UserCheck className="h-4 w-4" />
+                            </button>
+                          )}
 
-                      {/* Publish: DRAFT -> OPEN */}
-                      {cls.status === 'DRAFT' && (
-                        <button
-                          type="button"
-                          onClick={() => onPublish(cls)}
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition border border-emerald-200 ml-1"
-                          title="Công bố mở đăng ký lớp"
-                        >
-                          <Send className="h-3 w-3" />
-                          <span>Mở lớp</span>
-                        </button>
-                      )}
+                          {/* Chỉnh sửa */}
+                          {['DRAFT', 'OPEN'].includes(cls.status) && (
+                            <button
+                              type="button"
+                              onClick={() => onEdit(cls)}
+                              className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-slate-100 rounded-lg transition"
+                              title="Sửa thông tin lớp"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                          )}
 
-                      {/* Start: OPEN -> IN_PROGRESS */}
-                      {cls.status === 'OPEN' && (
-                        <button
-                          type="button"
-                          onClick={() => onStart(cls)}
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition border border-indigo-200 ml-1"
-                          title="Bắt đầu giảng dạy học phần"
-                        >
-                          <Play className="h-3 w-3" />
-                          <span>Bắt đầu</span>
-                        </button>
-                      )}
+                          {/* Publish: DRAFT -> OPEN */}
+                          {cls.status === 'DRAFT' && (
+                            <button
+                              type="button"
+                              onClick={() => onPublish(cls)}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition border border-emerald-200 ml-1"
+                              title="Công bố mở đăng ký lớp"
+                            >
+                              <Send className="h-3 w-3" />
+                              <span>Mở lớp</span>
+                            </button>
+                          )}
 
-                      {/* Close: IN_PROGRESS -> CLOSED */}
-                      {cls.status === 'IN_PROGRESS' && (
-                        <button
-                          type="button"
-                          onClick={() => onClose(cls)}
-                          className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition border border-slate-300 ml-1"
-                          title="Hoàn tất & Đóng lớp học"
-                        >
-                          <CheckCircle2 className="h-3 w-3" />
-                          <span>Đóng lớp</span>
-                        </button>
-                      )}
+                          {/* Start: OPEN -> IN_PROGRESS */}
+                          {cls.status === 'OPEN' && (
+                            <button
+                              type="button"
+                              onClick={() => onStart(cls)}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition border border-indigo-200 ml-1"
+                              title="Bắt đầu giảng dạy học phần"
+                            >
+                              <Play className="h-3 w-3" />
+                              <span>Bắt đầu</span>
+                            </button>
+                          )}
 
-                      {/* Cancel: OPEN / IN_PROGRESS -> CANCELLED */}
-                      {['OPEN', 'IN_PROGRESS'].includes(cls.status) && (
-                        <button
-                          type="button"
-                          onClick={() => onCancel(cls)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                          title="Hủy lớp học phần"
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </button>
-                      )}
+                          {/* Close: IN_PROGRESS -> CLOSED */}
+                          {cls.status === 'IN_PROGRESS' && (
+                            <button
+                              type="button"
+                              onClick={() => onClose(cls)}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition border border-slate-300 ml-1"
+                              title="Hoàn tất & Đóng lớp học"
+                            >
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span>Đóng lớp</span>
+                            </button>
+                          )}
 
-                      {/* Delete: DRAFT with 0 enrollments */}
-                      {cls.status === 'DRAFT' && cls.enrolledCount === 0 && (
-                        <button
-                          type="button"
-                          onClick={() => onDelete(cls)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                          title="Xóa vật lý lớp học"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                          {/* Cancel: OPEN / IN_PROGRESS -> CANCELLED */}
+                          {['OPEN', 'IN_PROGRESS'].includes(cls.status) && (
+                            <button
+                              type="button"
+                              onClick={() => onCancel(cls)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                              title="Hủy lớp học phần"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </button>
+                          )}
+
+                          {/* Delete: DRAFT with 0 enrollments */}
+                          {cls.status === 'DRAFT' && cls.enrolledCount === 0 && (
+                            <button
+                              type="button"
+                              onClick={() => onDelete(cls)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                              title="Xóa vật lý lớp học"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   </td>

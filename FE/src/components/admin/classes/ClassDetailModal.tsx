@@ -23,6 +23,9 @@ import type {
 } from '../../../types/classOffering';
 import { classService } from '../../../services/classService';
 import { AddSessionModal } from './AddSessionModal';
+import { UnlockAttendanceModal } from './UnlockAttendanceModal';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useToast } from '../../../contexts/ToastContext';
 
 interface ClassDetailModalProps {
   isOpen: boolean;
@@ -32,6 +35,15 @@ interface ClassDetailModalProps {
   onClassUpdated: () => void;
 }
 
+interface StudentRosterItem {
+  id: string;
+  studentCode: string;
+  fullName: string;
+  email: string;
+  enrollmentStatus: 'ENROLLED' | 'CANCELLED' | 'COMPLETED';
+  enrolledAt: string;
+}
+
 export function ClassDetailModal({
   isOpen,
   classOffering,
@@ -39,12 +51,20 @@ export function ClassDetailModal({
   onClose,
   onClassUpdated,
 }: ClassDetailModalProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const canManage = user?.role === 'TRAINING_ADMIN';
+
   const [activeTab, setActiveTab] = useState<'overview' | 'sessions' | 'roster'>('sessions');
   const [sessions, setSessions] = useState<ClassSession[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
   const [isAddSessionModalOpen, setIsAddSessionModalOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<ClassSession | null>(null);
+  const [unlockingSession, setUnlockingSession] = useState<ClassSession | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const [students, setStudents] = useState<StudentRosterItem[]>([]);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
 
   const loadSessions = useCallback(async () => {
     if (!classOffering) return;
@@ -59,12 +79,26 @@ export function ClassDetailModal({
     }
   }, [classOffering]);
 
+  const loadStudents = useCallback(async () => {
+    if (!classOffering) return;
+    try {
+      setIsLoadingStudents(true);
+      const data = await classService.getClassStudents(classOffering.id);
+      setStudents(data);
+    } catch {
+      setActionError('Không thể tải danh sách học viên.');
+    } finally {
+      setIsLoadingStudents(false);
+    }
+  }, [classOffering]);
+
   useEffect(() => {
     if (classOffering && isOpen) {
       loadSessions();
+      loadStudents();
       setActionError(null);
     }
-  }, [classOffering, isOpen, loadSessions]);
+  }, [classOffering, isOpen, loadSessions, loadStudents]);
 
   if (!isOpen || !classOffering) return null;
 
@@ -94,7 +128,17 @@ export function ClassDetailModal({
     }
   };
 
-  const canEditSessions = ['DRAFT', 'OPEN'].includes(classOffering.status);
+  const handleUnlockAttendance = async (sessionId: string, reason: string) => {
+    try {
+      await classService.unlockSessionAttendance(sessionId, reason);
+      toast.success('Đã mở khóa điểm danh thành công.');
+      await loadSessions();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Lỗi khi mở khóa điểm danh');
+    }
+  };
+
+  const canEditSessions = canManage && ['DRAFT', 'OPEN'].includes(classOffering.status);
 
   return (
     <>
@@ -274,10 +318,23 @@ export function ClassDetailModal({
                               </span>
 
                               {sess.attendanceLocked ? (
-                                <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] font-medium">
-                                  <Lock className="h-3 w-3" />
-                                  Đã khóa điểm danh
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px] font-medium">
+                                    <Lock className="h-3 w-3" />
+                                    Đã khóa điểm danh
+                                  </span>
+                                  {canManage && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setUnlockingSession(sess)}
+                                      className="inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 hover:bg-amber-100 transition border border-amber-200"
+                                      title="Mở khóa để giảng viên sửa điểm danh"
+                                    >
+                                      <Unlock className="h-3 w-3" />
+                                      Mở khóa
+                                    </button>
+                                  )}
+                                </div>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-slate-500 bg-slate-100 px-2 py-0.5 rounded text-[11px]">
                                   <Unlock className="h-3 w-3" />
@@ -411,15 +468,24 @@ export function ClassDetailModal({
             {activeTab === 'roster' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-slate-800">
-                    Danh sách sinh viên đã ghi danh
-                  </h3>
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-800">
+                      Danh sách sinh viên đã ghi danh (TR13)
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Hiển thị danh sách học viên đăng ký theo đúng hợp đồng dữ liệu
+                    </p>
+                  </div>
                   <span className="text-xs text-slate-500">
-                    Sĩ số hiện tại: <strong>{classOffering.enrolledCount}</strong> / {classOffering.maxCapacity} học viên
+                    Sĩ số: <strong>{classOffering.enrolledCount}</strong> / {classOffering.maxCapacity} học viên
                   </span>
                 </div>
 
-                {classOffering.enrolledCount === 0 ? (
+                {isLoadingStudents ? (
+                  <div className="flex h-32 items-center justify-center">
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+                  </div>
+                ) : students.length === 0 ? (
                   <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
                     <Users className="h-8 w-8 text-slate-300" />
                     <p className="mt-2 text-sm font-medium text-slate-700">Chưa có sinh viên nào đăng ký vào lớp</p>
@@ -436,37 +502,47 @@ export function ClassDetailModal({
                           <th className="px-4 py-3">Mã sinh viên</th>
                           <th className="px-4 py-3">Họ và tên</th>
                           <th className="px-4 py-3">Email trường</th>
+                          <th className="px-4 py-3">Thời gian ghi danh</th>
                           <th className="px-4 py-3">Trạng thái ghi danh</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 text-slate-700">
-                        {Array.from({ length: Math.min(classOffering.enrolledCount, 10) }).map((_, i) => (
-                          <tr key={i} className="hover:bg-slate-50">
+                        {students.map((stu, i) => (
+                          <tr key={stu.id} className="hover:bg-slate-50">
                             <td className="px-4 py-2.5 font-medium">{i + 1}</td>
                             <td className="px-4 py-2.5 font-semibold text-indigo-600">
-                              SV2026{String(100 + i).padStart(3, '0')}
+                              {stu.studentCode}
                             </td>
                             <td className="px-4 py-2.5 font-medium text-slate-900">
-                              Sinh viên {String.fromCharCode(65 + i)}
+                              {stu.fullName}
                             </td>
                             <td className="px-4 py-2.5 text-slate-500">
-                              sv{100 + i}@student.edu.vn
+                              {stu.email}
+                            </td>
+                            <td className="px-4 py-2.5 text-slate-500">
+                              {stu.enrolledAt}
                             </td>
                             <td className="px-4 py-2.5">
-                              <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                                <CheckCircle2 className="h-3 w-3" />
-                                ENROLLED
-                              </span>
+                              {stu.enrollmentStatus === 'ENROLLED' ? (
+                                <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Đang học (ENROLLED)
+                                </span>
+                              ) : stu.enrollmentStatus === 'COMPLETED' ? (
+                                <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Hoàn thành
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
+                                  Đã hủy
+                                </span>
+                              )}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                    {classOffering.enrolledCount > 10 && (
-                      <div className="p-3 bg-slate-50 text-center text-xs text-slate-500 border-t border-slate-200">
-                        Hiển thị 10 / {classOffering.enrolledCount} sinh viên đầu tiên
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -502,6 +578,14 @@ export function ClassDetailModal({
         onClose={() => setIsAddSessionModalOpen(false)}
         onSubmit={handleCreateSession}
         onUpdate={handleUpdateSession}
+      />
+
+      {/* Sub-modal: Unlock Attendance */}
+      <UnlockAttendanceModal
+        isOpen={!!unlockingSession}
+        session={unlockingSession}
+        onClose={() => setUnlockingSession(null)}
+        onConfirm={handleUnlockAttendance}
       />
     </>
   );

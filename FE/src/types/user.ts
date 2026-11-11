@@ -1,4 +1,6 @@
-export type SystemRole = 'TRAINING_ADMIN' | 'TRAINING_MANAGER' | 'INSTRUCTOR' | 'STUDENT';
+import type { UserRole } from './auth';
+
+export type SystemRole = UserRole;
 
 export type StudentStatus = 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
 

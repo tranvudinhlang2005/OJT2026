@@ -12,15 +12,15 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState('hungtv@edu.vn');
   const [password, setPassword] = useState('password123');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('teacher');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('INSTRUCTOR');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const roleData: Record<UserRole, { id: string; name: string; title: string }> = {
-      admin: { id: 'admin-1', name: 'Quản trị viên', title: 'Quản trị viên' },
-      teacher: { id: 'gv-1', name: 'ThS. Trần Văn Hùng', title: 'Giảng viên' },
-      student: { id: 'sv-1', name: 'Nguyễn Văn An (B21DCCN001)', title: 'Sinh viên' },
-      educator: { id: 'dt-1', name: 'Cán bộ Đào tạo', title: 'Đào tạo' },
+      TRAINING_ADMIN: { id: 'admin-1', name: 'Quản trị viên Hệ thống', title: 'Quản trị viên' },
+      TRAINING_MANAGER: { id: 'dt-1', name: 'Cán bộ Quản lý Đào tạo', title: 'Quản lý Đào tạo' },
+      INSTRUCTOR: { id: 'gv-1', name: 'ThS. Trần Văn Hùng', title: 'Giảng viên' },
+      STUDENT: { id: 'sv-1', name: 'Nguyễn Văn An (B21DCCN001)', title: 'Sinh viên' },
     };
 
     const user = {
@@ -34,9 +34,9 @@ export default function LoginPage() {
     login(user, token);
     toast.success(`Đăng nhập thành công với vai trò ${roleData[selectedRole].title}`);
 
-    if (selectedRole === 'teacher') {
+    if (selectedRole === 'INSTRUCTOR') {
       navigate(ROUTES.TEACHER.SCHEDULE);
-    } else if (selectedRole === 'student') {
+    } else if (selectedRole === 'STUDENT') {
       navigate(ROUTES.STUDENT.SCHEDULE);
     } else {
       navigate(ROUTES.ADMIN.DASHBOARD);
@@ -57,10 +57,10 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Vai trò</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <label
                 className={`flex cursor-pointer items-center justify-center rounded-lg border p-2 text-xs font-semibold transition ${
-                  selectedRole === 'student'
+                  selectedRole === 'STUDENT'
                     ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-xs'
                     : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
@@ -68,10 +68,10 @@ export default function LoginPage() {
                 <input
                   type="radio"
                   name="role"
-                  value="student"
-                  checked={selectedRole === 'student'}
+                  value="STUDENT"
+                  checked={selectedRole === 'STUDENT'}
                   onChange={() => {
-                    setSelectedRole('student');
+                    setSelectedRole('STUDENT');
                     setEmail('an.nv@edu.vn');
                   }}
                   className="sr-only"
@@ -81,7 +81,7 @@ export default function LoginPage() {
 
               <label
                 className={`flex cursor-pointer items-center justify-center rounded-lg border p-2 text-xs font-semibold transition ${
-                  selectedRole === 'teacher'
+                  selectedRole === 'INSTRUCTOR'
                     ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-xs'
                     : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
@@ -89,10 +89,10 @@ export default function LoginPage() {
                 <input
                   type="radio"
                   name="role"
-                  value="teacher"
-                  checked={selectedRole === 'teacher'}
+                  value="INSTRUCTOR"
+                  checked={selectedRole === 'INSTRUCTOR'}
                   onChange={() => {
-                    setSelectedRole('teacher');
+                    setSelectedRole('INSTRUCTOR');
                     setEmail('hungtv@edu.vn');
                   }}
                   className="sr-only"
@@ -102,7 +102,7 @@ export default function LoginPage() {
 
               <label
                 className={`flex cursor-pointer items-center justify-center rounded-lg border p-2 text-xs font-semibold transition ${
-                  selectedRole === 'admin'
+                  selectedRole === 'TRAINING_MANAGER'
                     ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-xs'
                     : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                 }`}
@@ -110,15 +110,36 @@ export default function LoginPage() {
                 <input
                   type="radio"
                   name="role"
-                  value="admin"
-                  checked={selectedRole === 'admin'}
+                  value="TRAINING_MANAGER"
+                  checked={selectedRole === 'TRAINING_MANAGER'}
                   onChange={() => {
-                    setSelectedRole('admin');
+                    setSelectedRole('TRAINING_MANAGER');
+                    setEmail('daotao@edu.vn');
+                  }}
+                  className="sr-only"
+                />
+                QL Đào tạo
+              </label>
+
+              <label
+                className={`flex cursor-pointer items-center justify-center rounded-lg border p-2 text-xs font-semibold transition ${
+                  selectedRole === 'TRAINING_ADMIN'
+                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-xs'
+                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="role"
+                  value="TRAINING_ADMIN"
+                  checked={selectedRole === 'TRAINING_ADMIN'}
+                  onChange={() => {
+                    setSelectedRole('TRAINING_ADMIN');
                     setEmail('admin@edu.vn');
                   }}
                   className="sr-only"
                 />
-                Admin
+                Quản trị viên
               </label>
             </div>
           </div>

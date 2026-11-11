@@ -563,5 +563,93 @@ export const classService = {
       cls.sessionsCount = mockSessions.filter((s) => s.classId === classId).length;
     }
   },
+
+  /**
+   * Điều chỉnh sĩ số tối đa của lớp học (TR05)
+   */
+  async changeCapacity(classId: string, maxCapacity: number): Promise<ClassOffering> {
+    await delay();
+    const index = mockClasses.findIndex((c) => c.id === classId);
+    if (index === -1) throw new Error('Không tìm thấy lớp học.');
+
+    const current = mockClasses[index];
+    if (maxCapacity < current.enrolledCount) {
+      throw new Error(
+        `Sĩ số tối đa (${maxCapacity}) không được nhỏ hơn số học viên hiện đã đăng ký (${current.enrolledCount}).`
+      );
+    }
+    if (maxCapacity < 1 || maxCapacity > 500) {
+      throw new Error('Sĩ số lớp phải nằm trong khoảng từ 1 đến 500 học viên.');
+    }
+
+    current.maxCapacity = maxCapacity;
+    current.updatedAt = new Date().toISOString();
+    return current;
+  },
+
+  /**
+   * Mở khóa điểm danh cho buổi học khi giảng viên yêu cầu (TR14)
+   */
+  async unlockSessionAttendance(sessionId: string, reason: string): Promise<void> {
+    await delay();
+    if (!reason || reason.trim().length < 5) {
+      throw new Error('Vui lòng nhập lý do mở khóa điểm danh (tối thiểu 5 ký tự).');
+    }
+
+    const session = mockSessions.find((s) => s.id === sessionId);
+    if (!session) throw new Error('Không tìm thấy buổi học.');
+
+    session.attendanceLocked = false;
+    session.unlockReason = reason.trim();
+  },
+
+  /**
+   * Lấy danh sách học viên đăng ký của lớp (TR13)
+   */
+  async getClassStudents(classId: string): Promise<
+    Array<{
+      id: string;
+      studentCode: string;
+      fullName: string;
+      email: string;
+      enrollmentStatus: 'ENROLLED' | 'CANCELLED' | 'COMPLETED';
+      enrolledAt: string;
+    }>
+  > {
+    await delay();
+    const cls = mockClasses.find((c) => c.id === classId);
+    const count = cls ? cls.enrolledCount : 0;
+
+    const sampleNames = [
+      'Nguyễn Văn An',
+      'Trần Thị Bích',
+      'Lê Hoàng Cường',
+      'Phạm Minh Đức',
+      'Đỗ Thanh Mai',
+      'Vũ Quang Huy',
+      'Bùi Phương Nga',
+      'Hoàng Gia Bảo',
+      'Ngô Đình Phong',
+      'Đặng Thúy Quỳnh',
+      'Dương Quốc Toàn',
+      'Phan Hải Yến',
+    ];
+
+    return Array.from({ length: count }).map((_, idx) => {
+      const padIdx = String(idx + 1).padStart(3, '0');
+      const name = sampleNames[idx % sampleNames.length];
+      const status: 'ENROLLED' | 'CANCELLED' | 'COMPLETED' =
+        cls?.status === 'CLOSED' ? 'COMPLETED' : 'ENROLLED';
+
+      return {
+        id: `stu-${classId}-${idx + 1}`,
+        studentCode: `SV2026${padIdx}`,
+        fullName: `${name} ${idx >= sampleNames.length ? `(K${idx + 1})` : ''}`.trim(),
+        email: `sv2026${padIdx}@edu.vn`,
+        enrollmentStatus: status,
+        enrolledAt: cls ? `${cls.startDate} 08:30` : '2026-11-01 08:30',
+      };
+    });
+  },
 };
 
