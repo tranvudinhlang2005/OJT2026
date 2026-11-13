@@ -1,257 +1,267 @@
+import { axiosClient } from './axiosClient';
 import type { ManagedUser, UserFilter, CreateUserPayload, UpdateUserPayload, SystemRole } from '../types/user';
-import { INITIAL_MOCK_USERS } from './userMockData';
 
-// Giả lập lưu trữ State trong runtime FE (có thể reset hoặc refresh)
-let mockUsersDatabase: ManagedUser[] = [...INITIAL_MOCK_USERS];
+interface BackendUserResponse {
+  id: number;
+  username: string;
+  email: string;
+  fullName: string;
+  role: SystemRole;
+  isActive: boolean;
+  lockedUntil: string | null;
+}
 
-const delay = (ms: number = 250) => new Promise(resolve => setTimeout(resolve, ms));
+interface PageResponse<T> {
+  items: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+interface BackendStudentSummary {
+  id: number;
+  studentCode: string;
+  fullName: string;
+  email: string;
+}
+
+interface BackendInstructorSummary {
+  id: number;
+  instructorCode: string;
+  fullName: string;
+  email: string;
+  department: string;
+  phone: string;
+}
 
 export const userService = {
   /**
-   * Lấy danh sách người dùng với bộ lọc tìm kiếm
+   * Lấy danh sách người dùng với bộ lọc từ Backend (GET /api/v1/users)
+   * Áp dụng Data Enrichment để ghép thêm studentCode và instructorCode nếu có.
    */
   async getUsers(filter: UserFilter = {}): Promise<ManagedUser[]> {
-    await delay();
-    return mockUsersDatabase.filter(user => {
-      // 1. Lọc theo role
-      if (filter.role && filter.role !== 'ALL' && user.role !== filter.role) {
-        return false;
+    const params: Record<string, string | boolean | number> = {
+      page: 0,
+      size: 100,
+    };
+
+    if (filter.role && filter.role !== 'ALL') {
+      params.role = filter.role;
+    }
+    if (filter.status && filter.status !== 'ALL') {
+      if (filter.status === 'ACTIVE') params.isActive = true;
+      if (filter.status === 'INACTIVE') params.isActive = false;
+    }
+    if (filter.keyword && filter.keyword.trim()) {
+      params.keyword = filter.keyword.trim();
+    }
+
+    // 1. Lấy danh sách tài khoản
+    const usersRes = await axiosClient.get<PageResponse<BackendUserResponse>>('/users', { params });
+    const users = usersRes.data?.items || [];
+
+    // 2. Data Enrichment (ghép thông tin hồ sơ phụ trợ)
+    let studentsMap = new Map<string, BackendStudentSummary>();
+    let instructorsMap = new Map<string, BackendInstructorSummary>();
+
+    try {
+      const [stdRes, instRes] = await Promise.allSettled([
+        axiosClient.get<PageResponse<BackendStudentSummary>>('/students', { params: { size: 100 } }),
+        axiosClient.get<PageResponse<BackendInstructorSummary>>('/instructors', { params: { size: 100 } }),
+      ]);
+
+      if (stdRes.status === 'fulfilled' && stdRes.value.data?.items) {
+        stdRes.value.data.items.forEach((s) => {
+          if (s.email) studentsMap.set(s.email.toLowerCase(), s);
+        });
+      }
+      if (instRes.status === 'fulfilled' && instRes.value.data?.items) {
+        instRes.value.data.items.forEach((i) => {
+          if (i.email) instructorsMap.set(i.email.toLowerCase(), i);
+        });
+      }
+    } catch {
+      // Nếu không có quyền đọc danh sách hồ sơ, bỏ qua enrichment
+    }
+
+    // 3. Map sang ManagedUser
+    return users.map((u) => {
+      const emailKey = u.email.toLowerCase();
+      const std = studentsMap.get(emailKey);
+      const inst = instructorsMap.get(emailKey);
+
+      const managed: ManagedUser = {
+        id: String(u.id),
+        username: u.username,
+        email: u.email,
+        fullName: u.fullName,
+        role: u.role,
+        isActive: u.isActive,
+        failedLoginCount: 0,
+        lockedUntil: u.lockedUntil,
+        createdAt: new Date().toISOString(),
+      };
+
+      if (u.role === 'STUDENT' && std) {
+        managed.studentProfile = {
+          studentCode: std.studentCode,
+          homeroomClass: 'Chưa gán',
+          status: 'ACTIVE',
+        };
+      } else if (u.role === 'INSTRUCTOR' && inst) {
+        managed.instructorProfile = {
+          instructorCode: inst.instructorCode,
+          department: inst.department || 'Khoa Công nghệ Thông tin',
+          phone: inst.phone || '',
+          teachingActive: true,
+          teachableCourses: [],
+        };
       }
 
-      // 2. Lọc theo trạng thái
-      if (filter.status && filter.status !== 'ALL') {
-        const isCurrentlyLocked = user.lockedUntil && new Date(user.lockedUntil) > new Date();
-        if (filter.status === 'ACTIVE' && (!user.isActive || isCurrentlyLocked)) return false;
-        if (filter.status === 'INACTIVE' && user.isActive) return false;
-        if (filter.status === 'LOCKED' && !isCurrentlyLocked) return false;
-      }
-
-      // 3. Lọc theo từ khóa keyword
-      if (filter.keyword && filter.keyword.trim() !== '') {
-        const kw = filter.keyword.trim().toLowerCase();
-        const matchName = user.fullName.toLowerCase().includes(kw);
-        const matchUsername = user.username.toLowerCase().includes(kw);
-        const matchEmail = user.email.toLowerCase().includes(kw);
-        const matchStudentCode = user.studentProfile?.studentCode?.toLowerCase().includes(kw) ?? false;
-        const matchInstructorCode = user.instructorProfile?.instructorCode?.toLowerCase().includes(kw) ?? false;
-
-        if (!matchName && !matchUsername && !matchEmail && !matchStudentCode && !matchInstructorCode) {
-          return false;
-        }
-      }
-
-      return true;
+      return managed;
     });
   },
 
   /**
-   * Tạo mới tài khoản (Admin)
+   * Tạo mới tài khoản (Admin) (POST /api/v1/users)
    */
   async createUser(payload: CreateUserPayload): Promise<ManagedUser> {
-    await delay();
-
-    // Kiểm tra trùng username, email
-    const existsUsername = mockUsersDatabase.some(u => u.username.toLowerCase() === payload.username.toLowerCase());
-    if (existsUsername) {
-      throw new Error('Tên đăng nhập đã tồn tại trong hệ thống (USER_DUPLICATE)');
-    }
-
-    const existsEmail = mockUsersDatabase.some(u => u.email.toLowerCase() === payload.email.toLowerCase());
-    if (existsEmail) {
-      throw new Error('Địa chỉ email đã được sử dụng (USER_DUPLICATE)');
-    }
-
-    if (payload.role === 'STUDENT') {
-      if (!payload.studentCode) {
-        throw new Error('Mã sinh viên là bắt buộc đối với vai trò Học viên');
-      }
-      const existsCode = mockUsersDatabase.some(u => u.studentProfile?.studentCode?.toLowerCase() === payload.studentCode?.toLowerCase());
-      if (existsCode) {
-        throw new Error('Mã học viên đã tồn tại trong hệ thống');
-      }
-    }
-
-    if (payload.role === 'INSTRUCTOR') {
-      if (!payload.instructorCode) {
-        throw new Error('Mã giảng viên là bắt buộc đối với vai trò Giảng viên');
-      }
-      const existsCode = mockUsersDatabase.some(u => u.instructorProfile?.instructorCode?.toLowerCase() === payload.instructorCode?.toLowerCase());
-      if (existsCode) {
-        throw new Error('Mã giảng viên đã tồn tại trong hệ thống');
-      }
-    }
-
-    const newUser: ManagedUser = {
-      id: String(Date.now()),
+    const body = {
       username: payload.username.trim(),
       email: payload.email.trim(),
+      password: payload.password,
       fullName: payload.fullName.trim(),
       role: payload.role,
-      isActive: true,
+      studentCode: payload.role === 'STUDENT' ? payload.studentCode?.trim() : undefined,
+      instructorCode: payload.role === 'INSTRUCTOR' ? payload.instructorCode?.trim() : undefined,
+    };
+
+    const res = await axiosClient.post<BackendUserResponse>('/users', body);
+    const u = res.data;
+
+    return {
+      id: String(u.id),
+      username: u.username,
+      email: u.email,
+      fullName: u.fullName,
+      role: u.role,
+      isActive: u.isActive,
+      failedLoginCount: 0,
+      lockedUntil: u.lockedUntil,
+      createdAt: new Date().toISOString(),
+      studentProfile: payload.studentCode
+        ? { studentCode: payload.studentCode, homeroomClass: 'Chưa gán', status: 'ACTIVE' }
+        : undefined,
+      instructorProfile: payload.instructorCode
+        ? {
+            instructorCode: payload.instructorCode,
+            department: payload.department || 'Khoa CNTT',
+            phone: payload.phone || '',
+            teachingActive: true,
+          }
+        : undefined,
+    };
+  },
+
+  /**
+   * Cập nhật thông tin cơ bản người dùng (PATCH /api/v1/users/{id})
+   */
+  async updateUser(id: string, payload: UpdateUserPayload): Promise<ManagedUser> {
+    const body: Record<string, string> = {};
+    if (payload.fullName) body.fullName = payload.fullName.trim();
+    if (payload.email) body.email = payload.email.trim();
+
+    const res = await axiosClient.patch<BackendUserResponse>(`/users/${id}`, body);
+    const u = res.data;
+
+    return {
+      id: String(u.id),
+      username: u.username,
+      email: u.email,
+      fullName: u.fullName,
+      role: u.role,
+      isActive: u.isActive,
+      failedLoginCount: 0,
+      lockedUntil: u.lockedUntil,
+      createdAt: new Date().toISOString(),
+    };
+  },
+
+  /**
+   * Chuyển đổi vai trò tài khoản (PATCH /api/v1/users/{id}/role)
+   */
+  async changeRole(id: string, newRole: SystemRole, _currentAdminId?: string): Promise<ManagedUser> {
+    const res = await axiosClient.patch<BackendUserResponse>(`/users/${id}/role`, { newRole });
+    const u = res.data;
+
+    return {
+      id: String(u.id),
+      username: u.username,
+      email: u.email,
+      fullName: u.fullName,
+      role: u.role,
+      isActive: u.isActive,
+      failedLoginCount: 0,
+      lockedUntil: u.lockedUntil,
+      createdAt: new Date().toISOString(),
+    };
+  },
+
+  /**
+   * Kích hoạt / Vô hiệu hóa tài khoản (PATCH /api/v1/users/{id}/status)
+   */
+  async toggleUserStatus(id: string, _currentAdminId?: string): Promise<ManagedUser> {
+    // 1. Lấy thông tin user hiện tại để xác định nextStatus
+    const users = await this.getUsers();
+    const current = users.find((u) => u.id === id);
+    const nextStatus = current ? !current.isActive : true;
+
+    const res = await axiosClient.patch<BackendUserResponse>(`/users/${id}/status`, { isActive: nextStatus });
+    const u = res.data;
+
+    return {
+      id: String(u.id),
+      username: u.username,
+      email: u.email,
+      fullName: u.fullName,
+      role: u.role,
+      isActive: u.isActive,
+      failedLoginCount: 0,
+      lockedUntil: u.lockedUntil,
+      createdAt: new Date().toISOString(),
+    };
+  },
+
+  /**
+   * Mở khóa tài khoản bị khóa tạm thời 15 phút (PATCH /api/v1/users/{id}/status với isActive = true)
+   */
+  async unlockUser(id: string): Promise<ManagedUser> {
+    const res = await axiosClient.patch<BackendUserResponse>(`/users/${id}/status`, { isActive: true });
+    const u = res.data;
+
+    return {
+      id: String(u.id),
+      username: u.username,
+      email: u.email,
+      fullName: u.fullName,
+      role: u.role,
+      isActive: u.isActive,
       failedLoginCount: 0,
       lockedUntil: null,
       createdAt: new Date().toISOString(),
     };
-
-    if (payload.role === 'STUDENT') {
-      newUser.studentProfile = {
-        studentCode: payload.studentCode!.trim().toUpperCase(),
-        dateOfBirth: payload.dateOfBirth,
-        homeroomClass: payload.homeroomClass?.trim(),
-        status: 'ACTIVE',
-      };
-    } else if (payload.role === 'INSTRUCTOR') {
-      newUser.instructorProfile = {
-        instructorCode: payload.instructorCode!.trim().toUpperCase(),
-        department: payload.department?.trim() || 'Công nghệ thông tin',
-        phone: payload.phone?.trim() || '',
-        teachingActive: true,
-        teachableCourses: [],
-      };
-    }
-
-    mockUsersDatabase.unshift(newUser);
-    return newUser;
   },
 
   /**
-   * Cập nhật thông tin tài khoản / hồ sơ
+   * Đặt lại mật khẩu tài khoản (Admin) (PATCH /api/v1/users/{id}/password)
    */
-  async updateUser(id: string, payload: UpdateUserPayload): Promise<ManagedUser> {
-    await delay();
-    const index = mockUsersDatabase.findIndex(u => u.id === id);
-    if (index === -1) throw new Error('Không tìm thấy tài khoản người dùng');
-
-    const user = { ...mockUsersDatabase[index] };
-    user.fullName = payload.fullName.trim();
-    user.email = payload.email.trim();
-    user.updatedAt = new Date().toISOString();
-
-    if (user.role === 'INSTRUCTOR' && user.instructorProfile) {
-      user.instructorProfile = {
-        ...user.instructorProfile,
-        department: payload.department ?? user.instructorProfile.department,
-        phone: payload.phone ?? user.instructorProfile.phone,
-        teachingActive: payload.teachingActive ?? user.instructorProfile.teachingActive,
-      };
-    }
-
-    if (user.role === 'STUDENT' && user.studentProfile) {
-      user.studentProfile = {
-        ...user.studentProfile,
-        homeroomClass: payload.homeroomClass ?? user.studentProfile.homeroomClass,
-        dateOfBirth: payload.dateOfBirth ?? user.studentProfile.dateOfBirth,
-        status: payload.studentStatus ?? user.studentProfile.status,
-      };
-    }
-
-    mockUsersDatabase[index] = user;
-    return user;
-  },
-
-  /**
-   * Bật/tắt trạng thái hoạt động tài khoản (is_active)
-   */
-  async toggleUserStatus(id: string, currentAdminUserId?: string): Promise<ManagedUser> {
-    await delay();
-    const index = mockUsersDatabase.findIndex(u => u.id === id);
-    if (index === -1) throw new Error('Không tìm thấy tài khoản người dùng');
-
-    const user = mockUsersDatabase[index];
-
-    // Chặn tự khóa chính mình
-    if (currentAdminUserId && (user.id === currentAdminUserId || user.username === 'admin')) {
-      throw new Error('Không thể thay đổi trạng thái tài khoản của chính bạn (SELF_MODIFICATION)');
-    }
-
-    // Chặn khóa Admin cuối cùng
-    if (user.role === 'TRAINING_ADMIN' && user.isActive) {
-      const activeAdminCount = mockUsersDatabase.filter(u => u.role === 'TRAINING_ADMIN' && u.isActive).length;
-      if (activeAdminCount <= 1) {
-        throw new Error('Hệ thống phải còn ít nhất một Training Admin đang hoạt động (LAST_ADMIN)');
-      }
-    }
-
-    const updated = {
-      ...user,
-      isActive: !user.isActive,
-      updatedAt: new Date().toISOString(),
-    };
-
-    mockUsersDatabase[index] = updated;
-    return updated;
-  },
-
-  /**
-   * Mở khóa tài khoản bị tạm khóa do nhập sai mật khẩu (reset failedLoginCount & lockedUntil)
-   */
-  async unlockUser(id: string): Promise<ManagedUser> {
-    await delay();
-    const index = mockUsersDatabase.findIndex(u => u.id === id);
-    if (index === -1) throw new Error('Không tìm thấy tài khoản người dùng');
-
-    const updated = {
-      ...mockUsersDatabase[index],
-      failedLoginCount: 0,
-      lockedUntil: null,
-      updatedAt: new Date().toISOString(),
-    };
-
-    mockUsersDatabase[index] = updated;
-    return updated;
-  },
-
-  /**
-   * Chuyển đổi vai trò theo quy tắc D04 (Chỉ giữa TRAINING_ADMIN và TRAINING_MANAGER)
-   */
-  async changeRole(id: string, newRole: SystemRole, currentAdminUserId?: string): Promise<ManagedUser> {
-    await delay();
-    const index = mockUsersDatabase.findIndex(u => u.id === id);
-    if (index === -1) throw new Error('Không tìm thấy tài khoản người dùng');
-
-    const user = mockUsersDatabase[index];
-
-    // Chặn tự hạ quyền
-    if (currentAdminUserId && (user.id === currentAdminUserId || user.username === 'admin')) {
-      throw new Error('Không thể tự thay đổi vai trò của chính bạn (SELF_MODIFICATION)');
-    }
-
-    // Kiểm tra quy tắc D04
-    const validD04Current = user.role === 'TRAINING_ADMIN' || user.role === 'TRAINING_MANAGER';
-    const validD04New = newRole === 'TRAINING_ADMIN' || newRole === 'TRAINING_MANAGER';
-    if (!validD04Current || !validD04New) {
-      throw new Error('Không thể đổi sang vai trò này, vui lòng tạo tài khoản mới (D04: ROLE_CHANGE_NOT_ALLOWED)');
-    }
-
-    // Chặn hạ quyền Admin cuối cùng
-    if (user.role === 'TRAINING_ADMIN' && newRole !== 'TRAINING_ADMIN') {
-      const activeAdminCount = mockUsersDatabase.filter(u => u.role === 'TRAINING_ADMIN' && u.isActive).length;
-      if (activeAdminCount <= 1) {
-        throw new Error('Hệ thống phải còn ít nhất một Training Admin đang hoạt động (LAST_ADMIN)');
-      }
-    }
-
-    const updated = {
-      ...user,
-      role: newRole,
-      updatedAt: new Date().toISOString(),
-    };
-
-    mockUsersDatabase[index] = updated;
-    return updated;
-  },
-
-  /**
-   * Đặt lại mật khẩu tài khoản
-   */
-  async resetPassword(id: string): Promise<{ success: boolean; message: string }> {
-    await delay();
-    const user = mockUsersDatabase.find(u => u.id === id);
-    if (!user) throw new Error('Không tìm thấy người dùng');
-
+  async resetPassword(id: string): Promise<{ tempPassword: string; message: string }> {
+    const tempPassword = `Pass@${Math.floor(100000 + Math.random() * 900000)}`;
+    await axiosClient.patch(`/users/${id}/password`, { newPassword: tempPassword });
     return {
-      success: true,
-      message: `Đã đặt lại mật khẩu cho tài khoản "${user.username}" thành công. Mật khẩu mới tạm thời là: Password@123`,
+      tempPassword,
+      message: `Đã đặt lại mật khẩu thành công! Mật khẩu tạm thời: ${tempPassword}`,
     };
   },
 };

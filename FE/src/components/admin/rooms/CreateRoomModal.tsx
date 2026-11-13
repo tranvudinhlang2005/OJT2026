@@ -11,7 +11,6 @@ interface CreateRoomModalProps {
 export function CreateRoomModal({ isOpen, onClose, onSubmit }: CreateRoomModalProps) {
   const [code, setCode] = useState('');
   const [capacity, setCapacity] = useState(40);
-  const [building, setBuilding] = useState('Nhà A1');
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,7 +26,6 @@ export function CreateRoomModal({ isOpen, onClose, onSubmit }: CreateRoomModalPr
       await onSubmit({
         code: code.trim().toUpperCase(),
         capacity: Number(capacity),
-        building: building.trim(),
       });
       onClose();
     } catch (err: unknown) {
@@ -71,18 +69,6 @@ export function CreateRoomModal({ isOpen, onClose, onSubmit }: CreateRoomModalPr
               placeholder="VD: A1-201, Lab-02"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Khu vực / Tòa nhà *</label>
-            <input
-              type="text"
-              required
-              placeholder="VD: Nhà A1, Nhà Thực hành Lab"
-              value={building}
-              onChange={(e) => setBuilding(e.target.value)}
               className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
             />
           </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, UserPlus, AlertCircle } from 'lucide-react';
-import type { CreateUserPayload, SystemRole } from '../../../types/user';
+import { X, UserPlus, AlertCircle, Info } from 'lucide-react';
+import type { CreateUserPayload, CreatableUserRole } from '../../../types/user';
 
 interface CreateUserModalProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
   onClose,
   onSubmit,
 }) => {
-  const [role, setRole] = useState<SystemRole>('STUDENT');
+  const [role, setRole] = useState<CreatableUserRole>('STUDENT');
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -53,6 +53,11 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
     }
     if (password.length < 8) {
       setError('Mật khẩu phải từ 8 ký tự trở lên (gồm chữ hoa, chữ thường và chữ số)');
+      return;
+    }
+
+    if ((role as string) === 'TRAINING_ADMIN') {
+      setError('Hệ thống không cho phép tạo mới trực tiếp tài khoản Admin. Chỉ có thể nâng từ Quản lý đào tạo.');
       return;
     }
 
@@ -122,14 +127,21 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
             </label>
             <select
               value={role}
-              onChange={e => setRole(e.target.value as SystemRole)}
-              className="w-full rounded-lg border border-slate-300 p-2.5 text-sm font-medium text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              onChange={e => setRole(e.target.value as CreatableUserRole)}
+              className="w-full rounded-lg border border-slate-300 p-2.5 text-sm font-medium text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
             >
               <option value="STUDENT">Học viên (Student)</option>
               <option value="INSTRUCTOR">Giảng viên (Instructor)</option>
               <option value="TRAINING_MANAGER">Quản lý đào tạo (Training Manager)</option>
-              <option value="TRAINING_ADMIN">Admin đào tạo (Training Admin)</option>
             </select>
+
+            {/* Thông báo quy định Admin */}
+            <div className="mt-2 flex items-start gap-2 rounded-lg bg-indigo-50/70 p-2.5 text-xs text-indigo-900 border border-indigo-100">
+              <Info className="h-4 w-4 shrink-0 text-indigo-600 mt-0.5" />
+              <span>
+                <strong>Lưu ý:</strong> Tài khoản Admin được khởi tạo mặc định và không thể tạo mới trực tiếp. Để cấp quyền Admin, hãy tạo tài khoản với vai trò <strong>Quản lý đào tạo</strong>, sau đó thực hiện nâng quyền tại danh sách tài khoản.
+              </span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

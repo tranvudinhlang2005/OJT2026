@@ -1,3 +1,4 @@
+import { axiosClient } from './axiosClient';
 import type { ClassStatus } from '../types/classOffering';
 import type {
   DashboardClassItem,
@@ -7,198 +8,174 @@ import type {
   SecurityActionType,
   SecurityAlerts,
 } from '../types/dashboard';
-import { classService } from './classService';
-import { INITIAL_CLASS_RESULTS } from './approvalMockData';
-import { MOCK_GRADE_AUDIT_LOGS, MOCK_SECURITY_EVENTS } from './dashboardMockData';
 
-const delay = (ms: number = 200) => new Promise((resolve) => setTimeout(resolve, ms));
+interface BackendDashboardSummaryResponse {
+  classCountsByStatus: Record<ClassStatus, number>;
+  totalEnrollments: number;
+  fillRate: number | null;
+  completionRate: number | null;
+  averageAttendanceRate: number | null;
+}
+
+interface PageResponse<T> {
+  items: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+interface BackendDashboardClassResponse {
+  classId: number;
+  classCode: string;
+  courseName: string;
+  status: ClassStatus;
+  enrolledCount: number;
+  maxCapacity: number;
+  completionRate: number | null;
+}
+
+interface BackendSecurityAlertsResponse {
+  from: string;
+  to: string;
+  counts: Record<SecurityActionType, number>;
+  recentEvents?: Array<{
+    createdAt: string;
+    action: SecurityActionType;
+    username: string;
+    ipAddress: string;
+  }>;
+}
+
+interface BackendGradeAuditLogResponse {
+  changedAt: string;
+  classCode: string;
+  studentCode: string;
+  scoreType: 'MIDTERM' | 'FINAL';
+  oldScore: number | null;
+  newScore: number | null;
+  changedBy: string;
+  reason: string;
+}
 
 export const dashboardService = {
   /**
-   * TR18: Lấy dữ liệu thống kê tổng hợp (KPIs)
+   * TR18: Lấy dữ liệu thống kê tổng hợp (KPIs) (GET /api/v1/dashboard/summary)
    */
   async getSummary(filter: DashboardFilter = {}): Promise<DashboardSummary> {
-    await delay();
-    const allClasses = await classService.getClasses();
+    const params: Record<string, string | number> = {};
+    if (filter.semester && filter.semester !== 'ALL') params.semester = filter.semester;
+    if (filter.courseId && filter.courseId !== 'ALL') params.courseId = Number(filter.courseId);
+    if (filter.from) params.from = filter.from;
+    if (filter.to) params.to = filter.to;
 
-    // Áp dụng bộ lọc semester & courseId
-    const filteredClasses = allClasses.filter((c) => {
-      if (filter.semester && filter.semester !== 'ALL' && c.semester !== filter.semester) {
-        return false;
-      }
-      if (filter.courseId && filter.courseId !== 'ALL' && c.courseId !== filter.courseId) {
-        return false;
-      }
-      if (filter.from && c.startDate < filter.from) {
-        return false;
-      }
-      if (filter.to && c.startDate > filter.to) {
-        return false;
-      }
-      return true;
-    });
+    const res = await axiosClient.get<BackendDashboardSummaryResponse>('/dashboard/summary', { params });
+    const data = res.data;
 
-    // 1. Số lớp theo trạng thái
-    const statusCounts: Record<ClassStatus, number> = {
-      DRAFT: 0,
-      OPEN: 0,
-      IN_PROGRESS: 0,
-      CLOSED: 0,
-      CANCELLED: 0,
+    const classCounts: Record<ClassStatus, number> = {
+      DRAFT: data.classCountsByStatus?.DRAFT || 0,
+      OPEN: data.classCountsByStatus?.OPEN || 0,
+      IN_PROGRESS: data.classCountsByStatus?.IN_PROGRESS || 0,
+      CLOSED: data.classCountsByStatus?.CLOSED || 0,
+      CANCELLED: data.classCountsByStatus?.CANCELLED || 0,
     };
-    filteredClasses.forEach((c) => {
-      statusCounts[c.status] = (statusCounts[c.status] || 0) + 1;
-    });
 
-    // 2. Tổng lượt ghi danh (ENROLLED + COMPLETED)
-    const totalEnrollments = filteredClasses.reduce((acc, c) => {
-      if (['OPEN', 'IN_PROGRESS', 'CLOSED'].includes(c.status)) {
-        return acc + c.enrolledCount;
-      }
-      return acc;
-    }, 0);
-
-    // 3. Tỷ lệ lấp đầy (OPEN + IN_PROGRESS)
-    const openAndProgress = filteredClasses.filter((c) =>
-      ['OPEN', 'IN_PROGRESS'].includes(c.status)
-    );
-    const totalEnrolledCapacity = openAndProgress.reduce((sum, c) => sum + c.enrolledCount, 0);
-    const totalMaxCapacity = openAndProgress.reduce((sum, c) => sum + c.maxCapacity, 0);
-
-    const fillRate =
-      totalMaxCapacity > 0
-        ? Math.round((totalEnrolledCapacity / totalMaxCapacity) * 10000) / 10000
-        : null;
-
-    // 4. Tỷ lệ hoàn thành & chuyên cần trung bình (tính trên các lớp CONFIRMED)
-    // Lấy danh sách kết quả học tập từ approval store
-    const confirmedClasses = INITIAL_CLASS_RESULTS.filter(
-      (r) => r.gradingStatus === 'CONFIRMED'
-    );
-
-    let totalPassed = 0;
-    let totalAssessed = 0;
-    let attendanceSum = 0;
-    let attendanceCount = 0;
-
-    confirmedClasses.forEach((cls) => {
-      cls.items.forEach((item) => {
-        if (item.finalStatus === 'PASSED' || item.finalStatus === 'FAILED') {
-          totalAssessed++;
-          if (item.finalStatus === 'PASSED') totalPassed++;
-          if (item.attendanceRate !== null) {
-            attendanceSum += item.attendanceRate;
-            attendanceCount++;
-          }
-        }
-      });
-    });
-
-    const completionRate =
-      totalAssessed > 0
-        ? Math.round((totalPassed / totalAssessed) * 10000) / 10000
-        : null;
-
-    const averageAttendanceRate =
-      attendanceCount > 0
-        ? Math.round((attendanceSum / attendanceCount) * 100) / 100
-        : null;
+    const totalClasses = Object.values(classCounts).reduce((a, b) => a + b, 0);
 
     return {
-      classCountsByStatus: statusCounts,
-      totalEnrollments,
-      fillRate,
-      completionRate,
-      averageAttendanceRate,
-      totalClasses: filteredClasses.length,
+      classCountsByStatus: classCounts,
+      totalEnrollments: Number(data.totalEnrollments || 0),
+      fillRate: data.fillRate !== null ? Number(data.fillRate) : null,
+      completionRate: data.completionRate !== null ? Number(data.completionRate) : null,
+      averageAttendanceRate: data.averageAttendanceRate !== null ? Number(data.averageAttendanceRate) : null,
+      totalClasses,
     };
   },
 
   /**
-   * TR18: Lấy danh sách chỉ số hiệu suất từng lớp học phần
+   * TR18: Lấy danh sách lớp kèm tỷ lệ hoàn thành (GET /api/v1/dashboard/classes)
    */
   async getDashboardClasses(filter: DashboardFilter = {}): Promise<DashboardClassItem[]> {
-    await delay();
-    const allClasses = await classService.getClasses();
+    const params: Record<string, string | number> = {
+      page: 0,
+      size: 100,
+    };
+    if (filter.semester && filter.semester !== 'ALL') params.semester = filter.semester;
+    if (filter.courseId && filter.courseId !== 'ALL') params.courseId = Number(filter.courseId);
 
-    const filtered = allClasses.filter((c) => {
-      if (filter.semester && filter.semester !== 'ALL' && c.semester !== filter.semester) {
-        return false;
-      }
-      if (filter.courseId && filter.courseId !== 'ALL' && c.courseId !== filter.courseId) {
-        return false;
-      }
-      if (filter.from && c.startDate < filter.from) {
-        return false;
-      }
-      if (filter.to && c.startDate > filter.to) {
-        return false;
-      }
-      return true;
-    });
+    const res = await axiosClient.get<PageResponse<BackendDashboardClassResponse>>('/dashboard/classes', { params });
+    const items = res.data?.items || [];
 
-    return filtered.map((c) => {
-      const matchResult = INITIAL_CLASS_RESULTS.find((r) => r.classCode === c.classCode);
-      let compRate: number | null = null;
-
-      if (matchResult && matchResult.gradingStatus === 'CONFIRMED') {
-        const passed = matchResult.items.filter((i) => i.finalStatus === 'PASSED').length;
-        const total = matchResult.items.filter(
-          (i) => i.finalStatus === 'PASSED' || i.finalStatus === 'FAILED'
-        ).length;
-        if (total > 0) {
-          compRate = Math.round((passed / total) * 10000) / 10000;
-        }
-      }
-
-      return {
-        classId: c.id,
-        classCode: c.classCode,
-        courseName: c.course.name,
-        semester: c.semester,
-        status: c.status,
-        enrolledCount: c.enrolledCount,
-        maxCapacity: c.maxCapacity,
-        completionRate: compRate,
-      };
-    });
+    return items.map((c) => ({
+      classId: String(c.classId),
+      classCode: c.classCode,
+      courseName: c.courseName,
+      semester: filter.semester && filter.semester !== 'ALL' ? filter.semester : 'HK2 2026-2027',
+      status: c.status,
+      enrolledCount: c.enrolledCount,
+      maxCapacity: c.maxCapacity,
+      completionRate: c.completionRate !== null ? Number(c.completionRate) : null,
+    }));
   },
 
   /**
-   * TR18: Lấy thông tin cảnh báo an ninh và 20 sự kiện gần nhất
+   * TR18: Lấy cảnh báo an ninh bảo mật (Admin only) (GET /api/v1/dashboard/security-alerts)
    */
-  async getSecurityAlerts(): Promise<SecurityAlerts> {
-    await delay(150);
+  async getSecurityAlerts(from?: string, to?: string): Promise<SecurityAlerts> {
+    const params: Record<string, string> = {};
+    if (from) params.from = from;
+    if (to) params.to = to;
+
+    const res = await axiosClient.get<BackendSecurityAlertsResponse>('/dashboard/security-alerts', { params });
+    const data = res.data;
 
     const counts: Record<SecurityActionType, number> = {
-      LOGIN_FAILED: 0,
-      ACCOUNT_LOCKED: 0,
-      ACCESS_DENIED: 0,
+      LOGIN_FAILED: data.counts?.LOGIN_FAILED || 0,
+      ACCOUNT_LOCKED: data.counts?.ACCOUNT_LOCKED || 0,
+      ACCESS_DENIED: data.counts?.ACCESS_DENIED || 0,
     };
 
-    MOCK_SECURITY_EVENTS.forEach((e) => {
-      counts[e.action] = (counts[e.action] || 0) + 1;
-    });
+    const recentEvents = (data.recentEvents || []).map((e, idx) => ({
+      id: `sec-${idx}-${e.createdAt}`,
+      createdAt: e.createdAt,
+      action: e.action,
+      username: e.username,
+      ipAddress: e.ipAddress,
+    }));
 
     return {
-      from: '2026-11-04',
-      to: '2026-11-11',
+      from: data.from || from || '',
+      to: data.to || to || '',
       counts,
-      recentEvents: MOCK_SECURITY_EVENTS.slice(0, 20),
+      recentEvents,
     };
   },
 
   /**
-   * TR18: Lấy danh sách kiểm toán chỉnh sửa điểm số (Admin only)
+   * TR18: Lấy nhật ký thay đổi điểm số kiểm toán (Admin only) (GET /api/v1/audit/grade-logs)
    */
-  async getGradeAuditLogs(classCode?: string): Promise<GradeAuditLogItem[]> {
-    await delay(150);
+  async getGradeAuditLogs(classId?: string, from?: string, to?: string): Promise<GradeAuditLogItem[]> {
+    const params: Record<string, string | number> = {
+      page: 0,
+      size: 100,
+    };
+    if (classId && classId !== 'ALL') params.classId = Number(classId);
+    if (from) params.from = from;
+    if (to) params.to = to;
 
-    if (classCode && classCode !== 'ALL') {
-      return MOCK_GRADE_AUDIT_LOGS.filter((log) => log.classCode === classCode);
-    }
+    const res = await axiosClient.get<PageResponse<BackendGradeAuditLogResponse>>('/audit/grade-logs', { params });
+    const items = res.data?.items || [];
 
-    return [...MOCK_GRADE_AUDIT_LOGS];
+    return items.map((l, idx) => ({
+      id: `audit-${idx}-${l.changedAt}`,
+      changedAt: l.changedAt,
+      classCode: l.classCode,
+      studentCode: l.studentCode,
+      scoreType: l.scoreType,
+      oldScore: l.oldScore !== null ? Number(l.oldScore) : null,
+      newScore: l.newScore !== null ? Number(l.newScore) : null,
+      changedBy: l.changedBy,
+      reason: l.reason,
+    }));
   },
 };
-

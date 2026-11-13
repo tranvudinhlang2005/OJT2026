@@ -112,11 +112,11 @@ const EditUserModalContent: React.FC<{
             </div>
             <div>
               <span className="text-slate-400 block">Ngày tạo:</span>
-              <span className="text-slate-700">{new Date(user.createdAt).toLocaleDateString('vi-VN')}</span>
+              <span className="text-slate-700">{user.isActive ? 'Đang hoạt động' : 'Đã vô hiệu hóa'}</span>
             </div>
             <div>
-              <span className="text-slate-400 block">Lần đăng nhập sai:</span>
-              <span className="text-slate-700">{user.failedLoginCount}</span>
+              <span className="text-slate-400 block">Khóa tạm thời:</span>
+              <span className="text-slate-700">{user.lockedUntil ? 'Đang bị khóa' : 'Không'}</span>
             </div>
           </div>
 

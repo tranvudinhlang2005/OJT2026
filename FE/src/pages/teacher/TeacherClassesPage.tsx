@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  GraduationCap,
   Users,
   Calendar,
   BookOpen,
@@ -8,83 +7,51 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
-
-interface AssignedClass {
-  id: string;
-  code: string;
-  name: string;
-  credits: number;
-  semester: string;
-  scheduleDescription: string;
-  studentsCount: number;
-  completedSessions: number;
-  totalSessions: number;
-  status: 'active' | 'completed';
-}
-
-const mockClasses: AssignedClass[] = [
-  {
-    id: 'c1',
-    code: 'SE101.O21',
-    name: 'Lập trình Web Tiên tiến (React & TypeScript)',
-    credits: 3,
-    semester: 'Học kỳ II (2026 - 2027)',
-    scheduleDescription: 'Thứ Hai (07:30 - 11:30) • Phòng B2-304',
-    studentsCount: 38,
-    completedSessions: 8,
-    totalSessions: 15,
-    status: 'active',
-  },
-  {
-    id: 'c2',
-    code: 'SE101.O22',
-    name: 'Lập trình Web Tiên tiến (React & TypeScript)',
-    credits: 3,
-    semester: 'Học kỳ II (2026 - 2027)',
-    scheduleDescription: 'Thứ Năm (07:30 - 11:30) • Phòng B2-305',
-    studentsCount: 36,
-    completedSessions: 8,
-    totalSessions: 15,
-    status: 'active',
-  },
-  {
-    id: 'c3',
-    code: 'CS202.N12',
-    name: 'Cơ sở dữ liệu nâng cao & Tối ưu hóa truy vấn',
-    credits: 4,
-    semester: 'Học kỳ II (2026 - 2027)',
-    scheduleDescription: 'Thứ Hai (13:30 - 17:00) • Phòng C1-102',
-    studentsCount: 42,
-    completedSessions: 6,
-    totalSessions: 12,
-    status: 'active',
-  },
-  {
-    id: 'c4',
-    code: 'IT301.K18',
-    name: 'Kiến trúc phần mềm & Thiết kế mẫu',
-    credits: 3,
-    semester: 'Học kỳ I (2026 - 2027)',
-    scheduleDescription: 'Thứ Tư (07:30 - 11:30) • Phòng A1-201',
-    studentsCount: 40,
-    completedSessions: 15,
-    totalSessions: 15,
-    status: 'completed',
-  },
-];
+import { instructorService } from '../../services/instructorService';
+import type { ClassOffering } from '../../types/classOffering';
 
 export default function TeacherClassesPage() {
   const { toast } = useToast();
+  const [classes, setClasses] = useState<ClassOffering[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all');
 
-  const filteredClasses = mockClasses.filter((item) => {
+  useEffect(() => {
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const list = await instructorService.getMyClasses();
+        if (isMounted) setClasses(list);
+      } catch {
+        toast.error('Không thể tải danh sách lớp giảng dạy từ hệ thống.');
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      isMounted = false;
+    };
+  }, [toast]);
+
+  const filteredClasses = classes.filter((item) => {
     const matchSearch =
-      item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchStatus = statusFilter === 'all' || item.status === statusFilter;
+      item.classCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.course.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const isCompleted = item.status === 'CLOSED';
+    const matchStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'completed' && isCompleted) ||
+      (statusFilter === 'active' && !isCompleted);
+
     return matchSearch && matchStatus;
   });
+
+  const activeCount = classes.filter((c) => c.status !== 'CLOSED').length;
+  const completedCount = classes.filter((c) => c.status === 'CLOSED').length;
 
   return (
     <div className="space-y-6">
@@ -121,7 +88,7 @@ export default function TeacherClassesPage() {
                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
           >
-            Tất cả ({mockClasses.length})
+            Tất cả ({classes.length})
           </button>
           <button
             type="button"
@@ -132,7 +99,7 @@ export default function TeacherClassesPage() {
                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
           >
-            Đang giảng dạy (3)
+            Đang giảng dạy ({activeCount})
           </button>
           <button
             type="button"
@@ -143,92 +110,83 @@ export default function TeacherClassesPage() {
                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
           >
-            Đã kết thúc (1)
+            Đã kết thúc ({completedCount})
           </button>
         </div>
       </div>
 
-      {/* Class list cards */}
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        {filteredClasses.map((item) => {
-          const progressPercent = Math.round((item.completedSessions / item.totalSessions) * 100);
-          return (
+      {loading ? (
+        <div className="flex h-48 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+        </div>
+      ) : filteredClasses.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
+          Không tìm thấy lớp học nào phù hợp.
+        </div>
+      ) : (
+        /* Classes Grid */
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-2">
+          {filteredClasses.map((item) => (
             <div
               key={item.id}
-              className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-6 shadow-xs hover:border-indigo-300 transition"
+              className="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-6 shadow-xs hover:border-slate-300 transition"
             >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="rounded-md bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">
-                    {item.code}
+              <div>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                      {item.classCode}
+                    </span>
+                    <h3 className="mt-2 text-base font-bold text-slate-900 leading-snug">
+                      {item.course.name}
+                    </h3>
+                  </div>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                      item.status === 'CLOSED'
+                        ? 'bg-slate-100 text-slate-600'
+                        : 'bg-emerald-50 text-emerald-700'
+                    }`}
+                  >
+                    {item.status === 'CLOSED' ? 'Đã hoàn thành' : 'Đang hoạt động'}
                   </span>
-                  {item.status === 'active' ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 border border-emerald-200">
-                      Đang diễn ra
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-                      Đã hoàn thành
-                    </span>
-                  )}
                 </div>
 
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 line-clamp-1">{item.name}</h3>
-                  <p className="mt-1 text-xs text-slate-500">{item.scheduleDescription}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
-                  <div className="flex items-center gap-1.5">
+                <div className="mt-4 space-y-2 text-xs text-slate-600 border-t border-slate-100 pt-3">
+                  <div className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4 text-slate-400" />
-                    <span>Số tín chỉ: <strong>{item.credits} tín chỉ</strong></span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Users className="h-4 w-4 text-slate-400" />
-                    <span>Sĩ số: <strong>{item.studentsCount} sinh viên</strong></span>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="space-y-1.5 pt-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500 font-medium">Tiến độ buổi dạy</span>
-                    <span className="font-semibold text-slate-800">
-                      {item.completedSessions}/{item.totalSessions} buổi ({progressPercent}%)
+                    <span>
+                      {item.course.credits} Tín chỉ • Mã môn: {item.course.code}
                     </span>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        progressPercent === 100 ? 'bg-emerald-500' : 'bg-indigo-600'
-                      }`}
-                      style={{ width: `${progressPercent}%` }}
-                    />
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-slate-400" />
+                    <span>
+                      {item.semester} (Bắt đầu: {item.startDate})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-slate-400" />
+                    <span>
+                      Sĩ số: <strong>{item.enrolledCount}</strong> / {item.maxCapacity} sinh viên
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
-                <span className="text-xs text-slate-400 flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {item.semester}
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs text-slate-500">
+                  Trạng thái điểm: <strong className="text-slate-800">{item.gradingStatus}</strong>
                 </span>
-
-                <button
-                  type="button"
-                  onClick={() => toast.info(`Đang tải danh sách sinh viên lớp ${item.code}`)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition"
-                >
-                  <GraduationCap className="h-3.5 w-3.5 text-indigo-600" />
-                  Danh sách sinh viên
-                  <ExternalLink className="h-3 w-3 text-slate-400" />
-                </button>
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">
+                  <span>Chi tiết lớp</span>
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </span>
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

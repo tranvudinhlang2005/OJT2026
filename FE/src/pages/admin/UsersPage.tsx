@@ -105,11 +105,15 @@ export default function UsersPage() {
     }
   };
 
-  // Thao tác Đổi vai trò (Admin ↔ Manager)
+  // Thao tác Đổi vai trò (Nâng lên Admin hoặc Hạ về Quản lý)
   const handleChangeRole = async (id: string, newRole: SystemRole) => {
     try {
       await userService.changeRole(id, newRole, currentAuthUser?.id);
-      toast.success(`Đã chuyển đổi vai trò sang "${newRole === 'TRAINING_ADMIN' ? 'Admin' : 'Quản lý'}" thành công`);
+      if (newRole === 'TRAINING_ADMIN') {
+        toast.success('Đã nâng quyền lên Admin đào tạo thành công');
+      } else {
+        toast.success('Đã chuyển vai trò về Quản lý đào tạo thành công');
+      }
       loadData();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Lỗi khi chuyển đổi vai trò';

@@ -11,7 +11,6 @@ interface EditRoomModalProps {
 
 export function EditRoomModal({ isOpen, room, onClose, onSubmit }: EditRoomModalProps) {
   const [capacity, setCapacity] = useState(40);
-  const [building, setBuilding] = useState('Nhà A1');
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,7 +18,6 @@ export function EditRoomModal({ isOpen, room, onClose, onSubmit }: EditRoomModal
   useEffect(() => {
     if (room) {
       setCapacity(room.capacity);
-      setBuilding(room.building || 'Khu giảng đường');
       setError(null);
     }
   }, [room]);
@@ -33,8 +31,8 @@ export function EditRoomModal({ isOpen, room, onClose, onSubmit }: EditRoomModal
     try {
       setIsSubmitting(true);
       await onSubmit(room.id, {
+        code: room.code,
         capacity: Number(capacity),
-        building: building.trim(),
       });
       onClose();
     } catch (err: unknown) {
@@ -69,17 +67,6 @@ export function EditRoomModal({ isOpen, room, onClose, onSubmit }: EditRoomModal
               <span>{error}</span>
             </div>
           )}
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Khu vực / Tòa nhà *</label>
-            <input
-              type="text"
-              required
-              value={building}
-              onChange={(e) => setBuilding(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
-            />
-          </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Sức chứa tối đa (chỗ ngồi) *</label>

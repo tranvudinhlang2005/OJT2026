@@ -2,6 +2,9 @@ import type { UserRole } from './auth';
 
 export type SystemRole = UserRole;
 
+// Vai trò có thể tạo mới (Không bao gồm Admin vì Admin là mặc định hệ thống hoặc được nâng từ Quản lý)
+export type CreatableUserRole = 'STUDENT' | 'INSTRUCTOR' | 'TRAINING_MANAGER';
+
 export type StudentStatus = 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
 
 export interface InstructorProfile {
@@ -47,7 +50,7 @@ export interface CreateUserPayload {
   email: string;
   fullName: string;
   password: string;
-  role: SystemRole;
+  role: CreatableUserRole;
   
   // Nếu là Giảng viên
   instructorCode?: string;

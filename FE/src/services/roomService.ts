@@ -1,113 +1,111 @@
 import { axiosClient } from './axiosClient';
 import type { RoomItem, CreateRoomPayload, UpdateRoomPayload, RoomFilter } from '../types/room';
-import { MOCK_ROOMS } from './classMockData';
 
-// Khởi tạo mock database cho Phòng học từ MOCK_ROOMS
-let mockRooms: RoomItem[] = MOCK_ROOMS.map((r) => ({
-  id: String(r.id),
-  code: r.code,
-  capacity: r.capacity,
-  building: r.building || 'Khu giảng đường',
-  isActive: r.isActive,
-}));
+interface BackendRoomResponse {
+  id: number;
+  code: string;
+  capacity: number;
+  isActive: boolean;
+}
+
+interface PageResponse<T> {
+  items: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
 
 export const roomService = {
   /**
-   * Lấy danh sách phòng học kèm bộ lọc
+   * Lấy danh sách phòng học từ Backend API (GET /api/v1/rooms)
    */
   async getRooms(filter: RoomFilter = {}): Promise<RoomItem[]> {
-    try {
-      const res = await axiosClient.get<{ content: Array<RoomItem & { id: number | string }> }>('/rooms');
-      if (res.data && Array.isArray(res.data.content)) {
-        return res.data.content.map(r => ({
-          ...r,
-          id: String(r.id),
-        }));
-      }
-    } catch {
-      // Backend offline: sử dụng Mock fallback
-    }
+    const params: Record<string, number> = {
+      page: 0,
+      size: 100,
+    };
 
-    return mockRooms.filter((room) => {
+    const res = await axiosClient.get<PageResponse<BackendRoomResponse>>('/rooms', { params });
+    const items = res.data?.items || [];
+
+    const mapped: RoomItem[] = items.map((r) => ({
+      id: String(r.id),
+      code: r.code,
+      capacity: r.capacity,
+      building: 'Khu giảng đường',
+      isActive: r.isActive,
+    }));
+
+    // Lọc phía client nếu có filter
+    return mapped.filter((room) => {
       if (filter.isActive !== undefined && filter.isActive !== 'ALL' && room.isActive !== filter.isActive) {
         return false;
       }
       if (filter.keyword && filter.keyword.trim() !== '') {
         const kw = filter.keyword.trim().toLowerCase();
         const matchCode = room.code.toLowerCase().includes(kw);
-        const matchBuilding = room.building?.toLowerCase().includes(kw) ?? false;
-        if (!matchCode && !matchBuilding) return false;
+        if (!matchCode) return false;
       }
       return true;
     });
   },
 
   /**
-   * Tạo mới phòng học
+   * Tạo mới phòng học (POST /api/v1/rooms)
    */
   async createRoom(payload: CreateRoomPayload): Promise<RoomItem> {
-    try {
-      const res = await axiosClient.post<RoomItem>('/rooms', payload);
-      return { ...res.data, id: String(res.data.id) };
-    } catch {
-      // Mock fallback
-    }
-
-    const exists = mockRooms.some((r) => r.code.toLowerCase() === payload.code.trim().toLowerCase());
-    if (exists) {
-      throw new Error(`Phòng học "${payload.code}" đã tồn tại.`);
-    }
-
-    const newRoom: RoomItem = {
-      id: `room-${Date.now()}`,
+    const body = {
       code: payload.code.trim().toUpperCase(),
       capacity: Number(payload.capacity),
-      building: payload.building?.trim() || 'Khu giảng đường',
-      isActive: true,
     };
 
-    mockRooms = [newRoom, ...mockRooms];
-    return newRoom;
+    const res = await axiosClient.post<BackendRoomResponse>('/rooms', body);
+    const r = res.data;
+    return {
+      id: String(r.id),
+      code: r.code,
+      capacity: r.capacity,
+      building: 'Khu giảng đường',
+      isActive: r.isActive,
+    };
   },
 
   /**
-   * Cập nhật thông tin phòng học
+   * Cập nhật thông tin phòng học (PUT /api/v1/rooms/{id})
    */
   async updateRoom(id: string, payload: UpdateRoomPayload): Promise<RoomItem> {
-    try {
-      const res = await axiosClient.put<RoomItem>(`/rooms/${id}`, payload);
-      return { ...res.data, id: String(res.data.id) };
-    } catch {
-      // Mock fallback
-    }
+    const rooms = await this.getRooms();
+    const current = rooms.find((r) => r.id === id);
 
-    const index = mockRooms.findIndex((r) => r.id === id);
-    if (index === -1) throw new Error('Không tìm thấy phòng học yêu cầu.');
-
-    const updated: RoomItem = {
-      ...mockRooms[index],
-      ...payload,
+    const body = {
+      code: (payload.code || current?.code || '').trim().toUpperCase(),
+      capacity: Number(payload.capacity || current?.capacity || 40),
     };
-    mockRooms[index] = updated;
-    return updated;
+
+    const res = await axiosClient.put<BackendRoomResponse>(`/rooms/${id}`, body);
+    const r = res.data;
+    return {
+      id: String(r.id),
+      code: r.code,
+      capacity: r.capacity,
+      building: 'Khu giảng đường',
+      isActive: r.isActive,
+    };
   },
 
   /**
-   * Bật / tắt trạng thái hoạt động phòng học (bảo trì)
+   * Bật / tắt trạng thái hoạt động phòng học (bảo trì) (PATCH /api/v1/rooms/{id}/status)
    */
   async toggleRoomStatus(id: string, isActive: boolean): Promise<RoomItem> {
-    try {
-      const res = await axiosClient.patch<RoomItem>(`/rooms/${id}/status`, { isActive });
-      return { ...res.data, id: String(res.data.id) };
-    } catch {
-      // Mock fallback
-    }
-
-    const index = mockRooms.findIndex((r) => r.id === id);
-    if (index === -1) throw new Error('Không tìm thấy phòng học yêu cầu.');
-
-    mockRooms[index] = { ...mockRooms[index], isActive };
-    return mockRooms[index];
+    const res = await axiosClient.patch<BackendRoomResponse>(`/rooms/${id}/status`, { isActive });
+    const r = res.data;
+    return {
+      id: String(r.id),
+      code: r.code,
+      capacity: r.capacity,
+      building: 'Khu giảng đường',
+      isActive: r.isActive,
+    };
   },
 };
-

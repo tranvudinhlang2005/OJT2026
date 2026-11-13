@@ -8,6 +8,7 @@ import {
   useMemo,
 } from 'react';
 import type { User, UserRole } from '../types/auth';
+import { authService } from '../services/authService';
 import { authReducer, initialAuthState, type AuthAction } from '../reducers/authReducer';
 
 interface AuthContextValue {
@@ -26,55 +27,50 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
 
-  // Khởi tạo trạng thái xác thực từ localStorage khi load ứng dụng
+  // Khởi tạo trạng thái xác thực từ phiên Backend (/auth/me) hoặc localStorage
   useEffect(() => {
-    try {
+    let isMounted = true;
+    const initAuth = async () => {
+      try {
+        const currentUser = await authService.getCurrentUser();
+        if (currentUser && isMounted) {
+          dispatch({
+            type: 'INITIALIZE',
+            payload: { user: currentUser, token: 'active-session' },
+          });
+          return;
+        }
+      } catch {
+        // Backend offline
+      }
+
+      if (!isMounted) return;
+
       const token = localStorage.getItem('token');
       const userJson = localStorage.getItem('user');
-      const storedRole = localStorage.getItem('role') as UserRole | null;
-
-      if (token) {
-        let user: User | null = null;
-        if (userJson) {
-          user = JSON.parse(userJson);
-        } else if (storedRole) {
-          // Khôi phục user mẫu nếu chỉ có storedRole
-          const mockNames: Record<UserRole, string> = {
-            TRAINING_ADMIN: 'Quản trị viên Hệ thống',
-            TRAINING_MANAGER: 'Cán bộ Quản lý Đào tạo',
-            INSTRUCTOR: 'ThS. Trần Văn Hùng',
-            STUDENT: 'Nguyễn Văn An (B21DCCN001)',
-          };
-          const mockEmails: Record<UserRole, string> = {
-            TRAINING_ADMIN: 'admin@edu.vn',
-            TRAINING_MANAGER: 'daotao@edu.vn',
-            INSTRUCTOR: 'hungtv@edu.vn',
-            STUDENT: 'an.nv@edu.vn',
-          };
-          user = {
-            id: `${storedRole}-1`,
-            name: mockNames[storedRole] || 'Người dùng',
-            email: mockEmails[storedRole] || 'user@edu.vn',
-            role: storedRole,
-          };
+      if (token && userJson) {
+        try {
+          const user = JSON.parse(userJson);
+          dispatch({
+            type: 'INITIALIZE',
+            payload: { user, token },
+          });
+          return;
+        } catch {
+          // ignore parsing error
         }
-
-        dispatch({
-          type: 'INITIALIZE',
-          payload: { user, token },
-        });
-      } else {
-        dispatch({
-          type: 'INITIALIZE',
-          payload: { user: null, token: null },
-        });
       }
-    } catch {
+
       dispatch({
         type: 'INITIALIZE',
         payload: { user: null, token: null },
       });
-    }
+    };
+
+    initAuth();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const login = useCallback((user: User, token: string) => {
@@ -89,10 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('user');
-
+    authService.logout();
     dispatch({ type: 'LOGOUT' });
   }, []);
 

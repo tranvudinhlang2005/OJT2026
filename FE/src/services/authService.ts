@@ -34,12 +34,18 @@ export const authService = {
     const response = await axiosClient.post<AuthUserResponse>('/auth/login', credentials);
     const data = response.data;
 
-    return {
+    const user: User = {
       id: String(data.userId),
       name: data.fullName,
       email: data.email || `${credentials.username}@edu.vn`,
       role: data.role,
     };
+
+    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('role', user.role);
+    localStorage.setItem('token', 'active-session');
+
+    return user;
   },
 
   /**
@@ -56,18 +62,22 @@ export const authService = {
   },
 
   /**
-   * Lấy thông tin phiên làm việc hiện tại
+   * Lấy thông tin phiên làm việc hiện tại từ Backend (/auth/me)
    */
   async getCurrentUser(): Promise<User | null> {
     try {
       const response = await axiosClient.get<AuthUserResponse>('/auth/me');
       const data = response.data;
-      return {
+      const user: User = {
         id: String(data.userId),
         name: data.fullName,
         email: data.email || 'user@edu.vn',
         role: data.role,
       };
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('role', user.role);
+      localStorage.setItem('token', 'active-session');
+      return user;
     } catch {
       return null;
     }

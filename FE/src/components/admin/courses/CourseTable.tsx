@@ -56,7 +56,7 @@ export function CourseTable({
                 <td className="px-6 py-4 font-bold text-indigo-600">{c.code}</td>
                 <td className="px-6 py-4">
                   <div className="font-semibold text-slate-900">{c.name}</div>
-                  <div className="text-xs text-slate-500">{c.department || 'Khoa CNTT'}</div>
+                  <div className="text-xs text-slate-400 font-mono">Thời lượng: {c.durationHours} giờ</div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-1.5 font-medium text-slate-800">

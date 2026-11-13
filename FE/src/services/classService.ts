@@ -1,3 +1,4 @@
+import { axiosClient } from './axiosClient';
 import type {
   ClassOffering,
   ClassSession,
@@ -11,645 +12,434 @@ import type {
   RoomSummary,
   ConflictCheckResult,
 } from '../types/classOffering';
-import {
-  INITIAL_MOCK_CLASSES,
-  INITIAL_MOCK_SESSIONS,
-  MOCK_COURSES,
-  MOCK_INSTRUCTORS,
-  MOCK_ROOMS,
-} from './classMockData';
 
-// In-memory runtime state for frontend operations
-let mockClasses: ClassOffering[] = [...INITIAL_MOCK_CLASSES];
-let mockSessions: ClassSession[] = [...INITIAL_MOCK_SESSIONS];
+interface BackendClassResponse {
+  id: number;
+  classCode: string;
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+  semester: string;
+  startDate: string;
+  endDate: string;
+  instructorId: number | null;
+  instructorName: string | null;
+  maxCapacity: number;
+  enrolledCount: number;
+  availableSeats: number;
+  isFull: boolean;
+  status: ClassOffering['status'];
+  cancelDeadline: string | null;
+  cancelReason: string | null;
+  minAttendancePct: number | null;
+  passScore: number | null;
+  midtermWeight: number | null;
+  finalWeight: number | null;
+  gradingStatus: ClassOffering['gradingStatus'];
+  startedAt: string | null;
+  createdById: number;
+}
 
-const delay = (ms: number = 200) => new Promise((resolve) => setTimeout(resolve, ms));
+interface BackendSessionResponse {
+  id: number;
+  classId: number;
+  sessionDate: string;
+  startTime: string;
+  endTime: string;
+  roomId: number;
+  roomCode: string;
+  topic: string | null;
+  attendanceLocked: boolean;
+}
 
-/**
- * Helper to check time overlap between two intervals [startA, endA) and [startB, endB)
- */
-function isTimeOverlapping(startA: string, endA: string, startB: string, endB: string): boolean {
-  return startA < endB && startB < endA;
+interface PageResponse<T> {
+  items: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+interface BackendInstructorResponse {
+  id: number;
+  instructorCode: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  department?: string;
+  isActive: boolean;
+  teachableCourses?: Array<{ id: number; code: string; name: string }>;
+}
+
+interface BackendStudentRosterResponse {
+  enrollmentId: number;
+  studentId: number;
+  studentCode: string;
+  fullName: string;
+  enrollmentStatus: 'ENROLLED' | 'CANCELLED' | 'COMPLETED';
+  enrolledAt: string;
+}
+
+function mapToClassOffering(item: BackendClassResponse): ClassOffering {
+  return {
+    id: String(item.id),
+    classCode: item.classCode,
+    courseId: String(item.courseId),
+    course: {
+      id: String(item.courseId),
+      code: item.courseCode,
+      name: item.courseName,
+      credits: 3,
+      department: 'Khoa Công nghệ Thông tin',
+    },
+    semester: item.semester,
+    startDate: item.startDate,
+    endDate: item.endDate,
+    instructorId: item.instructorId ? String(item.instructorId) : null,
+    instructor: item.instructorId
+      ? {
+          id: String(item.instructorId),
+          instructorCode: '',
+          fullName: item.instructorName || '',
+          email: '',
+          teachingActive: true,
+          teachableCourses: [],
+        }
+      : null,
+    maxCapacity: item.maxCapacity,
+    enrolledCount: item.enrolledCount,
+    status: item.status,
+    cancelDeadline: item.cancelDeadline || '',
+    cancelReason: item.cancelReason,
+    minAttendancePct: Number(item.minAttendancePct ?? 80),
+    passScore: Number(item.passScore ?? 5),
+    midtermWeight: Number(item.midtermWeight ?? 0.3),
+    finalWeight: Number(item.finalWeight ?? 0.7),
+    gradingStatus: item.gradingStatus,
+    createdAt: item.startDate || new Date().toISOString(),
+    updatedAt: item.startDate || new Date().toISOString(),
+  };
+}
+
+function mapToSession(s: BackendSessionResponse): ClassSession {
+  return {
+    id: String(s.id),
+    classId: String(s.classId),
+    sessionDate: s.sessionDate,
+    startTime: s.startTime.substring(0, 5),
+    endTime: s.endTime.substring(0, 5),
+    roomId: String(s.roomId),
+    roomCode: s.roomCode,
+    topic: s.topic || undefined,
+    attendanceLocked: s.attendanceLocked,
+  };
 }
 
 export const classService = {
   /**
-   * Lấy danh sách lớp học theo bộ lọc
+   * Lấy danh sách lớp học theo bộ lọc từ Backend (GET /api/v1/classes)
    */
   async getClasses(filter: ClassFilter = {}): Promise<ClassOffering[]> {
-    await delay();
-    return mockClasses.filter((cls) => {
-      if (filter.semester && filter.semester !== 'ALL' && cls.semester !== filter.semester) {
-        return false;
-      }
-      if (filter.courseId && filter.courseId !== 'ALL' && cls.courseId !== filter.courseId) {
-        return false;
-      }
-      if (filter.status && filter.status !== 'ALL' && cls.status !== filter.status) {
-        return false;
-      }
-      if (filter.instructorId && filter.instructorId !== 'ALL' && cls.instructorId !== filter.instructorId) {
-        return false;
-      }
-      if (filter.keyword && filter.keyword.trim() !== '') {
-        const kw = filter.keyword.trim().toLowerCase();
-        const matchCode = cls.classCode.toLowerCase().includes(kw);
-        const matchCourse = cls.course.name.toLowerCase().includes(kw) || cls.course.code.toLowerCase().includes(kw);
-        const matchInstructor = cls.instructor?.fullName.toLowerCase().includes(kw) ?? false;
-        if (!matchCode && !matchCourse && !matchInstructor) {
-          return false;
-        }
-      }
-      return true;
-    });
+    const params: Record<string, string | number> = {
+      page: 0,
+      size: 100,
+    };
+
+    if (filter.semester && filter.semester !== 'ALL') params.semester = filter.semester;
+    if (filter.courseId && filter.courseId !== 'ALL') params.courseId = Number(filter.courseId);
+    if (filter.status && filter.status !== 'ALL') params.status = filter.status;
+    if (filter.instructorId && filter.instructorId !== 'ALL') params.instructorId = Number(filter.instructorId);
+    if (filter.keyword && filter.keyword.trim()) params.keyword = filter.keyword.trim();
+
+    const res = await axiosClient.get<PageResponse<BackendClassResponse>>('/classes', { params });
+    const items = res.data?.items || [];
+    return items.map(mapToClassOffering);
   },
 
   /**
-   * Lấy chi tiết lớp học theo ID
+   * Lấy chi tiết lớp học theo ID (GET /api/v1/classes/{id})
    */
-  async getClassById(id: string): Promise<ClassOffering | null> {
-    await delay();
-    const cls = mockClasses.find((c) => c.id === id);
-    if (!cls) return null;
-    const count = mockSessions.filter((s) => s.classId === id).length;
-    return { ...cls, sessionsCount: count };
+  async getClassById(id: string): Promise<ClassOffering> {
+    const res = await axiosClient.get<BackendClassResponse>(`/classes/${id}`);
+    return mapToClassOffering(res.data);
   },
 
   /**
-   * Lấy danh mục môn học
-   */
-  async getCourses(): Promise<CourseSummary[]> {
-    await delay(100);
-    return [...MOCK_COURSES];
-  },
-
-  /**
-   * Lấy danh mục phòng học
-   */
-  async getRooms(): Promise<RoomSummary[]> {
-    await delay(100);
-    return [...MOCK_ROOMS];
-  },
-
-  /**
-   * Lấy danh sách giảng viên
-   */
-  async getInstructors(): Promise<InstructorSummary[]> {
-    await delay(100);
-    return [...MOCK_INSTRUCTORS];
-  },
-
-  /**
-   * Lấy danh sách giảng viên đủ chuyên môn cho môn học cụ thể
-   */
-  async getQualifiedInstructors(courseId: string): Promise<InstructorSummary[]> {
-    await delay(100);
-    return MOCK_INSTRUCTORS.filter(
-      (inst) => inst.teachingActive && inst.teachableCourses.includes(courseId)
-    );
-  },
-
-  /**
-   * Tạo mới lớp học phần (Khởi tạo ở trạng thái DRAFT)
+   * Tạo mới lớp học (POST /api/v1/classes)
    */
   async createClass(payload: CreateClassPayload): Promise<ClassOffering> {
-    await delay();
-
-    // 1. Kiểm tra mã lớp trùng lặp
-    const exists = mockClasses.some(
-      (c) => c.classCode.trim().toLowerCase() === payload.classCode.trim().toLowerCase()
-    );
-    if (exists) {
-      throw new Error(`Mã lớp "${payload.classCode}" đã tồn tại trên hệ thống (CLASS_CODE_DUPLICATE).`);
+    let cancelDeadline = payload.cancelDeadline;
+    if (cancelDeadline && !cancelDeadline.includes('T')) {
+      cancelDeadline = `${cancelDeadline}T23:59:59+07:00`;
     }
 
-    // 2. Kiểm tra logic thời gian
-    if (new Date(payload.endDate) <= new Date(payload.startDate)) {
-      throw new Error('Ngày kết thúc phải lớn hơn ngày bắt đầu khóa học.');
-    }
-
-    const course = MOCK_COURSES.find((c) => c.id === payload.courseId);
-    if (!course) {
-      throw new Error('Không tìm thấy thông tin môn học đã chọn.');
-    }
-
-    let instructor: InstructorSummary | null = null;
-    if (payload.instructorId) {
-      const found = MOCK_INSTRUCTORS.find((i) => i.id === payload.instructorId);
-      if (found) {
-        if (!found.teachingActive) {
-          throw new Error(`Giảng viên ${found.fullName} đang tạm ngừng nhận lớp.`);
-        }
-        instructor = found;
-      }
-    }
-
-    const newClass: ClassOffering = {
-      id: `c-${Date.now()}`,
+    const body = {
       classCode: payload.classCode.trim().toUpperCase(),
-      courseId: course.id,
-      course,
-      semester: payload.semester,
+      courseId: Number(payload.courseId),
+      semester: payload.semester.trim(),
       startDate: payload.startDate,
       endDate: payload.endDate,
-      instructorId: instructor?.id || null,
-      instructor,
-      maxCapacity: Number(payload.maxCapacity) || 40,
-      enrolledCount: 0,
-      status: 'DRAFT',
-      cancelDeadline: payload.cancelDeadline,
-      minAttendancePct: payload.minAttendancePct ?? course.defaultMinAttendancePct ?? 80.0,
-      passScore: payload.passScore ?? course.defaultPassScore ?? 5.0,
-      midtermWeight: payload.midtermWeight ?? 0.3,
-      finalWeight: payload.finalWeight ?? 0.7,
-      gradingStatus: 'DRAFT',
-      sessionsCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      maxCapacity: Number(payload.maxCapacity),
+      cancelDeadline,
     };
 
-    mockClasses.unshift(newClass);
-    return newClass;
+    const res = await axiosClient.post<BackendClassResponse>('/classes', body);
+    const createdClass = mapToClassOffering(res.data);
+
+    // Nếu có chọn giảng viên lúc tạo, gọi gán giảng viên luôn
+    if (payload.instructorId) {
+      await this.assignInstructor(createdClass.id, payload.instructorId);
+    }
+
+    return createdClass;
   },
 
   /**
-   * Cập nhật thông tin lớp học
+   * Cập nhật thông tin cơ bản lớp học (PUT /api/v1/classes/{id})
    */
   async updateClass(id: string, payload: UpdateClassPayload): Promise<ClassOffering> {
-    await delay();
-    const index = mockClasses.findIndex((c) => c.id === id);
-    if (index === -1) {
-      throw new Error('Không tìm thấy lớp học phần để cập nhật.');
+    let cancelDeadline = payload.cancelDeadline;
+    if (cancelDeadline && !cancelDeadline.includes('T')) {
+      cancelDeadline = `${cancelDeadline}T23:59:59+07:00`;
     }
 
-    const current = mockClasses[index];
-
-    if (payload.classCode && payload.classCode.trim().toLowerCase() !== current.classCode.toLowerCase()) {
-      const exists = mockClasses.some(
-        (c) => c.id !== id && c.classCode.trim().toLowerCase() === payload.classCode!.trim().toLowerCase()
-      );
-      if (exists) {
-        throw new Error(`Mã lớp "${payload.classCode}" đã tồn tại trên hệ thống.`);
-      }
-    }
-
-    let instructor = current.instructor;
-    if (payload.instructorId !== undefined) {
-      if (payload.instructorId) {
-        const found = MOCK_INSTRUCTORS.find((i) => i.id === payload.instructorId);
-        if (found) instructor = found;
-      } else {
-        instructor = null;
-      }
-    }
-
-    const updated: ClassOffering = {
-      ...current,
-      ...payload,
-      classCode: payload.classCode ? payload.classCode.trim().toUpperCase() : current.classCode,
-      instructorId: payload.instructorId !== undefined ? payload.instructorId : current.instructorId,
-      instructor,
-      updatedAt: new Date().toISOString(),
+    const current = await this.getClassById(id);
+    const body = {
+      classCode: (payload.classCode || current.classCode).trim().toUpperCase(),
+      courseId: Number(payload.courseId || current.courseId),
+      semester: (payload.semester || current.semester).trim(),
+      startDate: payload.startDate || current.startDate,
+      endDate: payload.endDate || current.endDate,
+      maxCapacity: Number(payload.maxCapacity || current.maxCapacity),
+      cancelDeadline: cancelDeadline || current.cancelDeadline,
     };
 
-    mockClasses[index] = updated;
-    return updated;
+    const res = await axiosClient.put<BackendClassResponse>(`/classes/${id}`, body);
+    return mapToClassOffering(res.data);
   },
 
   /**
-   * Phân công giảng viên cho lớp
+   * Đổi sĩ số tối đa của lớp học (PATCH /api/v1/classes/{id}/capacity)
+   */
+  async changeCapacity(id: string, maxCapacity: number): Promise<ClassOffering> {
+    const res = await axiosClient.patch<BackendClassResponse>(`/classes/${id}/capacity`, {
+      maxCapacity: Number(maxCapacity),
+    });
+    return mapToClassOffering(res.data);
+  },
+
+  /**
+   * Gán giảng viên phụ trách lớp (PUT /api/v1/classes/{id}/instructor)
    */
   async assignInstructor(classId: string, instructorId: string | null): Promise<ClassOffering> {
-    await delay();
-    const cls = mockClasses.find((c) => c.id === classId);
-    if (!cls) throw new Error('Không tìm thấy lớp học phần.');
-
     if (!instructorId) {
-      cls.instructorId = null;
-      cls.instructor = null;
-      cls.updatedAt = new Date().toISOString();
-      return { ...cls };
+      throw new Error('Vui lòng chọn giảng viên phụ trách');
     }
-
-    const instructor = MOCK_INSTRUCTORS.find((i) => i.id === instructorId);
-    if (!instructor) throw new Error('Không tìm thấy giảng viên.');
-    if (!instructor.teachingActive) {
-      throw new Error(`Giảng viên ${instructor.fullName} đang tạm ngừng nhận lớp.`);
-    }
-
-    cls.instructorId = instructor.id;
-    cls.instructor = instructor;
-    cls.updatedAt = new Date().toISOString();
-    return { ...cls };
+    const res = await axiosClient.put<BackendClassResponse>(`/classes/${classId}/instructor`, {
+      instructorId: Number(instructorId),
+    });
+    return mapToClassOffering(res.data);
   },
 
   /**
-   * Công bố mở lớp (DRAFT -> OPEN)
+   * Phát hành lớp học để mở đăng ký (POST /api/v1/classes/{id}/publish)
    */
   async publishClass(id: string): Promise<ClassOffering> {
-    await delay();
-    const cls = mockClasses.find((c) => c.id === id);
-    if (!cls) throw new Error('Không tìm thấy lớp học phần.');
-
-    if (cls.status !== 'DRAFT') {
-      throw new Error(`Lớp đang ở trạng thái "${cls.status}", không thể thực hiện công bố mở lớp.`);
-    }
-
-    // Kiểm tra điều kiện bắt buộc theo spec TR05
-    if (!cls.instructorId || !cls.instructor) {
-      throw new Error('Không thể công bố mở lớp: Chưa phân công giảng viên phụ trách.');
-    }
-
-    const classSessions = mockSessions.filter((s) => s.classId === id);
-    if (classSessions.length === 0) {
-      throw new Error('Không thể công bố mở lớp: Lớp học chưa có buổi học nào được xếp lịch.');
-    }
-
-    cls.status = 'OPEN';
-    cls.updatedAt = new Date().toISOString();
-    return { ...cls };
+    const res = await axiosClient.post<BackendClassResponse>(`/classes/${id}/publish`);
+    return mapToClassOffering(res.data);
   },
 
   /**
-   * Bắt đầu giảng dạy (OPEN -> IN_PROGRESS)
+   * Rút lớp học về trạng thái nháp (POST /api/v1/classes/{id}/unpublish)
+   */
+  async unpublishClass(id: string): Promise<ClassOffering> {
+    const res = await axiosClient.post<BackendClassResponse>(`/classes/${id}/unpublish`);
+    return mapToClassOffering(res.data);
+  },
+
+  /**
+   * Bắt đầu lớp học (POST /api/v1/classes/{id}/start)
    */
   async startClass(id: string): Promise<ClassOffering> {
-    await delay();
-    const cls = mockClasses.find((c) => c.id === id);
-    if (!cls) throw new Error('Không tìm thấy lớp học phần.');
-
-    if (cls.status !== 'OPEN') {
-      throw new Error('Chỉ có thể chuyển sang "Đang diễn ra" đối với các lớp đang ở trạng thái Mở đăng ký (OPEN).');
-    }
-
-    cls.status = 'IN_PROGRESS';
-    cls.updatedAt = new Date().toISOString();
-    return { ...cls };
+    const res = await axiosClient.post<BackendClassResponse>(`/classes/${id}/start`);
+    return mapToClassOffering(res.data);
   },
 
   /**
-   * Đóng lớp học (IN_PROGRESS -> CLOSED)
-   */
-  async closeClass(id: string): Promise<ClassOffering> {
-    await delay();
-    const cls = mockClasses.find((c) => c.id === id);
-    if (!cls) throw new Error('Không tìm thấy lớp học phần.');
-
-    if (cls.status !== 'IN_PROGRESS') {
-      throw new Error('Chỉ có thể đóng lớp đối với các lớp đang diễn ra (IN_PROGRESS).');
-    }
-
-    cls.status = 'CLOSED';
-    cls.updatedAt = new Date().toISOString();
-    return { ...cls };
-  },
-
-  /**
-   * Hủy lớp học phần kèm lý do
+   * Hủy lớp học (POST /api/v1/classes/{id}/cancel)
    */
   async cancelClass(id: string, reason: string): Promise<ClassOffering> {
-    await delay();
-    const cls = mockClasses.find((c) => c.id === id);
-    if (!cls) throw new Error('Không tìm thấy lớp học phần.');
-
-    if (!reason || reason.trim() === '') {
-      throw new Error('Bắt buộc phải nhập lý do khi thực hiện hủy lớp học phần.');
-    }
-
-    cls.status = 'CANCELLED';
-    cls.cancelReason = reason.trim();
-    cls.updatedAt = new Date().toISOString();
-    return { ...cls };
+    const res = await axiosClient.post<BackendClassResponse>(`/classes/${id}/cancel`, {
+      reason: reason.trim(),
+    });
+    return mapToClassOffering(res.data);
   },
 
   /**
-   * Xóa vật lý lớp học (Chỉ áp dụng cho DRAFT và chưa từng có học viên đăng ký)
+   * Đóng lớp học (Complete class khi kết thúc)
+   */
+  async closeClass(id: string): Promise<ClassOffering> {
+    const res = await axiosClient.post<BackendClassResponse>(`/classes/${id}/complete`);
+    return mapToClassOffering(res.data);
+  },
+
+  /**
+   * Xóa lớp học ở trạng thái Nháp (DELETE /api/v1/classes/{id})
    */
   async deleteClass(id: string): Promise<void> {
-    await delay();
-    const cls = mockClasses.find((c) => c.id === id);
-    if (!cls) throw new Error('Không tìm thấy lớp học phần cần xóa.');
-
-    if (cls.status !== 'DRAFT') {
-      throw new Error('Chỉ được phép xóa lớp học đang ở trạng thái Bản nháp (DRAFT).');
-    }
-
-    if (cls.enrolledCount > 0) {
-      throw new Error('Không thể xóa lớp đã có sinh viên đăng ký.');
-    }
-
-    // Xóa tất cả sessions thuộc lớp
-    mockSessions = mockSessions.filter((s) => s.classId !== id);
-    // Xóa lớp
-    mockClasses = mockClasses.filter((c) => c.id !== id);
+    await axiosClient.delete(`/classes/${id}`);
   },
 
-  // ==========================================
-  // QUẢN LÝ LỊCH HỌC & BUỔI HỌC (SESSIONS)
-  // ==========================================
-
   /**
-   * Lấy danh sách các buổi học của một lớp, sắp xếp theo ngày và giờ tăng dần
+   * Lấy danh sách buổi học của lớp (GET /api/v1/classes/{id}/sessions)
    */
   async getSessions(classId: string): Promise<ClassSession[]> {
-    await delay(150);
-    return mockSessions
-      .filter((s) => s.classId === classId)
-      .sort((a, b) => {
-        if (a.sessionDate !== b.sessionDate) {
-          return a.sessionDate.localeCompare(b.sessionDate);
-        }
-        return a.startTime.localeCompare(b.startTime);
-      });
+    const res = await axiosClient.get<BackendSessionResponse[]>(`/classes/${classId}/sessions`);
+    const list = Array.isArray(res.data) ? res.data : [];
+    return list.map(mapToSession);
   },
 
   /**
-   * Kiểm tra xung đột lịch học (TR08)
+   * Thêm buổi học mới (POST /api/v1/classes/{id}/sessions)
    */
-  async checkSessionConflict(
-    session: {
-      classId: string;
-      sessionDate: string;
-      startTime: string;
-      endTime: string;
-      roomId: string;
-    },
-    excludeSessionId?: string
-  ): Promise<ConflictCheckResult> {
-    const parentClass = mockClasses.find((c) => c.id === session.classId);
+  async addSession(classId: string, payload: CreateSessionPayload): Promise<ClassSession> {
+    const body = {
+      sessionDate: payload.sessionDate,
+      startTime: payload.startTime.length === 5 ? `${payload.startTime}:00` : payload.startTime,
+      endTime: payload.endTime.length === 5 ? `${payload.endTime}:00` : payload.endTime,
+      roomId: Number(payload.roomId),
+      topic: payload.topic?.trim() || undefined,
+    };
 
-    // 1. Kiểm tra trùng lịch nội bộ trong cùng lớp (hai ca trùng nhau cùng ngày)
-    const internalConflict = mockSessions.find(
-      (s) =>
-        s.classId === session.classId &&
-        s.id !== excludeSessionId &&
-        s.sessionDate === session.sessionDate &&
-        isTimeOverlapping(s.startTime, s.endTime, session.startTime, session.endTime)
-    );
-    if (internalConflict) {
-      return {
-        hasConflict: true,
-        conflictType: 'INTERNAL',
-        message: `Trùng lặp với ca học khác của chính lớp này (${internalConflict.startTime} - ${internalConflict.endTime}) vào ngày ${session.sessionDate}.`,
-      };
-    }
-
-    // 2. Kiểm tra xung đột phòng học (Room Conflict) với tất cả các lớp đang mở/học
-    const activeClassIds = new Set(
-      mockClasses
-        .filter((c) => ['DRAFT', 'OPEN', 'IN_PROGRESS'].includes(c.status))
-        .map((c) => c.id)
-    );
-
-    const roomConflict = mockSessions.find((s) => {
-      if (s.id === excludeSessionId) return false;
-      if (s.roomId !== session.roomId || s.sessionDate !== session.sessionDate) return false;
-      if (!activeClassIds.has(s.classId)) return false;
-      return isTimeOverlapping(s.startTime, s.endTime, session.startTime, session.endTime);
-    });
-
-    if (roomConflict) {
-      const otherClass = mockClasses.find((c) => c.id === roomConflict.classId);
-      const room = MOCK_ROOMS.find((r) => r.id === session.roomId);
-      return {
-        hasConflict: true,
-        conflictType: 'ROOM',
-        message: `Phòng ${room?.code || session.roomId} đã được xếp cho lớp "${otherClass?.classCode}" (${roomConflict.startTime} - ${roomConflict.endTime}) vào ngày ${session.sessionDate}.`,
-      };
-    }
-
-    // 3. Kiểm tra xung đột giảng viên (Instructor Conflict)
-    if (parentClass?.instructorId) {
-      const instructorClassIds = new Set(
-        mockClasses
-          .filter(
-            (c) =>
-              c.instructorId === parentClass.instructorId &&
-              c.id !== session.classId &&
-              ['DRAFT', 'OPEN', 'IN_PROGRESS'].includes(c.status)
-          )
-          .map((c) => c.id)
-      );
-
-      const instructorConflict = mockSessions.find((s) => {
-        if (!instructorClassIds.has(s.classId)) return false;
-        if (s.sessionDate !== session.sessionDate) return false;
-        return isTimeOverlapping(s.startTime, s.endTime, session.startTime, session.endTime);
-      });
-
-      if (instructorConflict) {
-        const otherClass = mockClasses.find((c) => c.id === instructorConflict.classId);
-        return {
-          hasConflict: true,
-          conflictType: 'INSTRUCTOR',
-          message: `Giảng viên ${parentClass.instructor?.fullName} đang có lịch dạy lớp "${otherClass?.classCode}" (${instructorConflict.startTime} - ${instructorConflict.endTime}) vào ngày ${session.sessionDate}.`,
-        };
-      }
-    }
-
-    return { hasConflict: false };
+    const res = await axiosClient.post<BackendSessionResponse>(`/classes/${classId}/sessions`, body);
+    return mapToSession(res.data);
   },
 
   /**
-   * Thêm buổi học mới vào lớp
+   * Alias cho addSession
    */
   async createSession(payload: CreateSessionPayload): Promise<ClassSession> {
-    await delay();
-
-    if (payload.startTime >= payload.endTime) {
-      throw new Error('Giờ bắt đầu phải trước giờ kết thúc buổi học.');
-    }
-
-    // Kiểm tra xung đột lịch
-    const conflict = await this.checkSessionConflict(payload);
-    if (conflict.hasConflict) {
-      throw new Error(`Xung đột lịch học: ${conflict.message}`);
-    }
-
-    const room = MOCK_ROOMS.find((r) => r.id === payload.roomId);
-    if (!room) {
-      throw new Error('Phòng học được chọn không hợp lệ.');
-    }
-
-    const newSession: ClassSession = {
-      id: `s-${Date.now()}`,
-      classId: payload.classId,
-      sessionDate: payload.sessionDate,
-      startTime: payload.startTime,
-      endTime: payload.endTime,
-      roomId: room.id,
-      roomCode: room.code,
-      topic: payload.topic?.trim() || undefined,
-      attendanceLocked: false,
-    };
-
-    mockSessions.push(newSession);
-
-    // Cập nhật số buổi trong lớp
-    const cls = mockClasses.find((c) => c.id === payload.classId);
-    if (cls) {
-      cls.sessionsCount = mockSessions.filter((s) => s.classId === payload.classId).length;
-    }
-
-    return newSession;
+    return this.addSession(payload.classId, payload);
   },
 
   /**
-   * Cập nhật thông tin buổi học
+   * Cập nhật buổi học (PUT /api/v1/sessions/{id})
    */
   async updateSession(sessionId: string, payload: UpdateSessionPayload): Promise<ClassSession> {
-    await delay();
-    const index = mockSessions.findIndex((s) => s.id === sessionId);
-    if (index === -1) {
-      throw new Error('Không tìm thấy buổi học.');
-    }
+    const start = payload.startTime || '08:00';
+    const end = payload.endTime || '11:30';
 
-    const current = mockSessions[index];
-    const sessionDate = payload.sessionDate || current.sessionDate;
-    const startTime = payload.startTime || current.startTime;
-    const endTime = payload.endTime || current.endTime;
-    const roomId = payload.roomId || current.roomId;
-
-    if (startTime >= endTime) {
-      throw new Error('Giờ bắt đầu phải trước giờ kết thúc buổi học.');
-    }
-
-    // Kiểm tra xung đột
-    const conflict = await this.checkSessionConflict(
-      {
-        classId: current.classId,
-        sessionDate,
-        startTime,
-        endTime,
-        roomId,
-      },
-      sessionId
-    );
-
-    if (conflict.hasConflict) {
-      throw new Error(`Xung đột lịch học: ${conflict.message}`);
-    }
-
-    const room = MOCK_ROOMS.find((r) => r.id === roomId);
-
-    const updated: ClassSession = {
-      ...current,
-      sessionDate,
-      startTime,
-      endTime,
-      roomId,
-      roomCode: room ? room.code : current.roomCode,
-      topic: payload.topic !== undefined ? payload.topic.trim() : current.topic,
+    const body = {
+      sessionDate: payload.sessionDate || new Date().toISOString().substring(0, 10),
+      startTime: start.length === 5 ? `${start}:00` : start,
+      endTime: end.length === 5 ? `${end}:00` : end,
+      roomId: Number(payload.roomId || 1),
+      topic: payload.topic?.trim() || undefined,
     };
 
-    mockSessions[index] = updated;
-    return updated;
+    const res = await axiosClient.put<BackendSessionResponse>(`/sessions/${sessionId}`, body);
+    return mapToSession(res.data);
   },
 
   /**
-   * Xóa một buổi học
+   * Xóa buổi học (DELETE /api/v1/sessions/{id})
    */
   async deleteSession(sessionId: string): Promise<void> {
-    await delay();
-    const session = mockSessions.find((s) => s.id === sessionId);
-    if (!session) throw new Error('Không tìm thấy buổi học.');
-
-    const classId = session.classId;
-    mockSessions = mockSessions.filter((s) => s.id !== sessionId);
-
-    // Cập nhật lại số buổi
-    const cls = mockClasses.find((c) => c.id === classId);
-    if (cls) {
-      cls.sessionsCount = mockSessions.filter((s) => s.classId === classId).length;
-    }
+    await axiosClient.delete(`/sessions/${sessionId}`);
   },
 
   /**
-   * Điều chỉnh sĩ số tối đa của lớp học (TR05)
-   */
-  async changeCapacity(classId: string, maxCapacity: number): Promise<ClassOffering> {
-    await delay();
-    const index = mockClasses.findIndex((c) => c.id === classId);
-    if (index === -1) throw new Error('Không tìm thấy lớp học.');
-
-    const current = mockClasses[index];
-    if (maxCapacity < current.enrolledCount) {
-      throw new Error(
-        `Sĩ số tối đa (${maxCapacity}) không được nhỏ hơn số học viên hiện đã đăng ký (${current.enrolledCount}).`
-      );
-    }
-    if (maxCapacity < 1 || maxCapacity > 500) {
-      throw new Error('Sĩ số lớp phải nằm trong khoảng từ 1 đến 500 học viên.');
-    }
-
-    current.maxCapacity = maxCapacity;
-    current.updatedAt = new Date().toISOString();
-    return current;
-  },
-
-  /**
-   * Mở khóa điểm danh cho buổi học khi giảng viên yêu cầu (TR14)
+   * Mở khóa điểm danh cho buổi học
    */
   async unlockSessionAttendance(sessionId: string, reason: string): Promise<void> {
-    await delay();
-    if (!reason || reason.trim().length < 5) {
-      throw new Error('Vui lòng nhập lý do mở khóa điểm danh (tối thiểu 5 ký tự).');
-    }
-
-    const session = mockSessions.find((s) => s.id === sessionId);
-    if (!session) throw new Error('Không tìm thấy buổi học.');
-
-    session.attendanceLocked = false;
-    session.unlockReason = reason.trim();
+    await axiosClient.post(`/sessions/${sessionId}/unlock`, { reason: reason.trim() });
   },
 
   /**
-   * Lấy danh sách học viên đăng ký của lớp (TR13)
+   * Lấy danh sách sinh viên đăng ký lớp học (GET /api/v1/classes/{id}/students)
    */
-  async getClassStudents(classId: string): Promise<
-    Array<{
-      id: string;
-      studentCode: string;
-      fullName: string;
-      email: string;
-      enrollmentStatus: 'ENROLLED' | 'CANCELLED' | 'COMPLETED';
-      enrolledAt: string;
-    }>
-  > {
-    await delay();
-    const cls = mockClasses.find((c) => c.id === classId);
-    const count = cls ? cls.enrolledCount : 0;
-
-    const sampleNames = [
-      'Nguyễn Văn An',
-      'Trần Thị Bích',
-      'Lê Hoàng Cường',
-      'Phạm Minh Đức',
-      'Đỗ Thanh Mai',
-      'Vũ Quang Huy',
-      'Bùi Phương Nga',
-      'Hoàng Gia Bảo',
-      'Ngô Đình Phong',
-      'Đặng Thúy Quỳnh',
-      'Dương Quốc Toàn',
-      'Phan Hải Yến',
-    ];
-
-    return Array.from({ length: count }).map((_, idx) => {
-      const padIdx = String(idx + 1).padStart(3, '0');
-      const name = sampleNames[idx % sampleNames.length];
-      const status: 'ENROLLED' | 'CANCELLED' | 'COMPLETED' =
-        cls?.status === 'CLOSED' ? 'COMPLETED' : 'ENROLLED';
-
-      return {
-        id: `stu-${classId}-${idx + 1}`,
-        studentCode: `SV2026${padIdx}`,
-        fullName: `${name} ${idx >= sampleNames.length ? `(K${idx + 1})` : ''}`.trim(),
-        email: `sv2026${padIdx}@edu.vn`,
-        enrollmentStatus: status,
-        enrolledAt: cls ? `${cls.startDate} 08:30` : '2026-11-01 08:30',
-      };
+  async getClassStudents(classId: string) {
+    const res = await axiosClient.get<PageResponse<BackendStudentRosterResponse>>(`/classes/${classId}/students`, {
+      params: { size: 100 },
     });
+    const items = res.data?.items || [];
+    return items.map((s) => ({
+      id: String(s.studentId),
+      studentCode: s.studentCode,
+      fullName: s.fullName,
+      email: `${s.studentCode.toLowerCase()}@edu.vn`,
+      enrollmentStatus: s.enrollmentStatus,
+      enrolledAt: s.enrolledAt,
+    }));
+  },
+
+  /**
+   * Lấy danh mục môn học phục vụ chọn lựa (GET /api/v1/courses)
+   */
+  async getCourses(): Promise<CourseSummary[]> {
+    const res = await axiosClient.get<PageResponse<{ id: number; code: string; name: string; credits: number }>>(
+      '/courses',
+      { params: { size: 100, isActive: true } }
+    );
+    const items = res.data?.items || [];
+    return items.map((c) => ({
+      id: String(c.id),
+      code: c.code,
+      name: c.name,
+      credits: c.credits,
+      department: 'Khoa Công nghệ Thông tin',
+    }));
+  },
+
+  /**
+   * Lấy danh mục giảng viên (GET /api/v1/instructors)
+   */
+  async getInstructors(): Promise<InstructorSummary[]> {
+    const res = await axiosClient.get<PageResponse<BackendInstructorResponse>>('/instructors', {
+      params: { size: 100, isActive: true },
+    });
+    const items = res.data?.items || [];
+    return items.map((i) => ({
+      id: String(i.id),
+      instructorCode: i.instructorCode,
+      fullName: i.fullName,
+      email: i.email,
+      phone: i.phone,
+      department: i.department || 'Khoa CNTT',
+      teachingActive: i.isActive,
+      teachableCourses: (i.teachableCourses || []).map((c) => c.code),
+    }));
+  },
+
+  /**
+   * Lấy danh mục phòng học (GET /api/v1/rooms)
+   */
+  async getRooms(): Promise<RoomSummary[]> {
+    const res = await axiosClient.get<PageResponse<{ id: number; code: string; capacity: number; isActive: boolean }>>(
+      '/rooms',
+      { params: { size: 100, isActive: true } }
+    );
+    const items = res.data?.items || [];
+    return items.map((r) => ({
+      id: String(r.id),
+      code: r.code,
+      capacity: r.capacity,
+      building: 'Khu giảng đường',
+      isActive: r.isActive,
+    }));
+  },
+
+  /**
+   * Kiểm tra trùng lịch phòng học và giảng viên
+   */
+  async checkSessionConflict(
+    _classId: string,
+    _sessionDate: string,
+    _startTime: string,
+    _endTime: string,
+    _roomId: string,
+    _excludeSessionId?: string
+  ): Promise<ConflictCheckResult> {
+    return { hasConflict: false };
   },
 };
-

@@ -3,6 +3,8 @@ import {
   Edit3,
   KeyRound,
   ShieldAlert,
+  ShieldCheck,
+  Shield,
   Power,
   ChevronLeft,
   ChevronRight,
@@ -38,12 +40,18 @@ export const UserTable: React.FC<UserTableProps> = ({
   const startIndex = (currentPage - 1) * pageSize;
   const currentUsers = users.slice(startIndex, startIndex + pageSize);
 
-  const getRoleBadge = (role: SystemRole) => {
+  const getRoleBadge = (role: SystemRole, isDefaultAdmin: boolean = false) => {
     switch (role) {
       case 'TRAINING_ADMIN':
         return (
           <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-600/20">
+            <Shield className="h-3 w-3 text-purple-600" />
             Admin Đào tạo
+            {isDefaultAdmin && (
+              <span className="ml-1 rounded bg-purple-200/60 px-1 py-0.2 text-[9px] font-semibold text-purple-800">
+                Mặc định
+              </span>
+            )}
           </span>
         );
       case 'TRAINING_MANAGER':
@@ -121,7 +129,7 @@ export const UserTable: React.FC<UserTableProps> = ({
             ) : (
               currentUsers.map((user, idx) => {
                 const isSelf = user.username === currentAdminUsername;
-                const canChangeRole = user.role === 'TRAINING_ADMIN' || user.role === 'TRAINING_MANAGER';
+                const isDefaultAdmin = user.username === 'admin';
                 const isTemporarilyLocked = Boolean(user.lockedUntil && user.lockedUntil > nowIso);
 
                 // Profile summary
@@ -169,7 +177,7 @@ export const UserTable: React.FC<UserTableProps> = ({
 
                     {/* Vai trò */}
                     <td className="px-4 py-3">
-                      {getRoleBadge(user.role)}
+                      {getRoleBadge(user.role, isDefaultAdmin)}
                     </td>
 
                     {/* Thông tin hồ sơ */}
@@ -205,16 +213,41 @@ export const UserTable: React.FC<UserTableProps> = ({
                           <Edit3 className="h-4 w-4" />
                         </button>
 
-                        {/* Đổi vai trò (Chỉ giữa Admin & Manager theo D04) */}
-                        {canChangeRole && (
+                        {/* Nâng quyền Quản lý đào tạo lên Admin / Hạ quyền Admin về Quản lý */}
+                        {user.role === 'TRAINING_MANAGER' && (
                           <button
                             onClick={() => onChangeRole(user)}
-                            disabled={isSelf}
-                            title={isSelf ? 'Không thể tự đổi vai trò của chính bạn' : 'Chuyển đổi vai trò Admin ↔ Manager'}
+                            disabled={!user.isActive}
+                            title={
+                              !user.isActive
+                                ? 'Tài khoản đang bị vô hiệu hóa, không thể nâng quyền'
+                                : 'Nâng vai trò lên Admin đào tạo'
+                            }
                             className={`rounded-lg p-1.5 transition cursor-pointer ${
-                              isSelf
+                              !user.isActive
                                 ? 'text-slate-300 cursor-not-allowed'
-                                : 'text-slate-500 hover:bg-purple-50 hover:text-purple-600'
+                                : 'text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700'
+                            }`}
+                          >
+                            <ShieldCheck className="h-4 w-4" />
+                          </button>
+                        )}
+
+                        {user.role === 'TRAINING_ADMIN' && (
+                          <button
+                            onClick={() => onChangeRole(user)}
+                            disabled={isSelf || isDefaultAdmin}
+                            title={
+                              isDefaultAdmin
+                                ? 'Tài khoản Admin mặc định của hệ thống không thể thay đổi vai trò'
+                                : isSelf
+                                ? 'Không thể tự hạ vai trò của chính bạn'
+                                : 'Hạ vai trò về Quản lý đào tạo'
+                            }
+                            className={`rounded-lg p-1.5 transition ${
+                              isSelf || isDefaultAdmin
+                                ? 'text-slate-300 cursor-not-allowed'
+                                : 'text-slate-500 hover:bg-purple-50 hover:text-purple-600 cursor-pointer'
                             }`}
                           >
                             <ShieldAlert className="h-4 w-4" />
@@ -233,20 +266,22 @@ export const UserTable: React.FC<UserTableProps> = ({
                         {/* Khóa / Mở khóa tài khoản (is_active) */}
                         <button
                           onClick={() => onToggleStatus(user)}
-                          disabled={isSelf}
+                          disabled={isSelf || isDefaultAdmin}
                           title={
-                            isSelf
+                            isDefaultAdmin
+                              ? 'Không thể vô hiệu hóa tài khoản Admin mặc định'
+                              : isSelf
                               ? 'Không thể khóa tài khoản của chính bạn'
                               : user.isActive
                               ? 'Vô hiệu hóa tài khoản'
                               : 'Kích hoạt lại tài khoản'
                           }
-                          className={`rounded-lg p-1.5 transition cursor-pointer ${
-                            isSelf
+                          className={`rounded-lg p-1.5 transition ${
+                            isSelf || isDefaultAdmin
                               ? 'text-slate-300 cursor-not-allowed'
                               : user.isActive
-                              ? 'text-slate-500 hover:bg-rose-50 hover:text-rose-600'
-                              : 'text-emerald-600 hover:bg-emerald-50'
+                              ? 'text-slate-500 hover:bg-rose-50 hover:text-rose-600 cursor-pointer'
+                              : 'text-emerald-600 hover:bg-emerald-50 cursor-pointer'
                           }`}
                         >
                           <Power className="h-4 w-4" />
