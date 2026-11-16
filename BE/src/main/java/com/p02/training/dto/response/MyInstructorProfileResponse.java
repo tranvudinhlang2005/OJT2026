@@ -3,6 +3,7 @@ package com.p02.training.dto.response;
 import com.p02.training.entity.Instructor;
 import com.p02.training.entity.User;
 import java.util.List;
+import org.springframework.lang.Nullable;
 
 /**
  * {@code GET /instructors/me} (TR03): the logged-in instructor's own profile and teachable courses.
@@ -13,8 +14,8 @@ public record MyInstructorProfileResponse(
         String instructorCode,
         String fullName,
         String email,
-        String department,
-        String phone,
+        @Nullable String department,
+        @Nullable String phone,
         boolean isActive,
         List<CourseSummaryResponse> courses) {
 

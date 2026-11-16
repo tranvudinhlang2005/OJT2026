@@ -23,6 +23,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+import com.p02.training.entity.enums.GradingStatus;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -73,12 +74,13 @@ public class ClassController {
             @RequestParam(required = false) String semester,
             @RequestParam(required = false) ClassStatus status,
             @RequestParam(required = false) Long instructorId,
+            @RequestParam(required = false) GradingStatus gradingStatus,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String sort,
             @AuthenticationPrincipal AuthenticatedUser currentUser) {
         return classQueryService.listClasses(
-                new ClassQueryService.ClassFilter(keyword, courseId, semester, status, instructorId),
+                new ClassQueryService.ClassFilter(keyword, courseId, semester, status, instructorId, gradingStatus),
                 page, size, sort, currentUser);
     }
 

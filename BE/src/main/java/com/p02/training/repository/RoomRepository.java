@@ -4,10 +4,11 @@ import com.p02.training.entity.Room;
 import jakarta.persistence.LockModeType;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 
-/** The TR06 list uses the inherited {@code findAll(Pageable)}. */
-public interface RoomRepository extends JpaRepository<Room, Long> {
+/** The TR06 list uses the inherited {@code findAll(Specification, Pageable)}. */
+public interface RoomRepository extends JpaRepository<Room, Long>, JpaSpecificationExecutor<Room> {
 
     /** TR06: lock from spec 0.5. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)

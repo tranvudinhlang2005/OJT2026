@@ -3,6 +3,7 @@ package com.p02.training.dto.response;
 import com.p02.training.repository.projection.ScheduleEntry;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import org.springframework.lang.Nullable;
 
 /** One session in a personal schedule (TR17). Times are Vietnam local times (A-06). */
 public record ScheduleItemResponse(
@@ -12,7 +13,7 @@ public record ScheduleItemResponse(
         String roomCode,
         String classCode,
         String courseName,
-        String topic) {
+        @Nullable String topic) {
 
     public static ScheduleItemResponse from(ScheduleEntry entry) {
         return new ScheduleItemResponse(entry.getSessionDate(), entry.getStartTime(), entry.getEndTime(),

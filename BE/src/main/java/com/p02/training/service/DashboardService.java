@@ -178,7 +178,7 @@ public class DashboardService {
                 completionRate = hidden ? null : ratio(outcome.getPassed(), confirmed);
             }
             return new DashboardClassResponse(classOffering.getId(), classOffering.getClassCode(),
-                    classOffering.getCourse().getName(), classOffering.getStatus(), classOffering.getEnrolledCount(),
+                    classOffering.getCourse().getName(), classOffering.getSemester(), classOffering.getStatus(), classOffering.getEnrolledCount(),
                     classOffering.getMaxCapacity(), completionRate);
         });
     }

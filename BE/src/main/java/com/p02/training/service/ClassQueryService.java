@@ -1,6 +1,7 @@
 package com.p02.training.service;
 
 import com.p02.training.common.SearchPatterns;
+import com.p02.training.entity.enums.GradingStatus;
 import com.p02.training.dto.response.ClassResponse;
 import com.p02.training.dto.response.ClassSummaryResponse;
 import com.p02.training.dto.response.ClassView;
@@ -74,7 +75,13 @@ public class ClassQueryService {
     }
 
     /** The filters of {@code GET /classes}. Every field is optional. */
-    public record ClassFilter(String keyword, Long courseId, String semester, ClassStatus status, Long instructorId) {
+    public record ClassFilter(String keyword, Long courseId, String semester, ClassStatus status, Long instructorId,
+            GradingStatus gradingStatus) {
+
+        /** The filters without gradingStatus, as before it was added. */
+        public ClassFilter(String keyword, Long courseId, String semester, ClassStatus status, Long instructorId) {
+            this(keyword, courseId, semester, status, instructorId, null);
+        }
     }
 
     /**
@@ -169,6 +176,9 @@ public class ClassQueryService {
         }
         if (filter.status() != null) {
             predicates.add(cb.equal(root.get("status"), filter.status()));
+        }
+        if (filter.gradingStatus() != null) {
+            predicates.add(cb.equal(root.get("gradingStatus"), filter.gradingStatus()));
         }
         if (filter.instructorId() != null) {
             predicates.add(cb.equal(root.get("instructor").get("id"), filter.instructorId()));

@@ -3,6 +3,7 @@ package com.p02.training.dto.response;
 import com.p02.training.entity.enums.ClassStatus;
 import java.math.BigDecimal;
 import java.util.Map;
+import org.springframework.lang.Nullable;
 
 /**
  * TR18 {@code GET /dashboard/summary}: aggregate figures only, never a student's name or score.
@@ -21,7 +22,7 @@ import java.util.Map;
 public record DashboardSummaryResponse(
         Map<ClassStatus, Long> classCountsByStatus,
         long totalEnrollments,
-        BigDecimal fillRate,
-        BigDecimal completionRate,
-        BigDecimal averageAttendanceRate) {
+        @Nullable BigDecimal fillRate,
+        @Nullable BigDecimal completionRate,
+        @Nullable BigDecimal averageAttendanceRate) {
 }

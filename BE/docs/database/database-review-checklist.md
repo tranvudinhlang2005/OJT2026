@@ -177,7 +177,7 @@ All 137 columns were checked.
 - [x] V1 applied to `p02_training` and `p02_training_test`
 - [x] Test configuration in place
 - [x] 13 JPA entities implemented and validated
-- [x] A-23: one-time CLI bootstrap implemented; recovery procedure documented
+- [x] A-23: first Admin via `scripts/create-first-admin.sql`; Admin promotion only by another Admin
 - [x] A-26: login-only rate limit, 30 per IP per fixed 60 s, implemented
 - [x] A-29: inactive courses already assigned to an instructor may stay; never newly assigned (TR03)
 - [x] A-30: TR10 on a non-open class: 404 for missing, soft-deleted or DRAFT; 409 CLASS_NOT_OPEN otherwise, CANCELLED included

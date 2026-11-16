@@ -6,6 +6,7 @@ import com.p02.training.entity.enums.ClassStatus;
 import com.p02.training.entity.enums.EnrollmentStatus;
 import java.time.Instant;
 import java.time.LocalDate;
+import org.springframework.lang.Nullable;
 
 /**
  * One of the logged-in student's enrollments (TR10, TR12, "Lớp của tôi"), with the class details a
@@ -24,8 +25,8 @@ public record EnrollmentResponse(
         Instant cancelDeadline,
         EnrollmentStatus status,
         Instant enrolledAt,
-        Instant cancelledAt,
-        Instant completedAt) {
+        @Nullable Instant cancelledAt,
+        @Nullable Instant completedAt) {
 
     /** Expects the class and its course to be loaded, or loadable in the current transaction. */
     public static EnrollmentResponse from(Enrollment enrollment) {

@@ -8,6 +8,7 @@ import com.p02.training.entity.enums.GradingStatus;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import org.springframework.lang.Nullable;
 
 /**
  * A class as Training Admins see it in TR05-TR07 responses and in TR09. The thresholds and weights are the copy
@@ -23,22 +24,24 @@ public record ClassResponse(
         String semester,
         LocalDate startDate,
         LocalDate endDate,
-        Long instructorId,
-        String instructorName,
+        @Nullable Long instructorId,
+        @Nullable String instructorName,
         int maxCapacity,
         int enrolledCount,
         int availableSeats,
         boolean isFull,
         ClassStatus status,
         Instant cancelDeadline,
-        String cancelReason,
-        BigDecimal minAttendancePct,
-        BigDecimal passScore,
-        BigDecimal midtermWeight,
-        BigDecimal finalWeight,
+        @Nullable String cancelReason,
+        @Nullable BigDecimal minAttendancePct,
+        @Nullable BigDecimal passScore,
+        @Nullable BigDecimal midtermWeight,
+        @Nullable BigDecimal finalWeight,
         GradingStatus gradingStatus,
-        Instant startedAt,
-        Long createdById) implements ClassView {
+        @Nullable Instant startedAt,
+        Long createdById,
+        @Nullable Instant submittedAt,
+        @Nullable String returnReason) implements ClassView {
 
     /** Loads the course, instructor and creator ids lazily; call inside the transaction. */
     public static ClassResponse from(ClassOffering classOffering) {
@@ -53,6 +56,7 @@ public record ClassResponse(
                 classOffering.getCancelDeadline(), classOffering.getCancelReason(),
                 classOffering.getMinAttendancePct(), classOffering.getPassScore(), classOffering.getMidtermWeight(),
                 classOffering.getFinalWeight(), classOffering.getGradingStatus(), classOffering.getStartedAt(),
-                classOffering.getCreatedBy().getId());
+                classOffering.getCreatedBy().getId(), classOffering.getSubmittedAt(),
+                classOffering.getReturnReason());
     }
 }

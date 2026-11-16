@@ -2,6 +2,7 @@ package com.p02.training.dto.response;
 
 import com.p02.training.entity.enums.ClassStatus;
 import java.math.BigDecimal;
+import org.springframework.lang.Nullable;
 
 /**
  * One class on TR18 {@code GET /dashboard/classes}: classCode, courseName, status, enrolled/max and
@@ -13,8 +14,9 @@ public record DashboardClassResponse(
         Long classId,
         String classCode,
         String courseName,
+        String semester,
         ClassStatus status,
         int enrolledCount,
         int maxCapacity,
-        BigDecimal completionRate) {
+        @Nullable BigDecimal completionRate) {
 }

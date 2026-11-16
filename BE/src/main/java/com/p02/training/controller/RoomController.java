@@ -10,6 +10,7 @@ import com.p02.training.service.RoomService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,10 +37,12 @@ public class RoomController {
 
     @GetMapping
     public PageResponse<RoomResponse> listRooms(
+            @RequestParam(required = false) @Size(max = 255, message = "Từ khóa tối đa 255 ký tự") String keyword,
+            @RequestParam(name = "isActive", required = false) Boolean isActive,
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "page phải ≥ 0") int page,
             @RequestParam(defaultValue = "20") @Min(value = 1, message = "size phải từ 1 đến 100")
             @Max(value = 100, message = "size phải từ 1 đến 100") int size) {
-        return roomService.listRooms(page, size);
+        return roomService.listRooms(keyword, isActive, page, size);
     }
 
     @GetMapping("/{id}")

@@ -685,42 +685,30 @@ Added under A-22 where technically appropriate. These are **technical metadata**
 
 **They don't replace business timestamps.** `enrolled_at`, `cancelled_at`, `completed_at`, `marked_at`, `submitted_at`, `confirmed_at`, `started_at`, `closed_at` and `locked_at` remain the source for business questions. For example, re-enrolling resets `enrolled_at` (D06), while `created_at` keeps the first registration.
 
-## 12. First Admin bootstrap
+## 12. First Admin and Admin promotion
 
-**Decided under A-23: one-time CLI bootstrap. Implemented** in `com.p02.training.bootstrap`. No schema change. It replaces the earlier environment-variable startup design, which was not implemented. Operator steps: [admin-bootstrap-and-recovery.md](../operations/admin-bootstrap-and-recovery.md).
+**Decided under A-23, revised: Admins come only from the database.** No schema change. The earlier one-time CLI bootstrap (`bootstrap-admin`, package `com.p02.training.bootstrap`) has been removed, together with its operator guide.
 
-**Entry point:** `java -jar <app>.jar bootstrap-admin`. `TrainingManagementApplication.main` dispatches this first argument to `AdminBootstrapCommand`, which starts the application context without a web server and with lazy bean initialisation, runs once and exits. Any other start runs the server and never creates an account. There is no HTTP endpoint.
+**The application never creates an account by itself.** At startup `ActiveAdminStartupCheck` only counts active `TRAINING_ADMIN` rows; if there are none it logs one WARN line, `Chưa có TRAINING_ADMIN nào đang hoạt động`, and the application runs normally. There is no registration endpoint: only `GET /auth/csrf` and `POST /auth/login` are public.
 
-**Behaviour:**
+**First Admin:** an operator runs [`scripts/create-first-admin.sql`](../../scripts/create-first-admin.sql) in pgAdmin's Query Tool (plain SQL, no psql meta-commands). Username, email, full name and password are variables at the top of the file. In one transaction the script:
 
-| Situation | Result |
-|---|---|
-| A `TRAINING_ADMIN` row exists, active or not | Refused before asking for a password. Exit code 1 |
-| No Admin | Prompts for username, full name, email and password (twice, without echo), asks for `yes`, creates one Admin. Exit code 0 |
-| Invalid input, mismatched passwords, not confirmed | Nothing created. Exit code 1 |
-| No interactive terminal | Refused. Exit code 2 |
-| Startup or database failure | Nothing created. Exit code 3 |
+1. Takes a transaction-level advisory lock, so concurrent runs are serialised.
+2. Refuses (`RAISE EXCEPTION`) if an active `TRAINING_ADMIN` already exists.
+3. Validates the input with the TR01 rules: username 4-50 characters of `a-z 0-9 . _`, a valid email, a full name, a password of 8-64 characters (at most 72 bytes) with upper case, lower case and a digit.
+4. Hashes the password with pgcrypto, `crypt(password, gen_salt('bf', 10))`, which yields a `$2a$10$` BCrypt hash that the application's `BCryptPasswordEncoder` accepts.
+5. Inserts the Admin and writes `USER_CREATE` to `app_security_log` with `details = {userId, username, role, source: "SQL_SCRIPT"}`, no credential or hash.
 
-**Creating the Admin, in one transaction** (`AdminBootstrapService.createInitialAdmin`):
+**Later Admins:** `POST /users` refuses `role = TRAINING_ADMIN` with 409 `ROLE_CHANGE_NOT_ALLOWED`. An Admin creates a `TRAINING_MANAGER` account, and another Admin promotes it with `PATCH /users/{id}/role` (Admin only), under these rules:
 
-1. Validate against TR01 with the same rules as `POST /users` (`CreateUserRequest` constraints and `PasswordService`): username 4-50 characters of `a-z 0-9 . _`, a valid email, a full name, and a password of 8-64 characters with upper case, lower case and a digit, at most 72 bytes.
-2. Take the transaction-level advisory lock `pg_advisory_xact_lock` with key `0x50303241444D494E` (the ASCII bytes of "P02ADMIN"), so concurrent runs are serialised.
-3. Check again that no `TRAINING_ADMIN` row exists, and that the username and email are free.
-4. Hash the password with the application's BCrypt `PasswordEncoder`.
-5. Insert `users` with `role = 'TRAINING_ADMIN'` and no Student or Instructor profile.
-6. Write `USER_CREATE` to `app_security_log`: `username` is the new account, `details = {userId, role, source: "CLI_BOOTSTRAP"}`, no IP, no credential or hash.
+- D04: only `TRAINING_MANAGER` ↔ `TRAINING_ADMIN`; Students and Instructors can't become Admins (409 `ROLE_CHANGE_NOT_ALLOWED`).
+- Nobody changes their own role (409 `SELF_MODIFICATION`); the last active Admin can't be demoted or locked (409 `LAST_ADMIN`).
+- Only an active account can be promoted (409 `USER_INACTIVE`).
+- `ROLE_CHANGE` goes to `app_security_log`: `username` is the granting Admin, `details = {userId, username, oldRole, newRole}` of the target. The target's `token_version` is incremented, so they must sign in again.
 
-**Security requirements**
+The demo seed (`db/seed/demo-seed.sql`) keeps its own `admin` and `admin2` accounts for local demo databases.
 
-- The password is read only from the terminal without echo, never from arguments, environment variables or files. It is never printed, logged, returned or written to `app_security_log`. The character arrays read from the console are cleared after use.
-- No default credentials, and no credential or hash in Git, migrations or `application.yml`.
-- The spec has no forced password change, and none is added; the holder can change it through `PATCH /auth/password`.
-
-**Recovery** when no Admin can sign in is a separate operator-only procedure in the operator guide: an approved, audited database change that restores one existing Admin with a new temporary password. It never deletes Admin rows or bypasses the bootstrap's refusal.
-
-**Tests still to write:** creates one Admin; refuses when any Admin exists, including an inactive one; two concurrent runs create one; invalid input and weak passwords create nothing; the log entry holds no credential; the stored value is a BCrypt hash that matches.
-
-**Organisational, outside the repository:** who holds the first Admin's credentials.
+**Tests:** `AdminProvisioningIntegrationTest` (MockMvc against the test database).
 
 ## 13. Decisions applied
 

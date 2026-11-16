@@ -54,6 +54,17 @@ server:
     include-stacktrace: never
     include-exception: false
 
+# OpenAPI docs and Swagger UI stay off unless the "dev" profile is active (see the dev document at
+# the end of this file). SecurityConfig makes them public in that profile only.
+springdoc:
+  api-docs:
+    enabled: false
+    # OpenAPI 3.0: "nullable: true" is part of that version (3.1 has no such keyword), and the FE
+    # generator (openapi-typescript) turns it into "| null". See RecordSchemaConverter.
+    version: openapi_3_0
+  swagger-ui:
+    enabled: false
+
 logging:
   pattern:
     level: "%5p [traceId=%X{traceId:-}]"
@@ -64,3 +75,18 @@ app:
     allowed-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
   jwt:
     secret: ${JWT_SECRET}
+
+---
+# Profile "dev" (SPRING_PROFILES_ACTIVE=dev): OpenAPI docs and Swagger UI, public without login.
+#   http://localhost:8080/v3/api-docs    http://localhost:8080/swagger-ui.html
+# Kept here rather than in application-dev.yml, which .gitignore reserves for local secrets.
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

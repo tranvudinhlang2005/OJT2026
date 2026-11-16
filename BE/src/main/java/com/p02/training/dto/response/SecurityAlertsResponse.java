@@ -5,6 +5,7 @@ import com.p02.training.entity.enums.SecurityAction;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import org.springframework.lang.Nullable;
 
 /**
  * TR18 {@code GET /dashboard/security-alerts}: counts of LOGIN_FAILED, ACCOUNT_LOCKED and
@@ -18,6 +19,7 @@ public record SecurityAlertsResponse(
         @JsonInclude(JsonInclude.Include.NON_NULL) List<Event> recentEvents) {
 
     /** Time, action, username and IP. The event's details are not included. */
-    public record Event(Instant createdAt, SecurityAction action, String username, String ipAddress) {
+    public record Event(Instant createdAt, SecurityAction action, @Nullable String username,
+            @Nullable String ipAddress) {
     }
 }

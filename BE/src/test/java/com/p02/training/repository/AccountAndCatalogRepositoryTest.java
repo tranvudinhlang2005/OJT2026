@@ -83,15 +83,14 @@ class AccountAndCatalogRepositoryTest extends RepositoryTestSupport {
     }
 
     @Test
-    void lastAdminCountSkipsInactiveAdminsButBootstrapCheckDoesNot() {
-        assertThat(users.existsByRole(UserRole.TRAINING_ADMIN)).isFalse();
+    void lastAdminCountSkipsInactiveAdmins() {
+        assertThat(users.countByRoleAndActiveTrue(UserRole.TRAINING_ADMIN)).isZero();
 
         User inactive = data.user(UserRole.TRAINING_ADMIN);
         inactive.setActive(false);
         data.flushAndClear();
 
         assertThat(users.countByRoleAndActiveTrue(UserRole.TRAINING_ADMIN)).isZero();
-        assertThat(users.existsByRole(UserRole.TRAINING_ADMIN)).isTrue();
 
         data.user(UserRole.TRAINING_ADMIN);
         data.flushAndClear();

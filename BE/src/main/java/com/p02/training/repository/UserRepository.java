@@ -37,9 +37,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     /** TR01 LAST_ADMIN. */
     long countByRoleAndActiveTrue(UserRole role);
 
-    /** First Admin bootstrap (A-23): true for any Admin, active or not. */
-    boolean existsByRole(UserRole role);
-
     /**
      * TR01 writes to one account (login counters, logout, password, role, status). The row lock stops
      * concurrent changes, such as two failed logins, from overwriting each other.

@@ -327,20 +327,36 @@ class EnrollmentAndResultRepositoryTest extends RepositoryTestSupport {
 
     @Test
     void securityCountsGroupByActionWithinTheRange() {
-        Instant now = Instant.now();
-        data.persist(new AppSecurityLog(SecurityAction.LOGIN_FAILED, null, "127.0.0.1", null));
-        data.persist(new AppSecurityLog(SecurityAction.LOGIN_FAILED, "someone", "127.0.0.1", null));
-        data.persist(new AppSecurityLog(SecurityAction.ACCESS_DENIED, "someone", "127.0.0.1", null));
-        data.persist(new AppSecurityLog(SecurityAction.LOGIN_SUCCESS, "someone", "127.0.0.1", null));
-        data.flushAndClear();
-        Instant from = now.minus(1, ChronoUnit.HOURS);
-        Instant to = now.plus(1, ChronoUnit.HOURS);
+        // app_security_log is append-only and other integration tests commit entries to it, so this
+        // test counts in its own window in the year 2000, where nothing else ever writes.
+        Instant base = Instant.parse("2000-01-01T12:00:00Z");
+        insertSecurityLog(SecurityAction.LOGIN_FAILED, null, base);
+        insertSecurityLog(SecurityAction.LOGIN_FAILED, "someone", base.plus(1, ChronoUnit.MINUTES));
+        insertSecurityLog(SecurityAction.ACCESS_DENIED, "someone", base.plus(2, ChronoUnit.MINUTES));
+        insertSecurityLog(SecurityAction.LOGIN_SUCCESS, "someone", base.plus(3, ChronoUnit.MINUTES));
+        // just outside the range: the end is exclusive
+        Instant from = base.minus(1, ChronoUnit.HOURS);
+        Instant to = base.plus(1, ChronoUnit.HOURS);
+        insertSecurityLog(SecurityAction.ACCESS_DENIED, "someone", to);
 
         Map<SecurityAction, Long> counts = new java.util.HashMap<>();
         securityLogs.countByAction(ALERTS, from, to).forEach(row -> counts.put(row.getAction(), row.getTotal()));
 
         assertThat(counts).containsOnly(Map.entry(SecurityAction.LOGIN_FAILED, 2L), Map.entry(SecurityAction.ACCESS_DENIED, 1L));
-        assertThat(securityLogs.countByAction(ALERTS, to, to.plus(1, ChronoUnit.HOURS))).extracting(ActionCount::getTotal).isEmpty();
+        assertThat(securityLogs.countByAction(ALERTS, to.plus(1, ChronoUnit.SECONDS), to.plus(1, ChronoUnit.HOURS)))
+                .extracting(ActionCount::getTotal).isEmpty();
+    }
+
+    /** created_at is set by @CreationTimestamp, so a fixed time needs a native insert (rolled back with the test). */
+    private void insertSecurityLog(SecurityAction action, String username, Instant createdAt) {
+        entityManager.createNativeQuery("""
+                        INSERT INTO app_security_log (action, username, ip_address, created_at)
+                        VALUES (:action, :username, '127.0.0.1', :createdAt)
+                        """)
+                .setParameter("action", action.name())
+                .setParameter("username", username)
+                .setParameter("createdAt", java.time.OffsetDateTime.ofInstant(createdAt, java.time.ZoneOffset.UTC))
+                .executeUpdate();
     }
 
     @Test

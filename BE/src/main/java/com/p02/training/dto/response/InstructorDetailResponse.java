@@ -3,6 +3,7 @@ package com.p02.training.dto.response;
 import com.p02.training.entity.Instructor;
 import com.p02.training.entity.User;
 import java.util.List;
+import org.springframework.lang.Nullable;
 
 /**
  * An instructor as Admins see it (TR03, "Admin thấy đầy đủ"): profile, account and teachable
@@ -16,8 +17,8 @@ public record InstructorDetailResponse(
         String email,
         boolean accountActive,
         String instructorCode,
-        String department,
-        String phone,
+        @Nullable String department,
+        @Nullable String phone,
         boolean isActive,
         List<CourseSummaryResponse> courses) {
 

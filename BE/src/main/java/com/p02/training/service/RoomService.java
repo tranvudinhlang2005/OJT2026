@@ -6,6 +6,11 @@ import com.p02.training.dto.request.RoomRequest;
 import com.p02.training.dto.response.PageResponse;
 import com.p02.training.dto.response.RoomResponse;
 import com.p02.training.entity.Room;
+import com.p02.training.common.SearchPatterns;
+import jakarta.persistence.criteria.Predicate;
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.data.jpa.domain.Specification;
 import com.p02.training.entity.enums.SecurityAction;
 import com.p02.training.exception.ApiException;
 import com.p02.training.exception.ErrorCode;
@@ -45,11 +50,31 @@ public class RoomService {
         this.clock = clock;
     }
 
-    /** {@code GET /rooms}, sorted by code. TR06 defines no filter or sort field. */
+    /** {@code GET /rooms} without filters, sorted by code. */
     @Transactional(readOnly = true)
     public PageResponse<RoomResponse> listRooms(int page, int size) {
+        return listRooms(null, null, page, size);
+    }
+
+    /**
+     * {@code GET /rooms?keyword=&isActive=}, sorted by code. Both filters are optional: keyword
+     * matches part of the room code ignoring case (ILIKE), isActive the room's status.
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<RoomResponse> listRooms(String keyword, Boolean isActive, int page, int size) {
+        Specification<Room> specification = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (SearchPatterns.hasKeyword(keyword)) {
+                predicates.add(cb.like(cb.lower(root.get("code")), SearchPatterns.containsIgnoringCase(keyword),
+                        SearchPatterns.ESCAPE));
+            }
+            if (isActive != null) {
+                predicates.add(cb.equal(root.get("active"), isActive));
+            }
+            return cb.and(predicates.toArray(Predicate[]::new));
+        };
         PageRequest pageable = PageRequest.of(page, size, Sort.by("code").and(Sort.by("id")));
-        return PageResponse.of(roomRepository.findAll(pageable), RoomResponse::from);
+        return PageResponse.of(roomRepository.findAll(specification, pageable), RoomResponse::from);
     }
 
     /** {@code GET /rooms/{id}}. */

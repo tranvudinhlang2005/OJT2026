@@ -37,7 +37,7 @@
 | A-20 | IP type | Default applied | `VARCHAR(45)` |
 | A-21 | Security log | **Decided** | Java enum; failed-login username only if it matches an account |
 | A-22 | Columns not in the spec | **Decided** | Timestamps added; others not added |
-| A-23 | First Admin | **Decided** | One-time CLI bootstrap, implemented; operator recovery documented |
+| A-23 | First Admin | **Decided** | Created in the database with `scripts/create-first-admin.sql`; later Admins promoted from Manager by another Admin |
 | A-24 | Values after state changes | **Decided** | Reasons and lock/submission details are kept; nothing cleared unless the spec says so |
 | A-25 | Confirm versus unlock | **Decided** | Unlock locks `ClassOffering`, then `Session` |
 | A-26 | Login rate limit | **Decided** | Login only; 30 per IP per fixed 60 s; 429 with Retry-After; in memory |
@@ -156,16 +156,13 @@ Added where technically appropriate. Usage is in [database-design.md](database-d
 
 ### A-23. First Admin
 
-**Decided: one-time CLI bootstrap**, approved by the team, which replaces the earlier environment-variable startup design. Implemented; no schema change.
+**Decided, revised: Admins come only from the database.** The earlier one-time CLI bootstrap was removed. No schema change.
 
-- **Command:** `java -jar <app>.jar bootstrap-admin`, run by an operator in an interactive terminal. Normal startup never creates an account, and there is no registration endpoint.
-- **Input:** username, full name, email and password typed at the prompt; the password is read twice without echo and never accepted from arguments, environment variables or files. TR01's validation and password rules apply.
-- **Refusal:** if any `TRAINING_ADMIN` exists, active or not.
-- **Concurrency:** a PostgreSQL transaction-level advisory lock, then a second "no Admin" check, so concurrent runs can't create two Admins.
-- **Hashing and audit:** the application's BCrypt `PasswordEncoder`; `USER_CREATE` in `app_security_log` with `source: CLI_BOOTSTRAP` and no credential or hash.
-- **Recovery** when no Admin can sign in is a separate, operator-only, audited procedure. It never re-runs or weakens the bootstrap.
+- The application never creates an account; with no active Admin it starts and logs one WARN line. There is no registration endpoint.
+- The first Admin is inserted by an operator with `scripts/create-first-admin.sql` (pgAdmin, pgcrypto BCrypt hash). The script refuses if an active Admin exists or the password breaks TR01.
+- `POST /users` can't create a `TRAINING_ADMIN`. A Manager is promoted by another Admin through `PATCH /users/{id}/role`, logged as `ROLE_CHANGE`.
 
-Details: [database-design.md section 12](database-design.md#12-first-admin-bootstrap) and the operator guide [admin-bootstrap-and-recovery.md](../operations/admin-bootstrap-and-recovery.md). Code: `com.p02.training.bootstrap`.
+Details: [database-design.md section 12](database-design.md#12-first-admin-and-admin-promotion).
 
 **Organisational, outside the repository:** naming the person or role who holds the first Admin's credentials.
 

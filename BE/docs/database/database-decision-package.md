@@ -37,7 +37,7 @@
 | A-21 | Security log | Proposed columns; Java enum; failed-login username only if it matches an account | **APPROVED** |
 | A-22 | Columns not in the spec | `created_at`, `updated_at` where appropriate | **APPROVED** |
 | A-25 | Confirm versus unlock | Unlock locks `ClassOffering`, then `Session`, then re-reads; confirm locks `ClassOffering`, then all sessions in id order | **APPROVED, IMPLEMENTED** |
-| A-23 | First Admin | One-time CLI bootstrap (`bootstrap-admin`) with BCrypt; operator-only recovery | **APPROVED, IMPLEMENTED** |
+| A-23 | First Admin | Created in the database (`scripts/create-first-admin.sql`); further Admins only by promotion from Manager | **APPROVED, IMPLEMENTED** |
 | A-26 | Login rate limit | `POST /auth/login` only; 30 per IP per fixed 60 s; 429 with `Retry-After`; in memory; direct remote address | **APPROVED, IMPLEMENTED** |
 | A-29 | Inactive course on an instructor (TR03) | Existing assignments may stay; never newly assigned; removable unless a DRAFT, OPEN or IN_PROGRESS class uses it | **APPROVED, IMPLEMENTED** |
 | A-30 | Enrolling in a non-open class (TR10) | By current stored status only: missing, soft-deleted or `DRAFT` → 404; any other non-open class, `CANCELLED` included, and `OPEN` from `start_date` → 409 `CLASS_NOT_OPEN` | **APPROVED, IMPLEMENTED** |
@@ -69,13 +69,13 @@
 
 ## 2. Priority decisions
 
-### A-23. First Admin bootstrap
+### A-23. First Admin
 
 - **Spec:** TR01 lists `POST /users` as Admin only, and "Không cho khóa hoặc hạ quyền Admin đang hoạt động cuối cùng". There's no public registration, and nothing says how the first Admin is created.
 - **Recommendation:** a one-time startup step. If no `TRAINING_ADMIN` row exists and bootstrap environment variables are set, it creates one Admin with a bcrypt hash and logs `USER_CREATE`. If an Admin already exists, it does nothing. If none exists and the variables are missing, the application starts with no Admin and logs a clear warning.
 - **Why:** a seed migration would place a credential or hash in a file or repeat it across environments. Environment variables keep secrets out of Git and need no schema change.
 - **Impact:** backend only, in TR01. No schema change. The spec has no forced password change, and I'm not adding one; the Admin should change it through `PATCH /auth/password`.
-- **Status: APPROVED AND IMPLEMENTED, as a one-time CLI bootstrap.** The team chose a dedicated CLI command over the startup step recommended above: nothing happens at startup, and the password is typed interactively instead of being placed in environment variables. It refuses if any Admin exists, including an inactive one, and an advisory lock prevents two concurrent runs from creating two Admins. Recovery when no Admin can sign in is a separate operator-only procedure. See [database-design.md](database-design.md#12-first-admin-bootstrap) and [admin-bootstrap-and-recovery.md](../operations/admin-bootstrap-and-recovery.md).
+- **Status: APPROVED AND IMPLEMENTED, revised.** Neither the startup step above nor the later CLI bootstrap is used. The application never creates an account and only warns when no active Admin exists. The first Admin is inserted in the database with `scripts/create-first-admin.sql`; `POST /users` refuses `TRAINING_ADMIN`, and further Admins are promoted from `TRAINING_MANAGER` by another Admin. See [database-design.md](database-design.md#12-first-admin-and-admin-promotion).
 
 ### A-07. Class soft deletion
 

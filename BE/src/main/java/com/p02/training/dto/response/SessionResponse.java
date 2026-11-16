@@ -4,6 +4,7 @@ import com.p02.training.entity.Room;
 import com.p02.training.entity.Session;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import org.springframework.lang.Nullable;
 
 /**
  * A TR06 session. Times are Vietnam local times. {@code attendanceVersion} is not included: it
@@ -17,7 +18,7 @@ public record SessionResponse(
         LocalTime endTime,
         Long roomId,
         String roomCode,
-        String topic,
+        @Nullable String topic,
         boolean attendanceLocked) {
 
     /** Expects the room to be loaded already, or loadable in the current transaction. */

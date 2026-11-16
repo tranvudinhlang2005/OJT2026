@@ -5,9 +5,10 @@ import com.p02.training.common.TraceIdFilter;
 import com.p02.training.config.AppProperties;
 import com.p02.training.entity.enums.UserRole;
 import java.util.List;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -36,17 +37,20 @@ public class SecurityConfig {
 
     public static final String CSRF_HEADER = "X-XSRF-TOKEN";
 
+    /** The profile in which the OpenAPI docs and Swagger UI are public. */
+    public static final String DEV_PROFILE = "dev";
+    static final String[] OPENAPI_PATHS = {"/v3/api-docs", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"};
+
     private static final String ADMIN = UserRole.TRAINING_ADMIN.name();
     private static final String INSTRUCTOR = UserRole.INSTRUCTOR.name();
     private static final String STUDENT = UserRole.STUDENT.name();
     private static final String MANAGER = UserRole.TRAINING_MANAGER.name();
 
-    // Only in a servlet application: the bootstrap-admin CLI runs without a web server, where
-    // HttpSecurity does not exist.
     @Bean
-    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityErrorHandler errorHandler,
-            AccessTokenAuthenticator accessTokenAuthenticator, LoginRateLimiter loginRateLimiter) throws Exception {
+            AccessTokenAuthenticator accessTokenAuthenticator, LoginRateLimiter loginRateLimiter,
+            Environment environment) throws Exception {
+        boolean dev = environment.acceptsProfiles(Profiles.of(DEV_PROFILE));
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf
@@ -64,6 +68,13 @@ public class SecurityConfig {
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint(errorHandler)
                         .accessDeniedHandler(errorHandler))
+                // OpenAPI docs and Swagger UI: public in the dev profile only. Elsewhere springdoc is
+                // disabled and these paths fall through to the authenticated rule below.
+                .authorizeHttpRequests(authorize -> {
+                    if (dev) {
+                        authorize.requestMatchers(OPENAPI_PATHS).permitAll();
+                    }
+                })
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.GET, ApiPaths.CSRF).permitAll()
                         .requestMatchers(HttpMethod.POST, ApiPaths.LOGIN).permitAll()

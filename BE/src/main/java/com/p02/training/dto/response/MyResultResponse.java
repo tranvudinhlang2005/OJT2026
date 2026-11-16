@@ -4,6 +4,7 @@ import com.p02.training.entity.AssessmentResult;
 import com.p02.training.entity.ClassOffering;
 import com.p02.training.entity.enums.FinalStatus;
 import java.math.BigDecimal;
+import org.springframework.lang.Nullable;
 
 /** {@code GET /students/me/results} (TR15): one of the student's own results, only once CONFIRMED (D20). */
 public record MyResultResponse(
@@ -12,10 +13,10 @@ public record MyResultResponse(
         String courseCode,
         String courseName,
         String semester,
-        BigDecimal midtermScore,
-        BigDecimal finalScore,
-        BigDecimal totalScore,
-        BigDecimal attendanceRate,
+        @Nullable BigDecimal midtermScore,
+        @Nullable BigDecimal finalScore,
+        @Nullable BigDecimal totalScore,
+        @Nullable BigDecimal attendanceRate,
         FinalStatus finalStatus) {
 
     /** Expects the class and course to be loaded, as the student query does. */

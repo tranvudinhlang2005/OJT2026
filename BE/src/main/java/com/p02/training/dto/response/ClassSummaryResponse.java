@@ -6,6 +6,7 @@ import com.p02.training.entity.Instructor;
 import com.p02.training.entity.enums.ClassStatus;
 import java.time.Instant;
 import java.time.LocalDate;
+import org.springframework.lang.Nullable;
 
 /**
  * A class as Instructors, Students and Managers see it in TR09: exactly the listed fields, without
@@ -19,7 +20,7 @@ public record ClassSummaryResponse(
         String semester,
         LocalDate startDate,
         LocalDate endDate,
-        String instructorName,
+        @Nullable String instructorName,
         int maxCapacity,
         int enrolledCount,
         int availableSeats,

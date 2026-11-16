@@ -4,6 +4,7 @@ import com.p02.training.entity.GradeAuditLog;
 import com.p02.training.entity.enums.ScoreType;
 import java.math.BigDecimal;
 import java.time.Instant;
+import org.springframework.lang.Nullable;
 
 /**
  * One score change for TR18 {@code GET /audit/grade-logs} (Admin only, read-only): changedAt,
@@ -14,10 +15,10 @@ public record GradeAuditLogResponse(
         String classCode,
         String studentCode,
         ScoreType scoreType,
-        BigDecimal oldScore,
-        BigDecimal newScore,
+        @Nullable BigDecimal oldScore,
+        @Nullable BigDecimal newScore,
         String changedBy,
-        String reason) {
+        @Nullable String reason) {
 
     /** Expects the class, student and user to be loaded, as the audit query does. */
     public static GradeAuditLogResponse from(GradeAuditLog log) {

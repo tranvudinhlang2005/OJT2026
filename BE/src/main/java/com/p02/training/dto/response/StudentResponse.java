@@ -4,6 +4,7 @@ import com.p02.training.entity.Student;
 import com.p02.training.entity.User;
 import com.p02.training.entity.enums.StudentStatus;
 import java.time.LocalDate;
+import org.springframework.lang.Nullable;
 
 /**
  * A student as Admins see it (TR04): profile and account. {@code status} is the profile status that
@@ -17,8 +18,8 @@ public record StudentResponse(
         String email,
         boolean accountActive,
         String studentCode,
-        LocalDate dateOfBirth,
-        String homeroomClass,
+        @Nullable LocalDate dateOfBirth,
+        @Nullable String homeroomClass,
         StudentStatus status) {
 
     /** Expects the user to be loaded already, or loadable in the current transaction. */

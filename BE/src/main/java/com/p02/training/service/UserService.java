@@ -53,6 +53,12 @@ public class UserService {
     private static final String ROLE_CHANGE_NOT_ALLOWED = "ROLE_CHANGE_NOT_ALLOWED";
     private static final String ROLE_CHANGE_NOT_ALLOWED_MESSAGE =
             "Không thể đổi sang vai trò này, vui lòng tạo tài khoản mới";
+    private static final String ADMIN_CREATE_NOT_ALLOWED_MESSAGE =
+            "Không thể tạo trực tiếp tài khoản Training Admin. "
+                    + "Hãy tạo tài khoản Training Manager rồi để Admin khác cấp quyền.";
+    private static final String USER_INACTIVE = "USER_INACTIVE";
+    private static final String USER_INACTIVE_MESSAGE =
+            "Tài khoản đang bị khóa, không thể cấp quyền Training Admin";
 
     /** D04: roles can only switch between these two, because the others are tied to a profile. */
     private static final Set<UserRole> SWITCHABLE_ROLES =
@@ -104,11 +110,18 @@ public class UserService {
     /**
      * {@code POST /users}: creates the account and, for STUDENT or INSTRUCTOR, its profile, in one
      * transaction, then logs USER_CREATE.
+     *
+     * <p>A TRAINING_ADMIN is never created here: it must start as a TRAINING_MANAGER and be promoted
+     * by another Admin through {@link #changeRole}. The very first Admin is inserted directly in the
+     * database (scripts/create-first-admin.sql).
      */
     @Transactional
     public UserResponse createUser(CreateUserRequest request, AuthenticatedUser actor) {
         passwordService.requireStrong(request.password());
         String profileCode = requiredProfileCode(request);
+        if (request.role() == UserRole.TRAINING_ADMIN) {
+            throw ApiException.conflict(ROLE_CHANGE_NOT_ALLOWED, ADMIN_CREATE_NOT_ALLOWED_MESSAGE);
+        }
 
         if (userRepository.existsByUsernameIgnoringCase(request.username())
                 || userRepository.existsByEmailIgnoringCase(request.email())
@@ -168,8 +181,11 @@ public class UserService {
     }
 
     /**
-     * {@code PATCH /users/{id}/role}: not on oneself, not demoting the last active Admin, only as D04
-     * allows. token_version + 1 signs the user out at once; logs ROLE_CHANGE.
+     * {@code PATCH /users/{id}/role}: the only way to become a TRAINING_ADMIN, granted by another
+     * Admin. Not on oneself, not demoting the last active Admin, only as D04 allows (TRAINING_MANAGER
+     * ↔ TRAINING_ADMIN), and only an active account can be promoted. token_version + 1 signs the
+     * user out at once; logs ROLE_CHANGE with the granting Admin as {@code username} and the target
+     * and both roles in the details.
      */
     @Transactional
     public UserResponse changeRole(Long id, ChangeRoleRequest request, AuthenticatedUser actor) {
@@ -185,12 +201,16 @@ public class UserService {
         if (!SWITCHABLE_ROLES.contains(oldRole) || !SWITCHABLE_ROLES.contains(newRole)) {
             throw ApiException.conflict(ROLE_CHANGE_NOT_ALLOWED, ROLE_CHANGE_NOT_ALLOWED_MESSAGE);
         }
+        if (newRole == UserRole.TRAINING_ADMIN && oldRole != UserRole.TRAINING_ADMIN && !user.isActive()) {
+            throw ApiException.conflict(USER_INACTIVE, USER_INACTIVE_MESSAGE);
+        }
 
         user.setRole(newRole);
         user.setTokenVersion(user.getTokenVersion() + 1);
 
         Map<String, Object> details = new LinkedHashMap<>();
         details.put("userId", user.getId());
+        details.put("username", user.getUsername());
         details.put("oldRole", oldRole.name());
         details.put("newRole", newRole.name());
         auditLogger.record(SecurityAction.ROLE_CHANGE, actor.username(), details);

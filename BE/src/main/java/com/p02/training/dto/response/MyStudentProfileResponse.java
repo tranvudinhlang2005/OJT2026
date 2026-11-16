@@ -4,6 +4,7 @@ import com.p02.training.entity.Student;
 import com.p02.training.entity.User;
 import com.p02.training.entity.enums.StudentStatus;
 import java.time.LocalDate;
+import org.springframework.lang.Nullable;
 
 /** {@code GET /students/me} (TR04): the logged-in student's full profile. */
 public record MyStudentProfileResponse(
@@ -11,8 +12,8 @@ public record MyStudentProfileResponse(
         String studentCode,
         String fullName,
         String email,
-        LocalDate dateOfBirth,
-        String homeroomClass,
+        @Nullable LocalDate dateOfBirth,
+        @Nullable String homeroomClass,
         StudentStatus status) {
 
     public static MyStudentProfileResponse from(Student student) {

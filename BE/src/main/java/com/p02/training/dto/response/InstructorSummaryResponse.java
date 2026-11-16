@@ -2,6 +2,7 @@ package com.p02.training.dto.response;
 
 import com.p02.training.entity.Instructor;
 import com.p02.training.entity.User;
+import org.springframework.lang.Nullable;
 
 /**
  * An instructor in the Admin list (TR03). {@code isActive} is the profile's "nhận lớp" flag, not the
@@ -14,8 +15,8 @@ public record InstructorSummaryResponse(
         String fullName,
         String email,
         String instructorCode,
-        String department,
-        String phone,
+        @Nullable String department,
+        @Nullable String phone,
         boolean isActive) {
 
     /** Expects the user to be loaded already, as the list query does. */
