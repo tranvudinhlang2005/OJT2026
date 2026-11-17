@@ -11,6 +11,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import type { ClassResultDetail } from '../../../types/approval';
+import { formatDateTime } from '../../../utils/dateFormat';
 
 interface ApprovalDetailModalProps {
   isOpen: boolean;
@@ -81,7 +82,7 @@ export function ApprovalDetailModal({
         return (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 border border-rose-200">
             <AlertTriangle className="h-3.5 w-3.5" />
-            Yêu cầu chỉnh sửa (Bản nháp)
+            Yêu cầu chỉnh sửa
           </span>
         );
     }
@@ -113,11 +114,15 @@ export function ApprovalDetailModal({
               <span><strong>Giảng viên:</strong> {resultDetail.instructorName}</span>
               <span><strong>Học kỳ:</strong> {resultDetail.semester}</span>
               {resultDetail.submittedAt && (
-                <span><strong>Ngày nộp:</strong> {resultDetail.submittedAt}</span>
+                <span>
+                  <strong>Ngày nộp:</strong> {formatDateTime(resultDetail.submittedAt)}
+                  {resultDetail.submittedBy ? ` (${resultDetail.submittedBy})` : ''}
+                </span>
               )}
               {resultDetail.confirmedAt && (
                 <span className="text-emerald-700 font-medium">
-                  <strong>Ngày duyệt:</strong> {resultDetail.confirmedAt} ({resultDetail.confirmedBy})
+                  <strong>Ngày duyệt:</strong> {formatDateTime(resultDetail.confirmedAt)}
+                  {resultDetail.confirmedBy ? ` (${resultDetail.confirmedBy})` : ''}
                 </span>
               )}
             </div>
@@ -155,7 +160,7 @@ export function ApprovalDetailModal({
                   <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                   <div>
                     <h4 className="text-xs font-bold text-amber-900">
-                      Chưa đủ điều kiện phê duyệt (Theo TR16)
+                      Chưa đủ điều kiện phê duyệt
                     </h4>
                     <p className="mt-1 text-xs text-amber-800">
                       Còn <strong>{resultDetail.unlockedSessionsCount}</strong> buổi học chưa chốt điểm danh. Cần chốt toàn bộ điểm danh để tính tỷ lệ chuyên cần chính xác trước khi duyệt điểm.

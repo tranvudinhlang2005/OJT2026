@@ -58,7 +58,7 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
               <option value="ALL">Mọi trạng thái</option>
               <option value="ACTIVE">Đang hoạt động</option>
               <option value="INACTIVE">Bị vô hiệu hóa</option>
-              <option value="LOCKED">Bị tạm khóa (15p)</option>
+              <option value="LOCKED">Bị tạm khóa</option>
             </select>
           </div>
 

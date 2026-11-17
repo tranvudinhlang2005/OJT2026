@@ -15,10 +15,10 @@ interface SeedAccount {
 }
 
 const SEED_ACCOUNTS: SeedAccount[] = [
-  { label: 'QL Đào tạo', role: 'TRAINING_MANAGER', username: 'seed.manager01', defaultPass: 'Password123@' },
-  { label: 'Giảng viên', role: 'INSTRUCTOR', username: 'seed.gv01', defaultPass: 'Password123@' },
-  { label: 'Sinh viên', role: 'STUDENT', username: 'seed.sv01', defaultPass: 'Password123@' },
-  { label: 'Admin', role: 'TRAINING_ADMIN', username: 'admin', defaultPass: 'Admin@123' },
+  { label: 'Admin', role: 'TRAINING_ADMIN', username: 'admin', defaultPass: 'Demo@123' },
+  { label: 'QL Đào tạo', role: 'TRAINING_MANAGER', username: 'manager', defaultPass: 'Demo@123' },
+  { label: 'Giảng viên', role: 'INSTRUCTOR', username: 'gv01', defaultPass: 'Demo@123' },
+  { label: 'Sinh viên', role: 'STUDENT', username: 'sv01', defaultPass: 'Demo@123' },
 ];
 
 export default function LoginPage() {
@@ -26,10 +26,10 @@ export default function LoginPage() {
   const { login } = useAuth();
   const { toast } = useToast();
 
-  const [username, setUsername] = useState('seed.manager01');
-  const [password, setPassword] = useState('Password123@');
+  const [username, setUsername] = useState('admin');
+  const [password, setPassword] = useState('Demo@123');
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<UserRole>('TRAINING_MANAGER');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('TRAINING_ADMIN');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -97,7 +97,7 @@ export default function LoginPage() {
 
         <div className="mb-4">
           <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Tài khoản kiểm thử nhanh (Seed Data)
+            Tài khoản kiểm thử nhanh
           </label>
           <div className="grid grid-cols-2 gap-2">
             {SEED_ACCOUNTS.map((acc) => (

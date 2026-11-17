@@ -73,7 +73,7 @@ export function CancelClassModal({
         <div className="mt-3 text-xs text-slate-600 leading-relaxed bg-amber-50/70 p-3 rounded-lg border border-amber-200/60">
           <p className="font-semibold text-amber-800">Lưu ý quan trọng:</p>
           <p className="mt-0.5">
-            Lớp học sẽ chuyển sang trạng thái <strong>CANCELLED (Đã hủy)</strong>. Sinh viên đã đăng ký sẽ nhận được thông báo hủy lớp. Thao tác này không thể hoàn tác.
+            Lớp học sẽ chuyển sang trạng thái <strong>Đã hủy</strong>. Sinh viên đã đăng ký sẽ nhận được thông báo hủy lớp. Thao tác này không thể hoàn tác.
           </p>
         </div>
 

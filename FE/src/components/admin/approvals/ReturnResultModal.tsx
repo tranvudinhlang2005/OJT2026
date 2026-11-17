@@ -36,7 +36,7 @@ export function ReturnResultModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isReasonValid) {
-      setErrorMessage('Vui lòng nhập lý do tối thiểu 10 ký tự (theo quy định TR16).');
+      setErrorMessage('Vui lòng nhập lý do tối thiểu 10 ký tự.');
       return;
     }
 
@@ -78,7 +78,7 @@ export function ReturnResultModal({
           <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-200 text-xs text-slate-600">
             <span className="font-semibold text-slate-900">Lớp học phần:</span> {classCode} - {courseName}
             <p className="mt-1 text-slate-500">
-              Bảng điểm sẽ được chuyển về trạng thái <strong>Bản nháp (DRAFT)</strong>. Giảng viên phụ trách sẽ nhận được lý do này để rà soát và cập nhật lại điểm.
+              Bảng điểm sẽ được chuyển về trạng thái <strong>Bản nháp</strong>. Giảng viên phụ trách sẽ nhận được lý do này để rà soát và cập nhật lại điểm.
             </p>
           </div>
 

@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { DashboardKPIs } from '../../components/admin/dashboard/DashboardKPIs';
 import { DashboardStatusDistribution } from '../../components/admin/dashboard/DashboardStatusDistribution';
+import { DashboardCapacityChart } from '../../components/admin/dashboard/DashboardCapacityChart';
 import { DashboardFilters } from '../../components/admin/dashboard/DashboardFilters';
 import { DashboardClassTable } from '../../components/admin/dashboard/DashboardClassTable';
 import { SecurityAlertsCard } from '../../components/admin/dashboard/SecurityAlertsCard';
@@ -121,13 +122,8 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-5">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-            {isAdmin ? 'Tổng quan hệ thống (Admin Dashboard)' : 'Tổng quan Đào tạo (Manager Dashboard)'}
+            {isAdmin ? 'Tổng quan hệ thống' : 'Tổng quan Đào tạo'}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {isAdmin
-              ? 'Giám sát vận hành đào tạo, chỉ số KPIs, an ninh bảo mật và lịch sử kiểm toán điểm (TR18).'
-              : 'Theo dõi tiến độ vận hành đào tạo, tỷ lệ lấp đầy, sĩ số và chỉ số KPIs các lớp học phần.'}
-          </p>
         </div>
 
         <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 border border-slate-200">
@@ -179,12 +175,18 @@ export default function DashboardPage() {
             onRefresh={() => loadDashboardData(true)}
           />
 
-          <DashboardKPIs summary={summary} />
+          <DashboardKPIs summary={summary} classes={dashboardClasses} />
 
-          <DashboardStatusDistribution
-            classCountsByStatus={summary.classCountsByStatus}
-            totalClasses={summary.totalClasses}
-          />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-stretch">
+            <DashboardStatusDistribution
+              classCountsByStatus={summary.classCountsByStatus}
+              totalClasses={summary.totalClasses}
+            />
+            <DashboardCapacityChart
+              classes={dashboardClasses}
+              isLoading={isLoading}
+            />
+          </div>
 
           {isAdmin ? (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
@@ -209,7 +211,7 @@ export default function DashboardPage() {
               <TrendingUp className="h-5 w-5 text-indigo-600" />
               <div>
                 <h4 className="text-xs font-bold text-indigo-900">
-                  Thanh tra tính toàn vẹn của điểm số (IA-TR06)
+                  Thanh tra tính toàn vẹn của điểm số
                 </h4>
                 <p className="text-xs text-indigo-700 mt-0.5">
                   Mọi thao tác thay đổi điểm sau khi đã nhập của Giảng viên đều bắt buộc giải trình lý do (D18). Dữ liệu này chỉ Quản trị viên mới có thẩm quyền truy cập.

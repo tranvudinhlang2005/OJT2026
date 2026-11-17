@@ -26,6 +26,7 @@ import { AddSessionModal } from './AddSessionModal';
 import { UnlockAttendanceModal } from './UnlockAttendanceModal';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useToast } from '../../../contexts/ToastContext';
+import { formatDateTime, formatDate } from '../../../utils/dateFormat';
 
 interface ClassDetailModalProps {
   isOpen: boolean;
@@ -153,7 +154,15 @@ export function ClassDetailModal({
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-bold text-slate-900">{classOffering.classCode}</h2>
                   <span className="text-xs bg-indigo-100 text-indigo-700 font-semibold px-2 py-0.5 rounded">
-                    {classOffering.status}
+                    {classOffering.status === 'DRAFT'
+                      ? 'Bản nháp'
+                      : classOffering.status === 'OPEN'
+                        ? 'Đang mở đăng ký'
+                        : classOffering.status === 'IN_PROGRESS'
+                          ? 'Đang diễn ra'
+                          : classOffering.status === 'CLOSED'
+                            ? 'Đã hoàn thành'
+                            : 'Đã hủy'}
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -225,14 +234,9 @@ export function ClassDetailModal({
             {activeTab === 'sessions' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-800">
-                      Lịch trình các buổi học (Timeline List)
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      Hiển thị danh sách các buổi học được xếp theo dòng thời gian tăng dần
-                    </p>
-                  </div>
+                  <h3 className="text-sm font-semibold text-slate-800">
+                    Lịch trình các buổi học
+                  </h3>
 
                   {canEditSessions && (
                     <button
@@ -293,7 +297,7 @@ export function ClassDetailModal({
                               </span>
                               <span className="text-xs text-slate-400">•</span>
                               <span className="font-semibold text-slate-900 text-sm">
-                                {sess.sessionDate}
+                                {formatDate(sess.sessionDate)}
                               </span>
                             </div>
 
@@ -397,12 +401,12 @@ export function ClassDetailModal({
                       <div className="flex justify-between py-1 border-b border-slate-100">
                         <dt className="text-slate-500">Thời gian đào tạo:</dt>
                         <dd className="font-medium text-slate-800">
-                          {classOffering.startDate} đến {classOffering.endDate}
+                          {formatDate(classOffering.startDate)} đến {formatDate(classOffering.endDate)}
                         </dd>
                       </div>
                       <div className="flex justify-between py-1">
                         <dt className="text-slate-500">Hạn chót hủy đăng ký:</dt>
-                        <dd className="font-medium text-slate-800">{classOffering.cancelDeadline}</dd>
+                        <dd className="font-medium text-slate-800">{formatDateTime(classOffering.cancelDeadline)}</dd>
                       </div>
                     </dl>
                   </div>
@@ -460,14 +464,9 @@ export function ClassDetailModal({
             {activeTab === 'roster' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-800">
-                      Danh sách sinh viên đã ghi danh (TR13)
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      Hiển thị danh sách học viên đăng ký theo đúng hợp đồng dữ liệu
-                    </p>
-                  </div>
+                  <h3 className="text-sm font-semibold text-slate-800">
+                    Danh sách sinh viên đã ghi danh
+                  </h3>
                   <span className="text-xs text-slate-500">
                     Sĩ số: <strong>{classOffering.enrolledCount}</strong> / {classOffering.maxCapacity} học viên
                   </span>
@@ -482,7 +481,7 @@ export function ClassDetailModal({
                     <Users className="h-8 w-8 text-slate-300" />
                     <p className="mt-2 text-sm font-medium text-slate-700">Chưa có sinh viên nào đăng ký vào lớp</p>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Sinh viên sẽ ghi danh vào lớp khi lớp được chuyển sang trạng thái <strong>OPEN</strong>.
+                      Sinh viên sẽ ghi danh vào lớp khi lớp được chuyển sang trạng thái <strong>Mở đăng ký</strong>.
                     </p>
                   </div>
                 ) : (
@@ -512,13 +511,13 @@ export function ClassDetailModal({
                               {stu.email}
                             </td>
                             <td className="px-4 py-2.5 text-slate-500">
-                              {stu.enrolledAt}
+                              {formatDateTime(stu.enrolledAt)}
                             </td>
                             <td className="px-4 py-2.5">
                               {stu.enrollmentStatus === 'ENROLLED' ? (
                                 <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
                                   <CheckCircle2 className="h-3 w-3" />
-                                  Đang học (ENROLLED)
+                                  Đang học
                                 </span>
                               ) : stu.enrollmentStatus === 'COMPLETED' ? (
                                 <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
@@ -541,17 +540,10 @@ export function ClassDetailModal({
             )}
           </div>
 
-          <div className="flex items-center justify-between border-t border-slate-200 bg-white px-6 py-3.5">
+          <div className="border-t border-slate-200 bg-slate-50/50 px-6 py-3">
             <span className="text-xs text-slate-400">
-              Cập nhật lần cuối: {new Date(classOffering.updatedAt).toLocaleString('vi-VN')}
+              Cập nhật lần cuối: {formatDateTime(classOffering.updatedAt)}
             </span>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
-            >
-              Đóng cửa sổ
-            </button>
           </div>
         </div>
       </div>

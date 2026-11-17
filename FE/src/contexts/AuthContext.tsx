@@ -30,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
     const initAuth = async () => {
+      authService.getCsrfToken();
       try {
         const currentUser = await authService.getCurrentUser();
         if (currentUser && isMounted) {

@@ -62,7 +62,6 @@ export function CreateCourseModal({ isOpen, onClose, onSubmit }: CreateCourseMod
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900">Thêm Môn học Mới</h3>
-              <p className="text-xs text-slate-500">Khởi tạo môn học và tiêu chuẩn đánh giá kết quả</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 text-slate-400 hover:bg-slate-200/60 rounded-lg">

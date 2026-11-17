@@ -1,5 +1,6 @@
 import { ShieldAlert, AlertTriangle, Lock, ShieldX, Clock, Globe } from 'lucide-react';
 import type { SecurityAlerts, SecurityActionType } from '../../../types/dashboard';
+import { formatDateTime } from '../../../utils/dateFormat';
 
 interface SecurityAlertsCardProps {
   alerts: SecurityAlerts | null;
@@ -53,11 +54,8 @@ export function SecurityAlertsCard({ alerts, isLoading }: SecurityAlertsCardProp
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900">
-              Giám sát & Cảnh báo an ninh (TR18)
+              Giám sát & Cảnh báo an ninh
             </h3>
-            <p className="text-xs text-slate-500">
-              Ghi nhận các sự cố đăng nhập và hành vi truy cập trong 7 ngày gần nhất
-            </p>
           </div>
         </div>
       </div>
@@ -85,7 +83,7 @@ export function SecurityAlertsCard({ alerts, isLoading }: SecurityAlertsCardProp
 
         <div className="rounded-xl border border-purple-200 bg-purple-50/50 p-3.5 flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-purple-800">Từ chối truy cập (403)</p>
+            <p className="text-xs font-semibold text-purple-800">Từ chối truy cập</p>
             <p className="mt-1 text-2xl font-black text-purple-700">
               {alerts.counts.ACCESS_DENIED} <span className="text-xs font-normal">lần</span>
             </p>
@@ -121,7 +119,7 @@ export function SecurityAlertsCard({ alerts, isLoading }: SecurityAlertsCardProp
                   <td className="px-4 py-2 text-slate-500 whitespace-nowrap">
                     <span className="flex items-center gap-1 font-mono text-[11px]">
                       <Clock className="h-3 w-3 text-slate-400" />
-                      {evt.createdAt}
+                      {formatDateTime(evt.createdAt)}
                     </span>
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap">

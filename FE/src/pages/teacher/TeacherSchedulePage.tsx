@@ -68,9 +68,6 @@ export default function TeacherSchedulePage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Lịch giảng dạy & Điểm danh
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Theo dõi thời khóa biểu ca dạy được phân công và thực hiện điểm danh học viên từng buổi học.
-          </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs">

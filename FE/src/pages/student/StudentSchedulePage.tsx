@@ -11,6 +11,7 @@ import {
 import { Link } from 'react-router';
 import { ROUTES } from '../../routes/paths';
 import { scheduleService, type ScheduleItem } from '../../services/scheduleService';
+import { formatDate } from '../../utils/dateFormat';
 
 const DAYS = [
   { value: 1, label: 'Thứ Hai' },
@@ -67,9 +68,6 @@ export default function StudentSchedulePage() {
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Thời khóa biểu cá nhân
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Theo dõi thời gian, ca học và phòng học các học phần bạn đã đăng ký từ hệ thống.
-          </p>
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-center">
@@ -140,7 +138,7 @@ export default function StudentSchedulePage() {
                       {dayLabel}
                     </span>
                     <span className="font-mono text-xs font-semibold text-slate-500">
-                      {item.sessionDate}
+                      {formatDate(item.sessionDate)}
                     </span>
                   </div>
 
@@ -189,7 +187,7 @@ export default function StudentSchedulePage() {
                     <td className="px-4 py-3.5 font-medium text-slate-900">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-blue-600" />
-                        <span>{item.sessionDate}</span>
+                        <span>{formatDate(item.sessionDate)}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3.5 font-semibold text-slate-900">{item.courseName}</td>

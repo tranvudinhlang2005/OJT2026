@@ -83,7 +83,7 @@ export const approvalService = {
     ]);
 
     const res = resultsRes.data;
-    const items: ClassResultItem[] = (res.items || []).map((it) => ({
+    const rawItems: ClassResultItem[] = (res.items || []).map((it) => ({
       studentId: String(it.studentId),
       studentCode: it.studentCode,
       fullName: it.fullName,
@@ -94,6 +94,62 @@ export const approvalService = {
       attendanceRate: it.attendanceRate !== null ? Number(it.attendanceRate) : null,
       finalStatus: it.finalStatus,
     }));
+
+    let computedRates: Record<string, number> = {};
+    if (sessions.length > 0 && rawItems.some((it) => it.attendanceRate === null)) {
+      try {
+        const sheets = await Promise.all(
+          sessions.map((s) =>
+            axiosClient.get<{ items: Array<{ studentId: number; status: string | null }> }>(
+              `/sessions/${s.id}/attendance`
+            )
+          )
+        );
+
+        const attendedCounts: Record<string, number> = {};
+        for (const sheet of sheets) {
+          for (const att of sheet.data.items || []) {
+            if (att.status === 'PRESENT' || att.status === 'LATE') {
+              const sid = String(att.studentId);
+              attendedCounts[sid] = (attendedCounts[sid] || 0) + 1;
+            }
+          }
+        }
+
+        for (const it of rawItems) {
+          const attended = attendedCounts[it.studentId] || 0;
+          computedRates[it.studentId] = Math.round((attended / sessions.length) * 100 * 100) / 100;
+        }
+      } catch {
+        computedRates = {};
+      }
+    }
+
+    const mWeight = Number(res.midtermWeight ?? classInfo.midtermWeight);
+    const fWeight = Number(res.finalWeight ?? classInfo.finalWeight);
+
+    const items: ClassResultItem[] = rawItems.map((it) => {
+      const rate = it.attendanceRate !== null ? it.attendanceRate : computedRates[it.studentId] ?? null;
+      const total =
+        it.totalScore !== null
+          ? it.totalScore
+          : it.midtermScore !== null && it.finalScore !== null
+          ? Math.round((it.midtermScore * mWeight + it.finalScore * fWeight) * 100) / 100
+          : null;
+
+      let status = it.finalStatus;
+      if (status === 'IN_PROGRESS' && total !== null && rate !== null) {
+        const pass = total >= classInfo.passScore && rate >= classInfo.minAttendancePct;
+        status = pass ? 'PASSED' : 'FAILED';
+      }
+
+      return {
+        ...it,
+        totalScore: total,
+        attendanceRate: rate,
+        finalStatus: status,
+      };
+    });
 
     const unlockedCount = sessions.filter((s) => !s.attendanceLocked).length;
 

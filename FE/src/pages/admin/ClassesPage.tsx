@@ -56,8 +56,8 @@ export default function ClassesPage() {
       try {
         const [c, inst, r] = await Promise.all([
           classService.getCourses(),
-          classService.getInstructors(),
-          classService.getRooms(),
+          canManage ? classService.getInstructors().catch(() => []) : Promise.resolve([]),
+          canManage ? classService.getRooms().catch(() => []) : Promise.resolve([]),
         ]);
         setCourses(c);
         setInstructors(inst);
@@ -67,7 +67,7 @@ export default function ClassesPage() {
       }
     }
     loadMetadata();
-  }, [toast]);
+  }, [canManage, toast]);
 
   const loadClassesData = useCallback(async () => {
     try {
@@ -137,7 +137,7 @@ export default function ClassesPage() {
   const handlePublishClass = async (cls: ClassOffering) => {
     try {
       await classService.publishClass(cls.id);
-      toast.success(`Đã công bố mở đăng ký cho lớp "${cls.classCode}" (OPEN)`);
+      toast.success(`Đã công bố mở đăng ký cho lớp "${cls.classCode}"`);
       await loadClassesData();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Không thể công bố mở lớp');
@@ -159,7 +159,7 @@ export default function ClassesPage() {
   const handleStartClass = async (cls: ClassOffering) => {
     try {
       await classService.startClass(cls.id);
-      toast.success(`Lớp "${cls.classCode}" đã chuyển sang trạng thái Đang diễn ra (IN_PROGRESS)`);
+      toast.success(`Lớp "${cls.classCode}" đã chuyển sang trạng thái Đang diễn ra`);
       await loadClassesData();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Lỗi khi bắt đầu lớp học');
@@ -170,7 +170,7 @@ export default function ClassesPage() {
     if (!confirm(`Xác nhận hoàn thành và đóng lớp học phần "${cls.classCode}"?`)) return;
     try {
       await classService.closeClass(cls.id);
-      toast.success(`Đã đóng lớp "${cls.classCode}" thành công (CLOSED)`);
+      toast.success(`Đã đóng lớp "${cls.classCode}" thành công`);
       await loadClassesData();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Lỗi khi đóng lớp');
@@ -207,9 +207,6 @@ export default function ClassesPage() {
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           Quản lý Lớp & Lịch học
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Quản lý vòng đời các lớp học phần, phân công giảng viên, xếp lịch phòng học và kiểm tra xung đột thời khóa biểu.
-        </p>
       </div>
 
       <ClassStatsCards classes={allClasses} />

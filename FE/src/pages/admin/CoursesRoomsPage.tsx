@@ -55,6 +55,10 @@ export default function CoursesRoomsPage() {
   }, [courseFilter, toast]);
 
   const loadRooms = useCallback(async () => {
+    if (!canManage) {
+      setIsRoomsLoading(false);
+      return;
+    }
     try {
       setIsRoomsLoading(true);
       const data = await roomService.getRooms(roomFilter);
@@ -64,15 +68,17 @@ export default function CoursesRoomsPage() {
     } finally {
       setIsRoomsLoading(false);
     }
-  }, [roomFilter, toast]);
+  }, [canManage, roomFilter, toast]);
 
   useEffect(() => {
     loadCourses();
   }, [loadCourses]);
 
   useEffect(() => {
-    loadRooms();
-  }, [loadRooms]);
+    if (canManage) {
+      loadRooms();
+    }
+  }, [canManage, loadRooms]);
 
   const handleToggleCourseStatus = async (course: CourseItem) => {
     try {
@@ -112,16 +118,15 @@ export default function CoursesRoomsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900">Quản lý Khóa học & Phòng học</h1>
+            <h1 className="text-2xl font-bold text-slate-900">
+              {canManage ? 'Quản lý Khóa học & Phòng học' : 'Danh mục Khóa học'}
+            </h1>
             {!canManage && (
               <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
                 Chế độ Giám sát (Chỉ đọc)
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-slate-500">
-            Khai báo và cấu hình tiêu chuẩn đánh giá môn học (TR02) và danh mục phòng học (TR06)
-          </p>
         </div>
 
         {canManage && (
@@ -147,7 +152,7 @@ export default function CoursesRoomsPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className={`grid grid-cols-2 gap-4 ${canManage ? 'sm:grid-cols-4' : 'sm:grid-cols-2'}`}>
         <div className="rounded-2xl bg-white p-5 border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng môn học</span>
@@ -166,23 +171,27 @@ export default function CoursesRoomsPage() {
           <p className="text-xs text-slate-500 mt-1">Sẵn sàng mở lớp học</p>
         </div>
 
-        <div className="rounded-2xl bg-white p-5 border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng phòng học</span>
-            <DoorOpen className="h-5 w-5 text-indigo-600" />
-          </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{rooms.length}</p>
-          <p className="text-xs text-slate-500 mt-1">{activeRoomsCount} phòng hoạt động</p>
-        </div>
+        {canManage && (
+          <>
+            <div className="rounded-2xl bg-white p-5 border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng phòng học</span>
+                <DoorOpen className="h-5 w-5 text-indigo-600" />
+              </div>
+              <p className="mt-2 text-2xl font-bold text-slate-900">{rooms.length}</p>
+              <p className="text-xs text-slate-500 mt-1">{activeRoomsCount} phòng hoạt động</p>
+            </div>
 
-        <div className="rounded-2xl bg-white p-5 border border-slate-200 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Phòng bảo trì</span>
-            <Building className="h-5 w-5 text-rose-500" />
-          </div>
-          <p className="mt-2 text-2xl font-bold text-rose-600">{rooms.length - activeRoomsCount}</p>
-          <p className="text-xs text-slate-500 mt-1">Đang tạm khóa xếp lịch</p>
-        </div>
+            <div className="rounded-2xl bg-white p-5 border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Phòng bảo trì</span>
+                <Building className="h-5 w-5 text-rose-500" />
+              </div>
+              <p className="mt-2 text-2xl font-bold text-rose-600">{rooms.length - activeRoomsCount}</p>
+              <p className="text-xs text-slate-500 mt-1">Đang tạm khóa xếp lịch</p>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="border-b border-slate-200 flex items-center justify-between bg-white px-4 rounded-xl shadow-xs">
@@ -198,17 +207,19 @@ export default function CoursesRoomsPage() {
             <GraduationCap className="h-4 w-4" />
             <span>Danh mục Môn học ({courses.length})</span>
           </button>
-          <button
-            onClick={() => setActiveTab('rooms')}
-            className={`flex items-center gap-2 py-4 px-2 border-b-2 text-sm font-semibold transition ${
-              activeTab === 'rooms'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <DoorOpen className="h-4 w-4" />
-            <span>Danh mục Phòng học ({rooms.length})</span>
-          </button>
+          {canManage && (
+            <button
+              onClick={() => setActiveTab('rooms')}
+              className={`flex items-center gap-2 py-4 px-2 border-b-2 text-sm font-semibold transition ${
+                activeTab === 'rooms'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <DoorOpen className="h-4 w-4" />
+              <span>Danh mục Phòng học ({rooms.length})</span>
+            </button>
+          )}
         </div>
 
         {activeTab === 'courses' ? (

@@ -115,11 +115,11 @@ export function ClassFilters({
           className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         >
           <option value="ALL">Tất cả trạng thái</option>
-          <option value="DRAFT">Bản nháp (DRAFT)</option>
-          <option value="OPEN">Mở đăng ký (OPEN)</option>
-          <option value="IN_PROGRESS">Đang diễn ra (IN_PROGRESS)</option>
-          <option value="CLOSED">Đã đóng (CLOSED)</option>
-          <option value="CANCELLED">Đã hủy (CANCELLED)</option>
+          <option value="DRAFT">Bản nháp</option>
+          <option value="OPEN">Đang mở đăng ký</option>
+          <option value="IN_PROGRESS">Đang diễn ra</option>
+          <option value="CLOSED">Đã kết thúc</option>
+          <option value="CANCELLED">Đã hủy</option>
         </select>
       </div>
     </div>

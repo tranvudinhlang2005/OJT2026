@@ -157,9 +157,6 @@ export default function TeacherGradesPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Quản lý kết quả & Nộp bảng điểm
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Nhập kết quả học tập (điểm quá trình, thi kết thúc) và gửi nộp xét duyệt cho từng lớp đúng hạn.
-          </p>
         </div>
       </div>
 

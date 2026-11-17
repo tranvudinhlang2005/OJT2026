@@ -98,9 +98,6 @@ export default function StudentGradesPage() {
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Bảng điểm & Kết quả học tập
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Tra cứu kết quả thi, điểm tổng kết môn học và điểm trung bình tích lũy toàn khóa.
-          </p>
         </div>
 
         <button

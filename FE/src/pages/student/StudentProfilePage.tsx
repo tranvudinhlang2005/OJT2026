@@ -117,7 +117,7 @@ export default function StudentProfilePage() {
 
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <dt className="text-slate-400">Mã số sinh viên (MSSV)</dt>
+              <dt className="text-slate-400">Mã số sinh viên</dt>
               <dd className="mt-1 font-mono font-bold text-slate-800 text-sm">{p.studentCode}</dd>
             </div>
             <div>

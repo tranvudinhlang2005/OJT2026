@@ -127,7 +127,6 @@ export function CreateClassModal({
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900">Tạo lớp học phần mới</h2>
-              <p className="text-xs text-slate-500">Khởi tạo lớp ở trạng thái Bản nháp (DRAFT)</p>
             </div>
           </div>
           <button

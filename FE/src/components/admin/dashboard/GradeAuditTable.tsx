@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, ShieldCheck, ArrowRight, User, Clock, FileSpreadsheet } from 'lucide-react';
 import type { GradeAuditLogItem } from '../../../types/dashboard';
+import { formatDateTime } from '../../../utils/dateFormat';
 
 interface GradeAuditTableProps {
   logs: GradeAuditLogItem[];
@@ -37,11 +38,8 @@ export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900">
-              Nhật ký kiểm toán chỉnh sửa điểm (Grade Audit Trail)
+              Nhật ký kiểm toán chỉnh sửa điểm
             </h3>
-            <p className="text-xs text-slate-500">
-              Dành riêng cho Quản trị viên (TR18 / IA-TR06) - Dữ liệu chỉ đọc, không thể xóa hoặc sửa
-            </p>
           </div>
         </div>
 
@@ -104,7 +102,7 @@ export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
                   <td className="px-5 py-3.5 text-slate-500 whitespace-nowrap">
                     <span className="flex items-center gap-1 font-mono text-[11px]">
                       <Clock className="h-3 w-3 text-slate-400" />
-                      {row.changedAt}
+                      {formatDateTime(row.changedAt)}
                     </span>
                   </td>
 

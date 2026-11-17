@@ -9,6 +9,7 @@ import {
 import { useToast } from '../../contexts/ToastContext';
 import { instructorService } from '../../services/instructorService';
 import type { ClassOffering } from '../../types/classOffering';
+import { formatDate } from '../../utils/dateFormat';
 
 export default function TeacherClassesPage() {
   const { toast } = useToast();
@@ -59,9 +60,6 @@ export default function TeacherClassesPage() {
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           Lớp học phụ trách
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Xem danh sách tất cả các lớp học phần được phân công giảng dạy, sĩ số học viên và tiến độ đào tạo.
-        </p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -159,7 +157,7 @@ export default function TeacherClassesPage() {
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-slate-400" />
                     <span>
-                      {item.semester} (Bắt đầu: {item.startDate})
+                      {item.semester} (Bắt đầu: {formatDate(item.startDate)})
                     </span>
                   </div>
                   <div className="flex items-center gap-2">

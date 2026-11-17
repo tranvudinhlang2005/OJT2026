@@ -26,31 +26,31 @@ export function DashboardClassTable({ classes, isLoading }: DashboardClassTableP
       case 'OPEN':
         return (
           <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 border border-blue-200">
-            OPEN
+            Mở ĐK
           </span>
         );
       case 'IN_PROGRESS':
         return (
           <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">
-            IN_PROGRESS
+            Đang học
           </span>
         );
       case 'CLOSED':
         return (
           <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
-            CLOSED
+            Hoàn tất
           </span>
         );
       case 'CANCELLED':
         return (
           <span className="rounded-md bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 border border-rose-200">
-            CANCELLED
+            Đã hủy
           </span>
         );
       default:
         return (
           <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700 border border-amber-200">
-            DRAFT
+            Bản nháp
           </span>
         );
     }
@@ -63,9 +63,6 @@ export function DashboardClassTable({ classes, isLoading }: DashboardClassTableP
           <h3 className="text-sm font-bold text-slate-900">
             Hiệu suất đào tạo theo từng lớp học phần
           </h3>
-          <p className="text-xs text-slate-500">
-            Theo dõi tỷ lệ lấp đầy chỗ và tỷ lệ hoàn thành môn theo đặc tả TR18
-          </p>
         </div>
 
         <div className="relative w-full sm:w-64">
@@ -90,8 +87,8 @@ export function DashboardClassTable({ classes, isLoading }: DashboardClassTableP
               <th className="px-6 py-3">Lớp học phần</th>
               <th className="px-6 py-3">Học kỳ</th>
               <th className="px-6 py-3 text-center">Trạng thái</th>
-              <th className="px-6 py-3">Tỷ lệ lấp đầy (Sĩ số / Sức chứa)</th>
-              <th className="px-6 py-3 text-center">Tỷ lệ đạt (Pass Rate)</th>
+              <th className="px-6 py-3">Tỷ lệ lấp đầy</th>
+              <th className="px-6 py-3 text-center">Tỷ lệ đạt</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">

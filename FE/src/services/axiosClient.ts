@@ -16,10 +16,17 @@ export const axiosClient = axios.create({
 });
 
 axiosClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  async (config: InternalAxiosRequestConfig) => {
     const method = config.method?.toUpperCase();
     if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-      const xsrfToken = getCookie('XSRF-TOKEN');
+      let xsrfToken = getCookie('XSRF-TOKEN');
+      if (!xsrfToken && !config.url?.includes('/auth/csrf')) {
+        try {
+          await axios.get(`${axiosClient.defaults.baseURL}/auth/csrf`, { withCredentials: true });
+          xsrfToken = getCookie('XSRF-TOKEN');
+        } catch {
+        }
+      }
       if (xsrfToken && config.headers) {
         config.headers['X-XSRF-TOKEN'] = xsrfToken;
       }
@@ -33,6 +40,7 @@ axiosClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const status = error.response?.status;
+    const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
 
     if (status === 401 && typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
@@ -45,9 +53,18 @@ axiosClient.interceptors.response.use(
     }
 
     if (status === 403 && (error.response?.data as { code?: string })?.code === 'CSRF_INVALID') {
-      try {
-        await axios.get(`${axiosClient.defaults.baseURL}/auth/csrf`, { withCredentials: true });
-      } catch {
+      if (originalRequest && !originalRequest._retry) {
+        originalRequest._retry = true;
+        try {
+          await axios.get(`${axiosClient.defaults.baseURL}/auth/csrf`, { withCredentials: true });
+          const newXsrfToken = getCookie('XSRF-TOKEN');
+          if (newXsrfToken && originalRequest.headers) {
+            originalRequest.headers['X-XSRF-TOKEN'] = newXsrfToken;
+          }
+          return axiosClient(originalRequest);
+        } catch (retryError) {
+          return Promise.reject(retryError);
+        }
       }
     }
 
@@ -56,4 +73,3 @@ axiosClient.interceptors.response.use(
 );
 
 export default axiosClient;
-

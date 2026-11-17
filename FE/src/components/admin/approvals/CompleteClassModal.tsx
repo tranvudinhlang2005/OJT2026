@@ -71,11 +71,11 @@ export function CompleteClassModal({
           <div className="rounded-xl bg-amber-50 p-3.5 border border-amber-200 text-xs text-amber-800">
             <p className="font-semibold flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4 text-amber-600" />
-              Lưu ý quy trình hoàn tất (TR16):
+              Lưu ý quy trình hoàn tất:
             </p>
             <ul className="mt-1.5 list-disc pl-4 space-y-1 text-amber-700">
-              <li>Lớp học phần sẽ chuyển sang trạng thái <strong>ĐÃ ĐÓNG (CLOSED)</strong>.</li>
-              <li>Toàn bộ {studentsCount} học viên sẽ được ghi nhận hoàn tất khóa học (<strong>COMPLETED</strong>).</li>
+              <li>Lớp học phần sẽ chuyển sang trạng thái <strong>Đã đóng</strong>.</li>
+              <li>Toàn bộ {studentsCount} học viên sẽ được ghi nhận hoàn tất khóa học.</li>
               <li>Điểm số và kết quả sẽ được lưu trữ vĩnh viễn và không thể sửa đổi sau khi đóng.</li>
             </ul>
           </div>

@@ -113,7 +113,8 @@ export default function UsersPage() {
       }
       loadData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi chuyển đổi vai trò';
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg = axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi chuyển đổi vai trò');
       toast.error(msg);
       throw err;
     }
@@ -136,9 +137,6 @@ export default function UsersPage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Quản lý Tài khoản & Hồ sơ</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Quản trị người dùng, phân quyền vai trò (Admin/Manager/GV/HV) và cập nhật thông tin hồ sơ theo đặc tả TR01, TR03, TR04.
-          </p>
         </div>
 
         <button

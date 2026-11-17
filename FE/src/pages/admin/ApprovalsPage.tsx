@@ -201,16 +201,13 @@ export default function ApprovalsPage() {
             </span>
           )}
         </div>
-        <p className="mt-1 text-sm text-slate-500">
-          Tiếp nhận, kiểm tra quy chế và phê duyệt kết quả học tập do giảng viên gửi nộp (Nghiệp vụ TR16).
-        </p>
       </div>
 
       {!canManage && (
         <div className="flex items-center gap-3 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-xs text-amber-800">
           <ShieldAlert className="h-5 w-5 shrink-0 text-amber-600" />
           <span>
-            Bạn đang đăng nhập với vai trò <strong>Quản lý Đào tạo (TRAINING_MANAGER)</strong>. Bạn có quyền xem bảng điểm và tiến độ xét duyệt ở chế độ chỉ đọc. Thao tác phê duyệt hoặc hoàn tất đóng lớp được giới hạn dành riêng cho <strong>Quản trị viên (TRAINING_ADMIN)</strong>.
+            Bạn đang đăng nhập với vai trò <strong>Quản lý Đào tạo</strong>. Bạn có quyền xem bảng điểm và tiến độ xét duyệt ở chế độ chỉ đọc. Thao tác phê duyệt hoặc hoàn tất đóng lớp được giới hạn dành riêng cho <strong>Quản trị viên</strong>.
           </span>
         </div>
       )}

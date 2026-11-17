@@ -45,7 +45,6 @@ export function CreateRoomModal({ isOpen, onClose, onSubmit }: CreateRoomModalPr
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900">Thêm Phòng học Mới</h3>
-              <p className="text-xs text-slate-500">Khai báo phòng học và sức chứa tối đa</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 text-slate-400 hover:bg-slate-200/60 rounded-lg">

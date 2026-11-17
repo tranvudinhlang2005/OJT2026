@@ -197,12 +197,16 @@ export const userService = {
   },
 
   async assignInstructorCourses(profileId: string, courseIds: number[]): Promise<TeachableCourseItem[]> {
-    const res = await axiosClient.put<Array<{ id: number; code: string; name: string }>>(
+    const res = await axiosClient.put<
+      BackendInstructorDetailResponse | Array<{ id: number; code: string; name: string }>
+    >(
       `/instructors/${profileId}/courses`,
       { courseIds }
     );
-    const items = res.data || [];
-    return items.map((c) => ({
+    const rawCourses = Array.isArray(res.data)
+      ? res.data
+      : (res.data as BackendInstructorDetailResponse)?.courses || [];
+    return rawCourses.map((c) => ({
       id: String(c.id),
       code: c.code,
       name: c.name,

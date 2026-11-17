@@ -22,7 +22,7 @@ export function AdminSidebar() {
     const menuItems = [
         { label: 'Tổng quan', path: ROUTES.ADMIN.DASHBOARD, icon: LayoutDashboard, end: true },
         ...(!isManager ? [{ label: 'Tài khoản & Hồ sơ', path: ROUTES.ADMIN.USERS, icon: Users }] : []),
-        { label: 'Khóa học & Phòng học', path: ROUTES.ADMIN.COURSES_ROOMS, icon: BookOpen },
+        { label: isManager ? 'Danh mục Khóa học' : 'Khóa học & Phòng học', path: ROUTES.ADMIN.COURSES_ROOMS, icon: BookOpen },
         { label: 'Lớp & Lịch học', path: ROUTES.ADMIN.CLASSES, icon: CalendarDays },
         ...(!isManager ? [{ label: 'Xét duyệt kết quả', path: ROUTES.ADMIN.APPROVALS, icon: CheckSquare }] : []),
     ];

@@ -29,7 +29,7 @@ export function ClassStatsCards({ classes }: ClassStatsCardsProps) {
       borderColor: 'border-indigo-100',
     },
     {
-      label: 'Đang mở đăng ký (OPEN)',
+      label: 'Đang mở đăng ký',
       value: openClasses,
       subtext: 'Sinh viên đang ghi danh',
       icon: DoorOpen,
@@ -38,7 +38,7 @@ export function ClassStatsCards({ classes }: ClassStatsCardsProps) {
       borderColor: 'border-blue-100',
     },
     {
-      label: 'Đang giảng dạy (IN_PROGRESS)',
+      label: 'Đang giảng dạy',
       value: inProgressClasses,
       subtext: 'Đang tiến hành học phần',
       icon: PlayCircle,

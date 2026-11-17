@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Unlock, AlertCircle } from 'lucide-react';
 import type { ClassSession } from '../../../types/classOffering';
+import { formatDate } from '../../../utils/dateFormat';
 
 interface UnlockAttendanceModalProps {
   isOpen: boolean;
@@ -52,7 +53,7 @@ export function UnlockAttendanceModal({
             <div>
               <h3 className="text-base font-bold text-slate-900">Mở khóa Điểm danh</h3>
               <p className="text-xs text-slate-500">
-                Buổi ngày {session.sessionDate} ({session.startTime} - {session.endTime})
+                Buổi ngày {formatDate(session.sessionDate)} ({session.startTime} - {session.endTime})
               </p>
             </div>
           </div>
@@ -75,7 +76,7 @@ export function UnlockAttendanceModal({
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Lý do mở khóa điểm danh (Bắt buộc theo TR14) *
+              Lý do mở khóa điểm danh (Bắt buộc) *
             </label>
             <textarea
               required

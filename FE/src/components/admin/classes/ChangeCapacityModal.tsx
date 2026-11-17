@@ -106,7 +106,7 @@ export function ChangeCapacityModal({
               className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
             />
             <p className="mt-1 text-[11px] text-slate-400">
-              Theo quy tắc TR05: Không được giảm thấp hơn số lượng {classOffering.enrolledCount} học viên hiện có.
+              Không được giảm thấp hơn số lượng {classOffering.enrolledCount} học viên hiện có.
             </p>
           </div>
 

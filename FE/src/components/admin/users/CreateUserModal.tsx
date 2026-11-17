@@ -124,9 +124,9 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
               onChange={e => setRole(e.target.value as CreatableUserRole)}
               className="w-full rounded-lg border border-slate-300 p-2.5 text-sm font-medium text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
             >
-              <option value="STUDENT">Học viên (Student)</option>
-              <option value="INSTRUCTOR">Giảng viên (Instructor)</option>
-              <option value="TRAINING_MANAGER">Quản lý đào tạo (Training Manager)</option>
+              <option value="STUDENT">Học viên</option>
+              <option value="INSTRUCTOR">Giảng viên</option>
+              <option value="TRAINING_MANAGER">Quản lý đào tạo</option>
             </select>
 
             <div className="mt-2 flex items-start gap-2 rounded-lg bg-indigo-50/70 p-2.5 text-xs text-indigo-900 border border-indigo-100">

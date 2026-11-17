@@ -88,7 +88,9 @@ const AssignCoursesModalContent: React.FC<{
       onSuccess();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Có lỗi khi phân công môn học');
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg = axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Có lỗi khi phân công môn học');
+      setError(msg);
     } finally {
       setIsSubmitting(false);
     }

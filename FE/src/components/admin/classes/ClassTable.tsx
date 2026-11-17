@@ -12,6 +12,7 @@ import {
   Users,
 } from 'lucide-react';
 import type { ClassOffering, ClassStatus } from '../../../types/classOffering';
+import { formatDate } from '../../../utils/dateFormat';
 
 interface ClassTableProps {
   classes: ClassOffering[];
@@ -143,7 +144,7 @@ export function ClassTable({
                     <div className="flex flex-col text-xs">
                       <span className="font-medium text-slate-800">{cls.semester}</span>
                       <span className="text-slate-500 mt-0.5">
-                        {cls.startDate} → {cls.endDate}
+                        {formatDate(cls.startDate)} → {formatDate(cls.endDate)}
                       </span>
                     </div>
                   </td>
@@ -192,7 +193,7 @@ export function ClassTable({
                       title="Xem danh sách buổi học"
                     >
                       <Calendar className="h-3.5 w-3.5" />
-                      <span>{cls.sessionsCount ?? 0} buổi học</span>
+                      <span>Xem lịch học</span>
                     </button>
                   </td>
 

@@ -43,18 +43,13 @@ export const UserTable: React.FC<UserTableProps> = ({
   const startIndex = (currentPage - 1) * pageSize;
   const currentUsers = users.slice(startIndex, startIndex + pageSize);
 
-  const getRoleBadge = (role: SystemRole, isDefaultAdmin: boolean = false) => {
+  const getRoleBadge = (role: SystemRole) => {
     switch (role) {
       case 'TRAINING_ADMIN':
         return (
           <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-600/20">
             <Shield className="h-3 w-3 text-purple-600" />
             Admin Đào tạo
-            {isDefaultAdmin && (
-              <span className="ml-1 rounded bg-purple-200/60 px-1 py-0.2 text-[9px] font-semibold text-purple-800">
-                Mặc định
-              </span>
-            )}
           </span>
         );
       case 'TRAINING_MANAGER':
@@ -85,7 +80,7 @@ export const UserTable: React.FC<UserTableProps> = ({
       return (
         <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
           <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-          Tạm khóa (15p)
+          Tạm khóa
         </span>
       );
     }
@@ -176,7 +171,7 @@ export const UserTable: React.FC<UserTableProps> = ({
                     </td>
 
                     <td className="px-4 py-3">
-                      {getRoleBadge(user.role, isDefaultAdmin)}
+                      {getRoleBadge(user.role)}
                     </td>
 
                     <td className="px-4 py-3 text-xs text-slate-500">

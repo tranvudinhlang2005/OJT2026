@@ -149,9 +149,6 @@ export default function StudentRegistrationPage() {
             <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
               Đăng ký lớp học phần trực tuyến
             </h1>
-            <p className="mt-1 text-sm text-blue-200 max-w-xl">
-              Sinh viên lựa chọn các lớp học phần phù hợp theo lộ trình đào tạo. Chú ý hạn chót hủy đăng ký.
-            </p>
           </div>
 
           <div className="rounded-xl bg-white/10 p-4 backdrop-blur-md border border-white/15 min-w-[240px]">

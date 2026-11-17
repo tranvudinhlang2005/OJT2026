@@ -8,6 +8,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import type { ApprovalSummaryItem } from '../../../types/approval';
+import { formatDateTime } from '../../../utils/dateFormat';
 
 interface ApprovalTableProps {
   items: ApprovalSummaryItem[];
@@ -86,7 +87,6 @@ export function ApprovalTable({
               <th className="px-6 py-3.5">Lớp học phần</th>
               <th className="px-6 py-3.5">Giảng viên & Học kỳ</th>
               <th className="px-6 py-3.5 text-center">Sĩ số</th>
-              <th className="px-6 py-3.5">Tình trạng buổi học</th>
               <th className="px-6 py-3.5">Ngày nộp điểm</th>
               <th className="px-6 py-3.5 text-center">Trạng thái</th>
               <th className="px-6 py-3.5 text-right">Thao tác</th>
@@ -118,24 +118,9 @@ export function ApprovalTable({
                     <span className="text-slate-500 text-[11px]"> SV</span>
                   </td>
 
-                  <td className="px-6 py-4">
-                    <p className="text-slate-700 font-medium">{item.sessionsCount} buổi</p>
-                    {item.unlockedSessionsCount > 0 ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700">
-                        <AlertTriangle className="h-3 w-3" />
-                        Chưa chốt {item.unlockedSessionsCount} buổi
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
-                        <CheckCircle className="h-3 w-3" />
-                        Đã chốt 100%
-                      </span>
-                    )}
-                  </td>
-
                   <td className="px-6 py-4 text-slate-600">
                     {item.submittedAt ? (
-                      <span className="font-medium">{item.submittedAt}</span>
+                      <span className="font-medium">{formatDateTime(item.submittedAt)}</span>
                     ) : (
                       <span className="text-slate-400 italic">Chưa nộp</span>
                     )}
