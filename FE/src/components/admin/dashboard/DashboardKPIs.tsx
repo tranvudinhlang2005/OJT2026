@@ -19,7 +19,6 @@ export function DashboardKPIs({ summary }: DashboardKPIsProps) {
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {/* 1. Tỷ lệ lấp đầy chỗ học (Fill Rate) */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs transition hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>
@@ -47,7 +46,6 @@ export function DashboardKPIs({ summary }: DashboardKPIsProps) {
         </div>
       </div>
 
-      {/* 2. Tỷ lệ hoàn thành môn học (Completion Rate) */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs transition hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>
@@ -75,7 +73,6 @@ export function DashboardKPIs({ summary }: DashboardKPIsProps) {
         </div>
       </div>
 
-      {/* 3. Chuyên cần trung bình (Attendance Rate) */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs transition hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>
@@ -103,7 +100,6 @@ export function DashboardKPIs({ summary }: DashboardKPIsProps) {
         </div>
       </div>
 
-      {/* 4. Tổng lượt ghi danh học tập */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs transition hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>

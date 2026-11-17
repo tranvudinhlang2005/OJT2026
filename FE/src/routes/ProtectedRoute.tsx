@@ -16,11 +16,9 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated) {
-    // Lưu lại vị trí trước khi bị redirect để sau khi login có thể quay lại
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Kiểm tra vai trò nếu route yêu cầu role cụ thể
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     return <Navigate to="/unauthorized" replace />;
   }

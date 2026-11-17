@@ -33,13 +33,14 @@ export function CreateClassModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // When courseId changes, auto fill default passScore / attendance % and suggest classCode
   useEffect(() => {
     if (courseId) {
       const selectedCourse = courses.find((c) => c.id === courseId);
       if (selectedCourse) {
-        if (selectedCourse.defaultPassScore) setPassScore(selectedCourse.defaultPassScore);
-        if (selectedCourse.defaultMinAttendancePct) setMinAttendancePct(selectedCourse.defaultMinAttendancePct);
+        if (selectedCourse.passScore) setPassScore(selectedCourse.passScore);
+        if (selectedCourse.minAttendancePct) setMinAttendancePct(selectedCourse.minAttendancePct);
+        if (selectedCourse.midtermWeight) setMidtermWeight(selectedCourse.midtermWeight);
+        if (selectedCourse.finalWeight) setFinalWeight(selectedCourse.finalWeight);
         if (!classCode) {
           setClassCode(`${selectedCourse.code}.O21`);
         }
@@ -47,7 +48,6 @@ export function CreateClassModal({
     }
   }, [courseId, courses, classCode]);
 
-  // Qualified instructors for this course
   const qualifiedInstructors = instructors.filter(
     (inst) => inst.teachingActive && (!courseId || inst.teachableCourses.includes(courseId))
   );
@@ -147,7 +147,6 @@ export function CreateClassModal({
         )}
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          {/* Môn học & Mã lớp */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
@@ -183,7 +182,6 @@ export function CreateClassModal({
             </div>
           </div>
 
-          {/* Học kỳ & Sĩ số */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
@@ -214,7 +212,6 @@ export function CreateClassModal({
             </div>
           </div>
 
-          {/* Phân công Giảng viên (Tùy chọn ở DRAFT) */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
               Giảng viên phụ trách <span className="text-slate-400 font-normal">(Có thể phân công sau trước khi Mở lớp)</span>
@@ -233,7 +230,6 @@ export function CreateClassModal({
             </select>
           </div>
 
-          {/* Thời gian khóa học & Hạn hủy */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
@@ -275,7 +271,6 @@ export function CreateClassModal({
             </div>
           </div>
 
-          {/* Trọng số điểm & Chuyên cần */}
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-600 mb-3">
               Quy tắc đánh giá & Điểm số
@@ -343,7 +338,6 @@ export function CreateClassModal({
             </div>
           </div>
 
-          {/* Modal Actions */}
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
             <button
               type="button"

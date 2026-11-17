@@ -90,7 +90,6 @@ export function ApprovalDetailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
       <div className="flex h-full max-h-[92vh] w-full max-w-5xl flex-col rounded-2xl bg-white shadow-2xl">
-        {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-200 px-6 py-4">
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -132,9 +131,7 @@ export function ApprovalDetailModal({
           </button>
         </div>
 
-        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* Cảnh báo lý do trả về nếu có */}
           {resultDetail.returnReason && (
             <div className="rounded-xl border border-rose-200 bg-rose-50/70 p-4">
               <div className="flex items-start gap-3">
@@ -151,7 +148,6 @@ export function ApprovalDetailModal({
             </div>
           )}
 
-          {/* Cảnh báo buổi học chưa chốt điểm danh (SESSIONS_NOT_LOCKED) */}
           {resultDetail.unlockedSessionsCount > 0 && (
             <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">
               <div className="flex items-start justify-between gap-3">
@@ -179,7 +175,6 @@ export function ApprovalDetailModal({
             </div>
           )}
 
-          {/* Quy chế tính điểm & Điều kiện đạt */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -215,7 +210,6 @@ export function ApprovalDetailModal({
             </div>
           </div>
 
-          {/* Thống kê tỷ lệ đạt nếu đã duyệt hoặc dự kiến */}
           <div className="flex flex-wrap items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
             <div className="flex items-center gap-2">
               <UserCheck className="h-5 w-5 text-indigo-600" />
@@ -235,7 +229,6 @@ export function ApprovalDetailModal({
             </div>
           </div>
 
-          {/* Bảng điểm chi tiết */}
           <div className="overflow-hidden rounded-xl border border-slate-200">
             <div className="max-h-96 overflow-y-auto">
               <table className="w-full text-left text-xs">
@@ -256,7 +249,6 @@ export function ApprovalDetailModal({
                     const isPassed = item.finalStatus === 'PASSED';
                     const isFailed = item.finalStatus === 'FAILED';
 
-                    // Tính điểm dự kiến nếu chưa confirm
                     const previewTotal =
                       item.totalScore !== null
                         ? item.totalScore
@@ -329,7 +321,6 @@ export function ApprovalDetailModal({
           )}
         </div>
 
-        {/* Footer Actions */}
         <div className="flex flex-wrap items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-4 rounded-b-2xl">
           <div className="text-xs text-slate-500">
             {resultDetail.gradingStatus === 'CONFIRMED' ? (
@@ -350,7 +341,6 @@ export function ApprovalDetailModal({
               Đóng
             </button>
 
-            {/* Nút Trả về yêu cầu sửa (chỉ khi đang chờ duyệt) */}
             {resultDetail.gradingStatus === 'SUBMITTED' && (
               <button
                 type="button"
@@ -363,7 +353,6 @@ export function ApprovalDetailModal({
               </button>
             )}
 
-            {/* Nút Phê duyệt kết quả (khi đang chờ duyệt) */}
             {resultDetail.gradingStatus === 'SUBMITTED' && (
               <button
                 type="button"
@@ -377,7 +366,6 @@ export function ApprovalDetailModal({
               </button>
             )}
 
-            {/* Nút Hoàn tất lớp học (khi đã CONFIRMED và lớp đang IN_PROGRESS) */}
             {resultDetail.gradingStatus === 'CONFIRMED' && resultDetail.classStatus === 'IN_PROGRESS' && (
               <button
                 type="button"

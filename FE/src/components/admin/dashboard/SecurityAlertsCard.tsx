@@ -62,7 +62,6 @@ export function SecurityAlertsCard({ alerts, isLoading }: SecurityAlertsCardProp
         </div>
       </div>
 
-      {/* 3 Metrics Cards */}
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3.5 flex items-center justify-between">
           <div>
@@ -95,7 +94,6 @@ export function SecurityAlertsCard({ alerts, isLoading }: SecurityAlertsCardProp
         </div>
       </div>
 
-      {/* Recent Events Log Table (Admin Only: 20 most recent) */}
       <div className="mt-5">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">

@@ -100,7 +100,6 @@ export function ApprovalTable({
 
               return (
                 <tr key={item.classId} className="hover:bg-slate-50/70 transition">
-                  {/* Lớp & môn học */}
                   <td className="px-6 py-4">
                     <span className="inline-block rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-bold text-indigo-700 mb-1">
                       {item.classCode}
@@ -109,19 +108,16 @@ export function ApprovalTable({
                     <span className="text-[11px] text-slate-400">{item.courseCode}</span>
                   </td>
 
-                  {/* Giảng viên & Học kỳ */}
                   <td className="px-6 py-4">
                     <p className="font-medium text-slate-800">{item.instructorName}</p>
                     <p className="text-[11px] text-slate-500 mt-0.5">{item.semester}</p>
                   </td>
 
-                  {/* Sĩ số */}
                   <td className="px-6 py-4 text-center">
                     <span className="font-bold text-slate-800">{item.studentsCount}</span>
                     <span className="text-slate-500 text-[11px]"> SV</span>
                   </td>
 
-                  {/* Tình trạng buổi học & chốt điểm danh */}
                   <td className="px-6 py-4">
                     <p className="text-slate-700 font-medium">{item.sessionsCount} buổi</p>
                     {item.unlockedSessionsCount > 0 ? (
@@ -137,7 +133,6 @@ export function ApprovalTable({
                     )}
                   </td>
 
-                  {/* Ngày nộp */}
                   <td className="px-6 py-4 text-slate-600">
                     {item.submittedAt ? (
                       <span className="font-medium">{item.submittedAt}</span>
@@ -146,7 +141,6 @@ export function ApprovalTable({
                     )}
                   </td>
 
-                  {/* Trạng thái duyệt */}
                   <td className="px-6 py-4 text-center">
                     {getStatusBadge(item.gradingStatus)}
                     {item.classStatus === 'CLOSED' && (
@@ -156,10 +150,8 @@ export function ApprovalTable({
                     )}
                   </td>
 
-                  {/* Cột Thao tác */}
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      {/* Nút Xem / Xét duyệt */}
                       <button
                         type="button"
                         onClick={() => onSelectReview(item.classId)}
@@ -182,7 +174,6 @@ export function ApprovalTable({
                         )}
                       </button>
 
-                      {/* Nút Hoàn tất lớp (hiển thị trên dòng theo phản hồi của user) */}
                       {canComplete && (
                         <button
                           type="button"

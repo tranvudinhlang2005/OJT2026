@@ -27,7 +27,6 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
 
-  // Khởi tạo trạng thái xác thực từ phiên Backend (/auth/me) hoặc localStorage
   useEffect(() => {
     let isMounted = true;
     const initAuth = async () => {
@@ -41,7 +40,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
       } catch {
-        // Backend offline
       }
 
       if (!isMounted) return;
@@ -57,7 +55,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           return;
         } catch {
-          // ignore parsing error
         }
       }
 
@@ -106,7 +103,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

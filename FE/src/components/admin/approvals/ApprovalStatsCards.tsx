@@ -8,7 +8,6 @@ interface ApprovalStatsCardsProps {
 export function ApprovalStatsCards({ stats }: ApprovalStatsCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {/* Tổng số hồ sơ */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs transition hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>
@@ -26,7 +25,6 @@ export function ApprovalStatsCards({ stats }: ApprovalStatsCardsProps) {
         <p className="mt-3 text-xs text-slate-500">Toàn bộ hồ sơ điểm học phần trong hệ thống</p>
       </div>
 
-      {/* Chờ xét duyệt */}
       <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-5 shadow-xs transition hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>
@@ -46,7 +44,6 @@ export function ApprovalStatsCards({ stats }: ApprovalStatsCardsProps) {
         </p>
       </div>
 
-      {/* Đã phê duyệt */}
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-5 shadow-xs transition hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>
@@ -66,7 +63,6 @@ export function ApprovalStatsCards({ stats }: ApprovalStatsCardsProps) {
         </p>
       </div>
 
-      {/* Yêu cầu chỉnh sửa */}
       <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-5 shadow-xs transition hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>

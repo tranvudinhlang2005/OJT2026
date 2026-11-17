@@ -41,7 +41,6 @@ export function ClassFilters({
   return (
     <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        {/* Search bar */}
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -53,7 +52,6 @@ export function ClassFilters({
           />
         </div>
 
-        {/* Action buttons */}
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -79,14 +77,12 @@ export function ClassFilters({
         </div>
       </div>
 
-      {/* Filter selects */}
       <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
           <Filter className="h-3.5 w-3.5" />
           <span>Bộ lọc:</span>
         </div>
 
-        {/* Semester */}
         <select
           value={filter.semester || 'ALL'}
           onChange={handleSemesterChange}
@@ -100,7 +96,6 @@ export function ClassFilters({
           ))}
         </select>
 
-        {/* Course */}
         <select
           value={filter.courseId || 'ALL'}
           onChange={handleCourseChange}
@@ -114,7 +109,6 @@ export function ClassFilters({
           ))}
         </select>
 
-        {/* Status */}
         <select
           value={filter.status || 'ALL'}
           onChange={handleStatusChange}

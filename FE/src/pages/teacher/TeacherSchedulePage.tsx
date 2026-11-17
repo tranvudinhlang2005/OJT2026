@@ -63,7 +63,6 @@ export default function TeacherSchedulePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header section */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-5">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -81,7 +80,6 @@ export default function TeacherSchedulePage() {
         </div>
       </div>
 
-      {/* Quick stats for teacher */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
           <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
@@ -116,7 +114,6 @@ export default function TeacherSchedulePage() {
         </div>
       </div>
 
-      {/* Schedule list */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-slate-900">Danh sách các ca học sắp tới</h2>
@@ -176,7 +173,6 @@ export default function TeacherSchedulePage() {
                 </div>
               </div>
 
-              {/* Action Button */}
               <div className="flex items-center gap-2 pt-3 md:pt-0 border-t border-slate-100 md:border-t-0 shrink-0">
                 {session.attendanceStatus === 'completed' ? (
                   <button
@@ -215,7 +211,6 @@ export default function TeacherSchedulePage() {
         </div>
       </div>
 
-      {/* Attendance Modal */}
       {isModalOpen && selectedSession && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
           <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl animate-in fade-in zoom-in-95">
@@ -252,7 +247,6 @@ export default function TeacherSchedulePage() {
                 </button>
               </div>
 
-              {/* Student attendance list */}
               <div className="border border-slate-200 rounded-lg divide-y divide-slate-100 max-h-72 overflow-y-auto">
                 {students.map((student) => (
                   <div
@@ -265,7 +259,6 @@ export default function TeacherSchedulePage() {
                     </div>
 
                     <div className="flex items-center gap-1.5 text-xs">
-                      {/* Có mặt */}
                       <button
                         type="button"
                         onClick={() => handleSetStudentStatus(student.id, 'present')}
@@ -278,7 +271,6 @@ export default function TeacherSchedulePage() {
                         Có mặt
                       </button>
 
-                      {/* Đi muộn */}
                       <button
                         type="button"
                         onClick={() => handleSetStudentStatus(student.id, 'late')}
@@ -291,7 +283,6 @@ export default function TeacherSchedulePage() {
                         Đi muộn
                       </button>
 
-                      {/* Vắng */}
                       <button
                         type="button"
                         onClick={() => handleSetStudentStatus(student.id, 'absent')}

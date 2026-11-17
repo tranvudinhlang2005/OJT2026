@@ -30,21 +30,18 @@ export default function CoursesRoomsPage() {
 
   const [activeTab, setActiveTab] = useState<'courses' | 'rooms'>('courses');
 
-  // Courses state
   const [courses, setCourses] = useState<CourseItem[]>([]);
   const [courseFilter, setCourseFilter] = useState<CourseFilter>({ keyword: '', isActive: 'ALL' });
   const [isCoursesLoading, setIsCoursesLoading] = useState(true);
   const [isCreateCourseOpen, setIsCreateCourseOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<CourseItem | null>(null);
 
-  // Rooms state
   const [rooms, setRooms] = useState<RoomItem[]>([]);
   const [roomFilter, setRoomFilter] = useState<RoomFilter>({ keyword: '', isActive: 'ALL' });
   const [isRoomsLoading, setIsRoomsLoading] = useState(true);
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<RoomItem | null>(null);
 
-  // Load Courses
   const loadCourses = useCallback(async () => {
     try {
       setIsCoursesLoading(true);
@@ -57,7 +54,6 @@ export default function CoursesRoomsPage() {
     }
   }, [courseFilter, toast]);
 
-  // Load Rooms
   const loadRooms = useCallback(async () => {
     try {
       setIsRoomsLoading(true);
@@ -78,7 +74,6 @@ export default function CoursesRoomsPage() {
     loadRooms();
   }, [loadRooms]);
 
-  // Course handlers
   const handleToggleCourseStatus = async (course: CourseItem) => {
     try {
       const nextStatus = !course.isActive;
@@ -94,7 +89,6 @@ export default function CoursesRoomsPage() {
     }
   };
 
-  // Room handlers
   const handleToggleRoomStatus = async (room: RoomItem) => {
     try {
       const nextStatus = !room.isActive;
@@ -115,7 +109,6 @@ export default function CoursesRoomsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -154,7 +147,6 @@ export default function CoursesRoomsPage() {
         )}
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="rounded-2xl bg-white p-5 border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between">
@@ -193,7 +185,6 @@ export default function CoursesRoomsPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="border-b border-slate-200 flex items-center justify-between bg-white px-4 rounded-xl shadow-xs">
         <div className="flex gap-4">
           <button
@@ -220,7 +211,6 @@ export default function CoursesRoomsPage() {
           </button>
         </div>
 
-        {/* Filter controls */}
         {activeTab === 'courses' ? (
           <div className="flex items-center gap-3 py-2">
             <div className="relative">
@@ -286,13 +276,19 @@ export default function CoursesRoomsPage() {
         )}
       </div>
 
-      {/* Main Table view */}
       {activeTab === 'courses' ? (
         <CourseTable
           courses={courses}
           isLoading={isCoursesLoading}
           canManage={canManage}
-          onEdit={(c) => setEditingCourse(c)}
+          onEdit={async (c) => {
+            try {
+              const fresh = await courseService.getCourseById(c.id);
+              setEditingCourse(fresh);
+            } catch {
+              setEditingCourse(c);
+            }
+          }}
           onToggleStatus={handleToggleCourseStatus}
         />
       ) : (
@@ -300,12 +296,18 @@ export default function CoursesRoomsPage() {
           rooms={rooms}
           isLoading={isRoomsLoading}
           canManage={canManage}
-          onEdit={(r) => setEditingRoom(r)}
+          onEdit={async (r) => {
+            try {
+              const fresh = await roomService.getRoomById(r.id);
+              setEditingRoom(fresh);
+            } catch {
+              setEditingRoom(r);
+            }
+          }}
           onToggleStatus={handleToggleRoomStatus}
         />
       )}
 
-      {/* Modals */}
       <CreateCourseModal
         isOpen={isCreateCourseOpen}
         onClose={() => setIsCreateCourseOpen(false)}

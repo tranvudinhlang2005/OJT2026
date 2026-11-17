@@ -64,7 +64,6 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Tải danh mục khóa học và các học kỳ
   useEffect(() => {
     async function loadMetadata() {
       try {
@@ -82,7 +81,6 @@ export default function DashboardPage() {
     loadMetadata();
   }, [toast]);
 
-  // Tải dữ liệu Dashboard theo bộ lọc
   const loadDashboardData = useCallback(async (isRefreshAction = false) => {
     try {
       if (isRefreshAction) {
@@ -120,7 +118,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header & Tab Navigation */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-5">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -133,7 +130,6 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* View Switcher Tabs */}
         <div className="flex items-center gap-1 rounded-xl bg-slate-100 p-1 border border-slate-200">
           <button
             type="button"
@@ -166,7 +162,6 @@ export default function DashboardPage() {
 
       {activeTab === 'overview' ? (
         <div className="space-y-6">
-          {/* Bộ lọc phạm vi và thời gian */}
           <DashboardFilters
             filter={filter}
             semesters={semesters}
@@ -184,24 +179,19 @@ export default function DashboardPage() {
             onRefresh={() => loadDashboardData(true)}
           />
 
-          {/* 4 Thẻ KPIs lớn */}
           <DashboardKPIs summary={summary} />
 
-          {/* Biểu đồ phân bổ trạng thái lớp học phần */}
           <DashboardStatusDistribution
             classCountsByStatus={summary.classCountsByStatus}
             totalClasses={summary.totalClasses}
           />
 
-          {/* Hiệu suất lớp học phần & Cảnh báo an ninh (Chỉ Admin mới hiển thị Cảnh báo an ninh) */}
           {isAdmin ? (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-              {/* Cột trái: Bảng chỉ số lớp học phần (7 cols) */}
               <div className="lg:col-span-7">
                 <DashboardClassTable classes={dashboardClasses} isLoading={isLoading} />
               </div>
 
-              {/* Cột phải: Cảnh báo an ninh & 20 sự kiện (5 cols) */}
               <div className="lg:col-span-5">
                 <SecurityAlertsCard alerts={securityAlerts} isLoading={isLoading} />
               </div>
@@ -214,7 +204,6 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Tab Kiểm toán sửa điểm (Admin Only) */}
           <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
             <div className="flex items-center gap-2.5">
               <TrendingUp className="h-5 w-5 text-indigo-600" />

@@ -1,6 +1,6 @@
 import { axiosClient } from './axiosClient';
 
-export type AttendanceMark = 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
+export type AttendanceMark = 'PRESENT' | 'ABSENT' | 'LATE';
 
 export interface AttendanceStudentItem {
   studentId: string;
@@ -45,9 +45,6 @@ interface BackendAttendanceSheetResponse {
 }
 
 export const attendanceService = {
-  /**
-   * Lấy phiếu điểm danh của một buổi học (GET /api/v1/sessions/{id}/attendance)
-   */
   async getAttendance(sessionId: string | number): Promise<AttendanceSheet> {
     const res = await axiosClient.get<BackendAttendanceSheetResponse>(`/sessions/${sessionId}/attendance`);
     const data = res.data;
@@ -73,9 +70,6 @@ export const attendanceService = {
     };
   },
 
-  /**
-   * Cập nhật điểm danh học viên (PUT /api/v1/sessions/{id}/attendance)
-   */
   async updateAttendance(
     sessionId: string | number,
     version: number,
@@ -113,16 +107,10 @@ export const attendanceService = {
     };
   },
 
-  /**
-   * Khóa buổi điểm danh (Giảng viên) (POST /api/v1/sessions/{id}/lock)
-   */
   async lockAttendance(sessionId: string | number): Promise<void> {
     await axiosClient.post(`/sessions/${sessionId}/lock`);
   },
 
-  /**
-   * Mở khóa buổi điểm danh (Admin) (POST /api/v1/sessions/{id}/unlock)
-   */
   async unlockAttendance(sessionId: string | number, reason: string): Promise<void> {
     await axiosClient.post(`/sessions/${sessionId}/unlock`, { reason: reason.trim() });
   },

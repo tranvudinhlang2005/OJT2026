@@ -20,7 +20,6 @@ export default function TeacherGradesPage() {
   const [classes, setClasses] = useState<ClassOffering[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal nhập điểm
   const [activeClass, setActiveClass] = useState<ClassOffering | null>(null);
   const [resultSheet, setResultSheet] = useState<ClassResultSheet | null>(null);
   const [loadingSheet, setLoadingSheet] = useState(false);
@@ -94,7 +93,6 @@ export default function TeacherGradesPage() {
 
       await instructorService.updateResults(activeClass.id, resultSheet.version, payloadItems);
       toast.success('Đã lưu bảng điểm thành công!');
-      // Reload sheet
       const updated = await instructorService.getClassResults(activeClass.id);
       setResultSheet(updated);
       await loadClasses();
@@ -154,7 +152,6 @@ export default function TeacherGradesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-5">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -166,7 +163,6 @@ export default function TeacherGradesPage() {
         </div>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
           <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
@@ -195,7 +191,6 @@ export default function TeacherGradesPage() {
         </div>
       </div>
 
-      {/* Submissions Table */}
       <div className="rounded-xl border border-slate-200 bg-white shadow-xs overflow-hidden">
         <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
           <h2 className="text-sm font-bold text-slate-800">Danh sách các lớp học phần</h2>
@@ -271,7 +266,6 @@ export default function TeacherGradesPage() {
         </div>
       </div>
 
-      {/* Grade Entry Modal */}
       {activeClass && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
           <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] flex flex-col">

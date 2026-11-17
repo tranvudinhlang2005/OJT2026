@@ -1,4 +1,4 @@
-import { Edit, Power, DoorOpen, Users, Building } from 'lucide-react';
+import { Edit, Power, DoorOpen, Users } from 'lucide-react';
 import type { RoomItem } from '../../../types/room';
 
 interface RoomTableProps {
@@ -41,7 +41,6 @@ export function RoomTable({
           <thead className="bg-slate-50 text-slate-600 uppercase text-[11px] font-semibold tracking-wider">
             <tr>
               <th className="px-6 py-4">Mã phòng</th>
-              <th className="px-6 py-4">Khu vực / Tòa nhà</th>
               <th className="px-6 py-4">Sức chứa tối đa</th>
               <th className="px-6 py-4">Trạng thái phòng</th>
               {canManage && <th className="px-6 py-4 text-right">Thao tác</th>}
@@ -54,12 +53,6 @@ export function RoomTable({
                   <div className="flex items-center gap-2">
                     <DoorOpen className="h-4 w-4 text-indigo-500" />
                     <span>{r.code}</span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-1.5 text-slate-800 font-medium">
-                    <Building className="h-4 w-4 text-slate-400" />
-                    <span>{r.building || 'Khu giảng đường'}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
@@ -113,4 +106,3 @@ export function RoomTable({
     </div>
   );
 }
-

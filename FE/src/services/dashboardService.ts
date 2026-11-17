@@ -59,9 +59,6 @@ interface BackendGradeAuditLogResponse {
 }
 
 export const dashboardService = {
-  /**
-   * TR18: Lấy dữ liệu thống kê tổng hợp (KPIs) (GET /api/v1/dashboard/summary)
-   */
   async getSummary(filter: DashboardFilter = {}): Promise<DashboardSummary> {
     const params: Record<string, string | number> = {};
     if (filter.semester && filter.semester !== 'ALL') params.semester = filter.semester;
@@ -92,9 +89,6 @@ export const dashboardService = {
     };
   },
 
-  /**
-   * TR18: Lấy danh sách lớp kèm tỷ lệ hoàn thành (GET /api/v1/dashboard/classes)
-   */
   async getDashboardClasses(filter: DashboardFilter = {}): Promise<DashboardClassItem[]> {
     const params: Record<string, string | number> = {
       page: 0,
@@ -118,9 +112,6 @@ export const dashboardService = {
     }));
   },
 
-  /**
-   * TR18: Lấy cảnh báo an ninh bảo mật (Admin only) (GET /api/v1/dashboard/security-alerts)
-   */
   async getSecurityAlerts(from?: string, to?: string): Promise<SecurityAlerts> {
     const params: Record<string, string> = {};
     if (from) params.from = from;
@@ -151,9 +142,6 @@ export const dashboardService = {
     };
   },
 
-  /**
-   * TR18: Lấy nhật ký thay đổi điểm số kiểm toán (Admin only) (GET /api/v1/audit/grade-logs)
-   */
   async getGradeAuditLogs(classId?: string, from?: string, to?: string): Promise<GradeAuditLogItem[]> {
     const params: Record<string, string | number> = {
       page: 0,

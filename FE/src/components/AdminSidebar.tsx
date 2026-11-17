@@ -35,7 +35,6 @@ export function AdminSidebar() {
 
     return (
         <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 h-screen border-r border-slate-800 select-none">
-            {/* Brand / Logo */}
             <div className="h-16 flex items-center gap-3 px-6 border-b border-slate-800">
                 <div className="p-2 bg-indigo-600 rounded-lg text-white">
                     <GraduationCap className="w-5 h-5" />
@@ -50,7 +49,6 @@ export function AdminSidebar() {
                 </div>
             </div>
 
-            {/* Nav List */}
             <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
                 <div className="px-3 pb-2 text-[11px] font-semibold tracking-wider text-slate-500 uppercase">
                     {isManager ? 'Menu Giám Sát' : 'Menu Quản Trị'}
@@ -76,7 +74,6 @@ export function AdminSidebar() {
                 })}
             </nav>
 
-            {/* User Profile & Đăng xuất */}
             <div className="p-4 border-t border-slate-800 bg-slate-950/40">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0">

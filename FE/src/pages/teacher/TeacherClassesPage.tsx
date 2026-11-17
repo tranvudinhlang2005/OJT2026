@@ -55,7 +55,6 @@ export default function TeacherClassesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Title & description */}
       <div className="border-b border-slate-200 pb-5">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           Lớp học phụ trách
@@ -65,7 +64,6 @@ export default function TeacherClassesPage() {
         </p>
       </div>
 
-      {/* Filter and Search Bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -124,7 +122,6 @@ export default function TeacherClassesPage() {
           Không tìm thấy lớp học nào phù hợp.
         </div>
       ) : (
-        /* Classes Grid */
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-2">
           {filteredClasses.map((item) => (
             <div

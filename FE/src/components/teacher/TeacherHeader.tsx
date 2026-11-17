@@ -50,7 +50,6 @@ export function TeacherHeader() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white shadow-xs">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Left: Brand / Logo */}
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs">
             <BookOpen className="h-5 w-5" />
@@ -70,7 +69,6 @@ export function TeacherHeader() {
           </div>
         </div>
 
-        {/* Center: Desktop Navigation (3 core items) */}
         <nav className="hidden md:flex items-center gap-1 lg:gap-2">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -104,9 +102,7 @@ export function TeacherHeader() {
           })}
         </nav>
 
-        {/* Right: Actions (Notification, User Profile, Logout) */}
         <div className="flex items-center gap-2 sm:gap-4">
-          {/* Notifications Button */}
           <button
             type="button"
             title="Thông báo"
@@ -119,7 +115,6 @@ export function TeacherHeader() {
             </span>
           </button>
 
-          {/* User Profile Info */}
           <div className="hidden sm:flex items-center gap-3 pl-2 border-l border-slate-200">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-xs">
               GV
@@ -130,7 +125,6 @@ export function TeacherHeader() {
             </div>
           </div>
 
-          {/* Logout Button */}
           <button
             type="button"
             onClick={handleLogout}
@@ -140,7 +134,6 @@ export function TeacherHeader() {
             <LogOut className="h-5 w-5" />
           </button>
 
-          {/* Mobile menu toggle */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -151,7 +144,6 @@ export function TeacherHeader() {
         </div>
       </div>
 
-      {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
         <div className="border-t border-slate-200 bg-white px-4 py-3 md:hidden">
           <div className="flex items-center gap-3 pb-3 border-b border-slate-100">

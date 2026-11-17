@@ -32,16 +32,12 @@ interface BackendClassResultsResponse {
 }
 
 export const approvalService = {
-  /**
-   * Lấy danh sách hồ sơ xét duyệt kết quả học phần (kết hợp GET /classes)
-   */
   async getApprovalList(filter: ApprovalFilter = {}): Promise<ApprovalSummaryItem[]> {
     const classes = await classService.getClasses({
       semester: filter.semester,
       keyword: filter.keyword,
     });
 
-    // Lọc các lớp có thể xét duyệt hoặc đã nộp điểm
     const targetClasses = classes.filter((cls) => {
       if (filter.gradingStatus && filter.gradingStatus !== 'ALL') {
         if (cls.gradingStatus !== filter.gradingStatus) return false;
@@ -68,9 +64,6 @@ export const approvalService = {
     }));
   },
 
-  /**
-   * Lấy thông tin thống kê trạng thái xét duyệt điểm
-   */
   async getApprovalStats(): Promise<ApprovalStats> {
     const classes = await classService.getClasses();
 
@@ -82,9 +75,6 @@ export const approvalService = {
     };
   },
 
-  /**
-   * Data Composition: Lấy chi tiết bảng điểm và thông tin lớp học (GET /classes/{id}/results + GET /classes/{id})
-   */
   async getClassResults(classId: string): Promise<ClassResultDetail> {
     const [resultsRes, classInfo, sessions] = await Promise.all([
       axiosClient.get<BackendClassResultsResponse>(`/classes/${classId}/results`),
@@ -130,40 +120,25 @@ export const approvalService = {
     };
   },
 
-  /**
-   * Phê duyệt kết quả học phần (Admin) (POST /api/v1/classes/{id}/results/confirm)
-   */
   async confirmResults(classId: string): Promise<ClassResultDetail> {
     await axiosClient.post(`/classes/${classId}/results/confirm`);
     return this.getClassResults(classId);
   },
 
-  /**
-   * Trả về kết quả cho Giảng viên chỉnh sửa kèm lý do (POST /api/v1/classes/{id}/results/return)
-   */
   async returnResults(classId: string, reason: string): Promise<ClassResultDetail> {
     await axiosClient.post(`/classes/${classId}/results/return`, { reason: reason.trim() });
     return this.getClassResults(classId);
   },
 
-  /**
-   * Hoàn thành lớp học sau khi đã phê duyệt kết quả (POST /api/v1/classes/{id}/complete)
-   */
   async completeClass(classId: string): Promise<ClassResultDetail> {
     await axiosClient.post(`/classes/${classId}/complete`);
     return this.getClassResults(classId);
   },
 
-  /**
-   * Mở khóa buổi học điểm danh (Admin) (POST /api/v1/sessions/{id}/unlock)
-   */
   async unlockSession(sessionId: string, reason: string): Promise<void> {
     await axiosClient.post(`/sessions/${sessionId}/unlock`, { reason: reason.trim() });
   },
 
-  /**
-   * Khóa tất cả các buổi học của lớp học (nếu cần)
-   */
   async lockAllSessionsForClass(classId: string): Promise<void> {
     const sessions = await classService.getSessions(classId);
     for (const session of sessions) {
@@ -171,7 +146,6 @@ export const approvalService = {
         try {
           await axiosClient.post(`/sessions/${session.id}/lock`);
         } catch {
-          // Bỏ qua nếu phiên đã bị khóa
         }
       }
     }

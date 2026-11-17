@@ -58,7 +58,6 @@ export function DashboardClassTable({ classes, isLoading }: DashboardClassTableP
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
-      {/* Table Header Controls */}
       <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-sm font-bold text-slate-900">
@@ -84,7 +83,6 @@ export function DashboardClassTable({ classes, isLoading }: DashboardClassTableP
         </div>
       </div>
 
-      {/* Table Content */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold uppercase tracking-wider text-slate-600">
@@ -126,23 +124,19 @@ export function DashboardClassTable({ classes, isLoading }: DashboardClassTableP
 
                 return (
                   <tr key={row.classId} className="hover:bg-slate-50/70 transition">
-                    {/* Class Code & Name */}
                     <td className="px-6 py-3.5">
                       <span className="font-bold text-indigo-700">{row.classCode}</span>
                       <p className="font-medium text-slate-800">{row.courseName}</p>
                     </td>
 
-                    {/* Semester */}
                     <td className="px-6 py-3.5 text-slate-600 font-medium">
                       {row.semester}
                     </td>
 
-                    {/* Status */}
                     <td className="px-6 py-3.5 text-center">
                       {getStatusBadge(row.status)}
                     </td>
 
-                    {/* Fill Rate */}
                     <td className="px-6 py-3.5">
                       <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 mb-1">
                         <span>
@@ -164,7 +158,6 @@ export function DashboardClassTable({ classes, isLoading }: DashboardClassTableP
                       </div>
                     </td>
 
-                    {/* Completion / Pass Rate */}
                     <td className="px-6 py-3.5 text-center">
                       {passPct !== null ? (
                         <div className="inline-flex items-center gap-1 font-bold text-emerald-700">
@@ -183,7 +176,6 @@ export function DashboardClassTable({ classes, isLoading }: DashboardClassTableP
         </table>
       </div>
 
-      {/* Pagination Controls */}
       <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3 text-xs text-slate-500">
         <span>
           Hiển thị {(currentPage - 1) * pageSize + 1} -{' '}

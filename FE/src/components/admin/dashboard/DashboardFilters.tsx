@@ -24,7 +24,6 @@ export function DashboardFilters({
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-12 items-center">
-        {/* Semester Filter */}
         <div className="lg:col-span-3">
           <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
             Học kỳ
@@ -46,7 +45,6 @@ export function DashboardFilters({
           </div>
         </div>
 
-        {/* Course Filter */}
         <div className="lg:col-span-3">
           <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
             Môn học
@@ -68,7 +66,6 @@ export function DashboardFilters({
           </div>
         </div>
 
-        {/* Date From */}
         <div className="lg:col-span-2">
           <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
             Từ ngày
@@ -84,7 +81,6 @@ export function DashboardFilters({
           </div>
         </div>
 
-        {/* Date To */}
         <div className="lg:col-span-2">
           <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
             Đến ngày
@@ -100,7 +96,6 @@ export function DashboardFilters({
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex items-center justify-end gap-2 lg:col-span-2 pt-4 sm:pt-0">
           <button
             type="button"

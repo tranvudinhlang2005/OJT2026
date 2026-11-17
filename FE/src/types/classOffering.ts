@@ -8,8 +8,10 @@ export interface CourseSummary {
   name: string;
   credits: number;
   department: string;
-  defaultPassScore?: number;
-  defaultMinAttendancePct?: number;
+  minAttendancePct?: number;
+  passScore?: number;
+  midtermWeight?: number;
+  finalWeight?: number;
 }
 
 export interface InstructorSummary {
@@ -20,23 +22,22 @@ export interface InstructorSummary {
   phone?: string;
   department?: string;
   teachingActive: boolean;
-  teachableCourses: string[]; // List of Course IDs or Course Codes
+  teachableCourses: string[];
 }
 
 export interface RoomSummary {
   id: string;
   code: string;
   capacity: number;
-  building?: string;
   isActive: boolean;
 }
 
 export interface ClassSession {
   id: string;
   classId: string;
-  sessionDate: string; // YYYY-MM-DD
-  startTime: string; // HH:mm
-  endTime: string; // HH:mm
+  sessionDate: string;
+  startTime: string;
+  endTime: string;
   roomId: string;
   roomCode: string;
   topic?: string;
@@ -52,19 +53,19 @@ export interface ClassOffering {
   courseId: string;
   course: CourseSummary;
   semester: string;
-  startDate: string; // YYYY-MM-DD
-  endDate: string; // YYYY-MM-DD
+  startDate: string;
+  endDate: string;
   instructorId?: string | null;
   instructor?: InstructorSummary | null;
   maxCapacity: number;
   enrolledCount: number;
   status: ClassStatus;
-  cancelDeadline: string; // ISO string or YYYY-MM-DD HH:mm
+  cancelDeadline: string;
   cancelReason?: string | null;
-  minAttendancePct: number; // e.g. 80.0
-  passScore: number; // e.g. 5.0
-  midtermWeight: number; // e.g. 0.3
-  finalWeight: number; // e.g. 0.7
+  minAttendancePct: number;
+  passScore: number;
+  midtermWeight: number;
+  finalWeight: number;
   gradingStatus: GradingStatus;
   sessionsCount?: number;
   createdAt: string;
@@ -85,7 +86,7 @@ export interface CreateClassPayload {
   semester: string;
   startDate: string;
   endDate: string;
-  instructorId?: string | null; // Optional in DRAFT per user decision
+  instructorId?: string | null;
   maxCapacity: number;
   cancelDeadline: string;
   minAttendancePct?: number;

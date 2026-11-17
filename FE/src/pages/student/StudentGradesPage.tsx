@@ -39,7 +39,6 @@ export default function StudentGradesPage() {
           setProfile(prof);
         }
       } catch {
-        // Handle error
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -61,7 +60,6 @@ export default function StudentGradesPage() {
     return results.filter((g) => g.semester === selectedSemester);
   }, [results, selectedSemester]);
 
-  // Tính GPA cho học kỳ được chọn (nếu có)
   const semesterGpa = useMemo(() => {
     const valid = filteredGrades.filter((g) => g.totalScore !== null);
     if (valid.length === 0) return '0.00';
@@ -69,13 +67,11 @@ export default function StudentGradesPage() {
     return (sumGpa / valid.length).toFixed(2);
   }, [filteredGrades]);
 
-  // Tổng tín chỉ tích lũy toàn khóa
   const accumulatedCredits = useMemo(() => {
     const passed = results.filter((r) => r.finalStatus === 'PASSED');
     return passed.length * 3;
   }, [results]);
 
-  // GPA toàn khóa
   const totalGpa4 = useMemo(() => {
     const valid = results.filter((g) => g.totalScore !== null);
     if (valid.length === 0) return 0;
@@ -89,7 +85,6 @@ export default function StudentGradesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -118,9 +113,7 @@ export default function StudentGradesPage() {
         </button>
       </div>
 
-      {/* Overview Stat Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* GPA 4.0 */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">GPA Tích lũy (Hệ 4)</span>
@@ -137,7 +130,6 @@ export default function StudentGradesPage() {
           </p>
         </div>
 
-        {/* Tín chỉ tích lũy */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">Tín chỉ tích lũy</span>
@@ -159,7 +151,6 @@ export default function StudentGradesPage() {
           </div>
         </div>
 
-        {/* Xếp loại học lực */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">Xếp loại học tập</span>
@@ -175,7 +166,6 @@ export default function StudentGradesPage() {
           <p className="mt-2 text-xs text-slate-500">Trạng thái: Đạt chuẩn tiến độ</p>
         </div>
 
-        {/* GPA Kỳ đang lọc */}
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500">
@@ -195,7 +185,6 @@ export default function StudentGradesPage() {
         </div>
       </div>
 
-      {/* Filter Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-slate-400" />
@@ -219,7 +208,6 @@ export default function StudentGradesPage() {
         </div>
       </div>
 
-      {/* Grades Table */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-600">

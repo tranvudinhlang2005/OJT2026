@@ -39,7 +39,6 @@ export function CompleteClassModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
       <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl transition-all">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <div className="flex items-center gap-2.5 text-indigo-600">
             <div className="rounded-lg bg-indigo-50 p-2">
@@ -59,7 +58,6 @@ export function CompleteClassModal({
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6 space-y-4">
           <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-200 text-xs text-slate-600 space-y-1.5">
             <p>
@@ -88,7 +86,6 @@ export function CompleteClassModal({
             </div>
           )}
 
-          {/* Action buttons */}
           <div className="flex items-center justify-end gap-2.5 pt-2">
             <button
               type="button"

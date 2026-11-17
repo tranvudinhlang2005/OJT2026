@@ -30,7 +30,6 @@ export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
-      {/* Header & Filter Controls */}
       <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
@@ -47,7 +46,6 @@ export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Score Type Filter */}
           <select
             value={selectedScoreType}
             onChange={(e) => setSelectedScoreType(e.target.value as 'ALL' | 'MIDTERM' | 'FINAL')}
@@ -58,7 +56,6 @@ export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
             <option value="FINAL">Điểm cuối kỳ</option>
           </select>
 
-          {/* Search box */}
           <div className="relative w-48 sm:w-60">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
             <input
@@ -72,7 +69,6 @@ export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
         </div>
       </div>
 
-      {/* Audit Log Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-600">
@@ -105,7 +101,6 @@ export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
             ) : (
               filtered.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50/70 transition">
-                  {/* Changed At */}
                   <td className="px-5 py-3.5 text-slate-500 whitespace-nowrap">
                     <span className="flex items-center gap-1 font-mono text-[11px]">
                       <Clock className="h-3 w-3 text-slate-400" />
@@ -113,14 +108,12 @@ export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
                     </span>
                   </td>
 
-                  {/* Class Code */}
                   <td className="px-5 py-3.5 whitespace-nowrap">
                     <span className="rounded-md bg-indigo-50 px-2 py-0.5 font-bold text-indigo-700">
                       {row.classCode}
                     </span>
                   </td>
 
-                  {/* Student Code & Name */}
                   <td className="px-5 py-3.5 whitespace-nowrap">
                     <p className="font-semibold text-slate-900">{row.studentCode}</p>
                     {row.studentName && (
@@ -128,7 +121,6 @@ export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
                     )}
                   </td>
 
-                  {/* Score Type */}
                   <td className="px-5 py-3.5 text-center whitespace-nowrap">
                     {row.scoreType === 'MIDTERM' ? (
                       <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 border border-blue-200">
@@ -141,7 +133,6 @@ export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
                     )}
                   </td>
 
-                  {/* Old Score -> New Score */}
                   <td className="px-5 py-3.5 text-center whitespace-nowrap">
                     <div className="inline-flex items-center gap-1.5 font-mono text-xs">
                       <span className="text-slate-400 font-semibold line-through">
@@ -154,7 +145,6 @@ export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
                     </div>
                   </td>
 
-                  {/* Changed By */}
                   <td className="px-5 py-3.5 whitespace-nowrap">
                     <span className="flex items-center gap-1 text-slate-700 font-medium">
                       <User className="h-3 w-3 text-slate-400" />
@@ -162,7 +152,6 @@ export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
                     </span>
                   </td>
 
-                  {/* Reason */}
                   <td className="px-5 py-3.5 text-slate-700 max-w-sm">
                     <p className="text-xs leading-relaxed italic bg-slate-50 p-2 rounded-lg border border-slate-100">
                       "{row.reason}"

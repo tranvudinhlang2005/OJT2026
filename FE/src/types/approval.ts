@@ -22,10 +22,10 @@ export interface ClassResultDetail {
   classStatus: 'DRAFT' | 'OPEN' | 'IN_PROGRESS' | 'CLOSED' | 'CANCELLED';
   gradingStatus: GradingStatus;
   version: number;
-  midtermWeight: number; // e.g. 0.4
-  finalWeight: number; // e.g. 0.6
-  minAttendancePct: number; // e.g. 80
-  passScore: number; // e.g. 5.0
+  midtermWeight: number;
+  finalWeight: number;
+  minAttendancePct: number;
+  passScore: number;
   submittedAt?: string;
   submittedBy?: string;
   confirmedAt?: string;

@@ -204,7 +204,7 @@ export function AddSessionModal({
               >
                 {rooms.map((r) => (
                   <option key={r.id} value={r.id} disabled={!r.isActive}>
-                    Phòng {r.code} ({r.capacity} chỗ - {r.building || 'Khu giảng đường'}) {!r.isActive ? '(Bảo trì)' : ''}
+                    Phòng {r.code} ({r.capacity} chỗ) {!r.isActive ? '(Bảo trì)' : ''}
                   </option>
                 ))}
               </select>

@@ -46,7 +46,6 @@ export default function LoginPage() {
     setErrorMessage(null);
 
     try {
-      // Gọi API Backend thật
       const user = await authService.login({
         username: username.trim(),
         password,
@@ -96,7 +95,6 @@ export default function LoginPage() {
           <p className="mt-1 text-sm text-slate-500">Hệ thống quản lý đào tạo & khóa học (OJT 2026)</p>
         </div>
 
-        {/* Nút chọn nhanh tài khoản Seed để tiện kiểm thử */}
         <div className="mb-4">
           <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
             Tài khoản kiểm thử nhanh (Seed Data)

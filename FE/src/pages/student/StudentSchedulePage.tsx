@@ -34,7 +34,6 @@ export default function StudentSchedulePage() {
         const items = await scheduleService.getMySchedule();
         if (isMounted) setScheduleItems(items);
       } catch {
-        // Handle error
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -46,7 +45,6 @@ export default function StudentSchedulePage() {
     };
   }, []);
 
-  // Sắp xếp lịch theo ngày
   const sortedItems = useMemo(() => {
     return [...scheduleItems].sort((a, b) => {
       if (a.sessionDate !== b.sessionDate) {
@@ -58,7 +56,6 @@ export default function StudentSchedulePage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -75,7 +72,6 @@ export default function StudentSchedulePage() {
           </p>
         </div>
 
-        {/* View Switcher */}
         <div className="flex items-center gap-2 self-start sm:self-center">
           <div className="flex rounded-lg border border-slate-200 bg-white p-1 shadow-2xs">
             <button

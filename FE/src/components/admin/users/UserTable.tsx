@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Unlock,
+  BookOpen,
 } from 'lucide-react';
 import type { ManagedUser, SystemRole } from '../../../types/user';
 
@@ -20,6 +21,7 @@ interface UserTableProps {
   onToggleStatus: (user: ManagedUser) => void;
   onUnlock: (user: ManagedUser) => void;
   onResetPassword: (user: ManagedUser) => void;
+  onAssignCourses?: (user: ManagedUser) => void;
 }
 
 export const UserTable: React.FC<UserTableProps> = ({
@@ -30,6 +32,7 @@ export const UserTable: React.FC<UserTableProps> = ({
   onToggleStatus,
   onUnlock,
   onResetPassword,
+  onAssignCourses,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
@@ -132,7 +135,6 @@ export const UserTable: React.FC<UserTableProps> = ({
                 const isDefaultAdmin = user.username === 'admin';
                 const isTemporarilyLocked = Boolean(user.lockedUntil && user.lockedUntil > nowIso);
 
-                // Profile summary
                 let profileInfo = '-';
                 if (user.role === 'INSTRUCTOR' && user.instructorProfile) {
                   profileInfo = `Mã: ${user.instructorProfile.instructorCode} • Khoa: ${user.instructorProfile.department}`;
@@ -146,7 +148,6 @@ export const UserTable: React.FC<UserTableProps> = ({
                       {startIndex + idx + 1}
                     </td>
 
-                    {/* Người dùng */}
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 font-semibold text-slate-700 text-xs border border-slate-200 uppercase">
@@ -170,30 +171,24 @@ export const UserTable: React.FC<UserTableProps> = ({
                       </div>
                     </td>
 
-                    {/* Email */}
                     <td className="px-4 py-3 text-slate-700">
                       {user.email}
                     </td>
 
-                    {/* Vai trò */}
                     <td className="px-4 py-3">
                       {getRoleBadge(user.role, isDefaultAdmin)}
                     </td>
 
-                    {/* Thông tin hồ sơ */}
                     <td className="px-4 py-3 text-xs text-slate-500">
                       {profileInfo}
                     </td>
 
-                    {/* Trạng thái */}
                     <td className="px-4 py-3">
                       {getStatusBadge(user)}
                     </td>
 
-                    {/* Thao tác */}
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* Mở khóa khẩn cấp nếu tạm khóa */}
                         {isTemporarilyLocked && (
                           <button
                             onClick={() => onUnlock(user)}
@@ -204,7 +199,6 @@ export const UserTable: React.FC<UserTableProps> = ({
                           </button>
                         )}
 
-                        {/* Sửa thông tin */}
                         <button
                           onClick={() => onEdit(user)}
                           title="Xem & Chỉnh sửa hồ sơ"
@@ -213,7 +207,6 @@ export const UserTable: React.FC<UserTableProps> = ({
                           <Edit3 className="h-4 w-4" />
                         </button>
 
-                        {/* Nâng quyền Quản lý đào tạo lên Admin / Hạ quyền Admin về Quản lý */}
                         {user.role === 'TRAINING_MANAGER' && (
                           <button
                             onClick={() => onChangeRole(user)}
@@ -254,7 +247,16 @@ export const UserTable: React.FC<UserTableProps> = ({
                           </button>
                         )}
 
-                        {/* Đặt lại mật khẩu */}
+                        {user.role === 'INSTRUCTOR' && onAssignCourses && (
+                          <button
+                            onClick={() => onAssignCourses(user)}
+                            title="Phân công môn giảng dạy"
+                            className="rounded-lg p-1.5 text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition cursor-pointer"
+                          >
+                            <BookOpen className="h-4 w-4" />
+                          </button>
+                        )}
+
                         <button
                           onClick={() => onResetPassword(user)}
                           title="Đặt lại mật khẩu"
@@ -263,7 +265,6 @@ export const UserTable: React.FC<UserTableProps> = ({
                           <KeyRound className="h-4 w-4" />
                         </button>
 
-                        {/* Khóa / Mở khóa tài khoản (is_active) */}
                         <button
                           onClick={() => onToggleStatus(user)}
                           disabled={isSelf || isDefaultAdmin}
@@ -296,7 +297,6 @@ export const UserTable: React.FC<UserTableProps> = ({
         </table>
       </div>
 
-      {/* Phân trang */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
           <div className="text-xs text-slate-500">

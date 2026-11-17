@@ -2,20 +2,27 @@ import type { UserRole } from './auth';
 
 export type SystemRole = UserRole;
 
-// Vai trò có thể tạo mới (Không bao gồm Admin vì Admin là mặc định hệ thống hoặc được nâng từ Quản lý)
 export type CreatableUserRole = 'STUDENT' | 'INSTRUCTOR' | 'TRAINING_MANAGER';
 
 export type StudentStatus = 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
 
+export interface TeachableCourseItem {
+  id: string;
+  code: string;
+  name: string;
+}
+
 export interface InstructorProfile {
+  id?: string;
   instructorCode: string;
   department: string;
   phone: string;
-  teachingActive: boolean; // Trạng thái sẵn sàng nhận lớp (Instructor.is_active)
-  teachableCourses?: string[]; // Danh sách môn học được phân công
+  teachingActive: boolean;
+  teachableCourses?: TeachableCourseItem[];
 }
 
 export interface StudentProfile {
+  id?: string;
   studentCode: string;
   dateOfBirth?: string;
   homeroomClass?: string;
@@ -28,13 +35,12 @@ export interface ManagedUser {
   email: string;
   fullName: string;
   role: SystemRole;
-  isActive: boolean; // Trạng thái tài khoản người dùng
+  isActive: boolean;
   failedLoginCount: number;
-  lockedUntil?: string | null; // ISO string nếu bị khóa tạm thời 15p
+  lockedUntil?: string | null;
   createdAt: string;
   updatedAt?: string;
-  
-  // Thông tin hồ sơ mở rộng tùy theo role
+
   instructorProfile?: InstructorProfile;
   studentProfile?: StudentProfile;
 }
@@ -51,13 +57,11 @@ export interface CreateUserPayload {
   fullName: string;
   password: string;
   role: CreatableUserRole;
-  
-  // Nếu là Giảng viên
+
   instructorCode?: string;
   department?: string;
   phone?: string;
 
-  // Nếu là Học viên
   studentCode?: string;
   dateOfBirth?: string;
   homeroomClass?: string;
@@ -66,6 +70,8 @@ export interface CreateUserPayload {
 export interface UpdateUserPayload {
   fullName: string;
   email: string;
+  studentCode?: string;
+  instructorCode?: string;
   department?: string;
   phone?: string;
   homeroomClass?: string;
@@ -73,4 +79,3 @@ export interface UpdateUserPayload {
   studentStatus?: StudentStatus;
   teachingActive?: boolean;
 }
-

@@ -35,7 +35,6 @@ export default function StudentRegistrationPage() {
         studentService.getMyEnrollments().catch(() => []),
       ]);
 
-      // Lọc các lớp OPEN hoặc IN_PROGRESS để đăng ký
       const openClasses: OpenClass[] = allClasses.map((cls, idx) => ({
         id: cls.id,
         courseCode: cls.course.code,
@@ -43,7 +42,7 @@ export default function StudentRegistrationPage() {
         credits: cls.course.credits || 3,
         teacherName: cls.instructor?.fullName || 'Chưa phân công',
         room: `Phòng ${cls.id}`,
-        dayOfWeek: (idx % 6) + 2, // Tạo thứ trong tuần mô phỏng
+        dayOfWeek: (idx % 6) + 2,
         startPeriod: 1,
         endPeriod: 3,
         timeSlot: '07:30 - 10:00 (Tiết 1-3)',
@@ -66,22 +65,18 @@ export default function StudentRegistrationPage() {
     loadData();
   }, [loadData]);
 
-  // Danh sách ID lớp đã đăng ký thành công
   const registeredClassIds = useMemo(() => {
     return enrollments.filter((e) => e.status === 'ENROLLED').map((e) => e.classId);
   }, [enrollments]);
 
-  // Các lớp sinh viên đã đăng ký
   const registeredClasses = useMemo(() => {
     return classesList.filter((c) => registeredClassIds.includes(c.id));
   }, [classesList, registeredClassIds]);
 
-  // Tổng số tín chỉ đã đăng ký
   const totalCredits = useMemo(() => {
     return registeredClasses.reduce((sum, c) => sum + c.credits, 0);
   }, [registeredClasses]);
 
-  // Đăng ký môn học mới qua Backend
   const handleRegister = async (cls: OpenClass) => {
     if (totalCredits + cls.credits > MAX_CREDITS) {
       toast.error(`Vượt quá số tín chỉ tối đa cho phép trong một kỳ (${MAX_CREDITS} TC)`);
@@ -98,7 +93,6 @@ export default function StudentRegistrationPage() {
     }
   };
 
-  // Hủy đăng ký môn học
   const handleUnregister = async (cls: OpenClass) => {
     const enrollment = enrollments.find((e) => e.classId === cls.id && e.status === 'ENROLLED');
     if (!enrollment) {
@@ -116,7 +110,6 @@ export default function StudentRegistrationPage() {
     }
   };
 
-  // Lọc danh sách lớp mở
   const filteredOpenClasses = useMemo(() => {
     return classesList.filter((c) => {
       const matchSearch =
@@ -144,7 +137,6 @@ export default function StudentRegistrationPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner / Credit Summary */}
       <div className="rounded-2xl bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-900 p-6 text-white shadow-md">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -162,7 +154,6 @@ export default function StudentRegistrationPage() {
             </p>
           </div>
 
-          {/* Quick Credit Meter */}
           <div className="rounded-xl bg-white/10 p-4 backdrop-blur-md border border-white/15 min-w-[240px]">
             <div className="flex items-center justify-between text-xs text-blue-200 mb-1.5">
               <span>Tín chỉ đã chọn</span>
@@ -190,7 +181,6 @@ export default function StudentRegistrationPage() {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
       <div className="flex border-b border-slate-200 gap-4">
         <button
           type="button"
@@ -225,7 +215,6 @@ export default function StudentRegistrationPage() {
         </div>
       ) : activeTab === 'open' ? (
         <div className="space-y-4">
-          {/* Filters Bar */}
           <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs sm:grid-cols-3">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -274,7 +263,6 @@ export default function StudentRegistrationPage() {
             </div>
           </div>
 
-          {/* Classes Table */}
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-slate-600">
@@ -401,7 +389,6 @@ export default function StudentRegistrationPage() {
           </div>
         </div>
       ) : (
-        /* Tab Lớp đã đăng ký */
         <div className="space-y-4">
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
             <div className="overflow-x-auto">

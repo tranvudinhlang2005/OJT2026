@@ -36,9 +36,6 @@ export interface ClassResultSheet {
 }
 
 export const instructorService = {
-  /**
-   * Lấy hồ sơ cá nhân của Giảng viên đăng nhập (GET /api/v1/instructors/me)
-   */
   async getMyProfile(): Promise<InstructorProfile> {
     const res = await axiosClient.get<{
       id: number;
@@ -68,17 +65,10 @@ export const instructorService = {
     };
   },
 
-  /**
-   * Lấy danh sách các lớp học do giảng viên phụ trách
-   */
   async getMyClasses(): Promise<ClassOffering[]> {
-    // BE tự động scope theo giảng viên đăng nhập khi gọi /classes
     return classService.getClasses();
   },
 
-  /**
-   * Lấy bảng điểm của lớp học để giảng viên nhập điểm (GET /api/v1/classes/{id}/results)
-   */
   async getClassResults(classId: string | number): Promise<ClassResultSheet> {
     const res = await axiosClient.get<{
       classId: number;
@@ -122,9 +112,6 @@ export const instructorService = {
     };
   },
 
-  /**
-   * Cập nhật điểm thi lớp học (PUT /api/v1/classes/{id}/results)
-   */
   async updateResults(
     classId: string | number,
     version: number,
@@ -143,9 +130,6 @@ export const instructorService = {
     await axiosClient.put(`/classes/${classId}/results`, body);
   },
 
-  /**
-   * Nộp bảng điểm lên Ban Quản lý Đào tạo xét duyệt (POST /api/v1/classes/{id}/results/submit)
-   */
   async submitResults(classId: string | number): Promise<void> {
     await axiosClient.post(`/classes/${classId}/results/submit`);
   },

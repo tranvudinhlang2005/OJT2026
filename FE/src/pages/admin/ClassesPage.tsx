@@ -43,7 +43,6 @@ export default function ClassesPage() {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedClassForEdit, setSelectedClassForEdit] = useState<ClassOffering | null>(null);
   const [selectedClassForAssign, setSelectedClassForAssign] = useState<ClassOffering | null>(null);
@@ -52,7 +51,6 @@ export default function ClassesPage() {
   const [selectedClassForCancel, setSelectedClassForCancel] = useState<ClassOffering | null>(null);
   const [selectedClassForDelete, setSelectedClassForDelete] = useState<ClassOffering | null>(null);
 
-  // Load initial static datasets (courses, instructors, rooms)
   useEffect(() => {
     async function loadMetadata() {
       try {
@@ -71,18 +69,16 @@ export default function ClassesPage() {
     loadMetadata();
   }, [toast]);
 
-  // Load classes with current filter
   const loadClassesData = useCallback(async () => {
     try {
       setIsLoading(true);
       const [filteredData, fullData] = await Promise.all([
         classService.getClasses(filter),
-        classService.getClasses(), // Để tính stats
+        classService.getClasses(),
       ]);
       setClasses(filteredData);
       setAllClasses(fullData);
 
-      // Nếu đang mở modal chi tiết, đồng bộ lại dữ liệu
       if (selectedClassForDetail) {
         const updatedDetail = fullData.find((c) => c.id === selectedClassForDetail.id);
         if (updatedDetail) {
@@ -98,12 +94,10 @@ export default function ClassesPage() {
 
   useEffect(() => {
     loadClassesData();
-  }, [filter]); // Re-load when filter changes
+  }, [filter]);
 
-  // Danh sách các học kỳ phân biệt
   const distinctSemesters = Array.from(new Set(allClasses.map((c) => c.semester)));
 
-  // Thao tác Tạo mới lớp
   const handleCreateClass = async (payload: CreateClassPayload) => {
     try {
       const created = await classService.createClass(payload);
@@ -116,7 +110,6 @@ export default function ClassesPage() {
     }
   };
 
-  // Thao tác Sửa thông tin lớp
   const handleUpdateClass = async (id: string, payload: UpdateClassPayload) => {
     try {
       await classService.updateClass(id, payload);
@@ -129,7 +122,6 @@ export default function ClassesPage() {
     }
   };
 
-  // Thao tác Phân công giảng viên
   const handleAssignInstructor = async (classId: string, instructorId: string | null) => {
     try {
       await classService.assignInstructor(classId, instructorId);
@@ -142,7 +134,6 @@ export default function ClassesPage() {
     }
   };
 
-  // Thao tác Mở lớp (Publish: DRAFT -> OPEN)
   const handlePublishClass = async (cls: ClassOffering) => {
     try {
       await classService.publishClass(cls.id);
@@ -153,7 +144,6 @@ export default function ClassesPage() {
     }
   };
 
-  // Thao tác Điều chỉnh sĩ số tối đa (TR05)
   const handleChangeCapacity = async (id: string, maxCapacity: number) => {
     try {
       await classService.changeCapacity(id, maxCapacity);
@@ -166,7 +156,6 @@ export default function ClassesPage() {
     }
   };
 
-  // Thao tác Bắt đầu lớp (Start: OPEN -> IN_PROGRESS)
   const handleStartClass = async (cls: ClassOffering) => {
     try {
       await classService.startClass(cls.id);
@@ -177,7 +166,6 @@ export default function ClassesPage() {
     }
   };
 
-  // Thao tác Đóng lớp (Close: IN_PROGRESS -> CLOSED)
   const handleCloseClass = async (cls: ClassOffering) => {
     if (!confirm(`Xác nhận hoàn thành và đóng lớp học phần "${cls.classCode}"?`)) return;
     try {
@@ -189,7 +177,6 @@ export default function ClassesPage() {
     }
   };
 
-  // Thao tác Hủy lớp
   const handleCancelClass = async (id: string, reason: string) => {
     try {
       await classService.cancelClass(id, reason);
@@ -202,7 +189,6 @@ export default function ClassesPage() {
     }
   };
 
-  // Thao tác Xóa lớp bản nháp
   const handleDeleteClass = async (id: string) => {
     try {
       await classService.deleteClass(id);
@@ -217,7 +203,6 @@ export default function ClassesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Title & Subtitle */}
       <div className="border-b border-slate-200 pb-5">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           Quản lý Lớp & Lịch học
@@ -227,10 +212,8 @@ export default function ClassesPage() {
         </p>
       </div>
 
-      {/* 1. Statistic Cards */}
       <ClassStatsCards classes={allClasses} />
 
-      {/* 2. Search & Filters */}
       <ClassFilters
         filter={filter}
         courses={courses}
@@ -242,7 +225,6 @@ export default function ClassesPage() {
         isLoading={isLoading}
       />
 
-      {/* 3. Main Data Table */}
       <ClassTable
         classes={classes}
         isLoading={isLoading}
@@ -258,8 +240,6 @@ export default function ClassesPage() {
         onDelete={(cls) => setSelectedClassForDelete(cls)}
       />
 
-      {/* 4. Modals */}
-      {/* Create Class */}
       <CreateClassModal
         isOpen={isCreateModalOpen}
         courses={courses}
@@ -268,7 +248,6 @@ export default function ClassesPage() {
         onSubmit={handleCreateClass}
       />
 
-      {/* Edit Class */}
       <EditClassModal
         isOpen={!!selectedClassForEdit}
         classOffering={selectedClassForEdit}
@@ -276,7 +255,6 @@ export default function ClassesPage() {
         onSubmit={handleUpdateClass}
       />
 
-      {/* Change Capacity */}
       <ChangeCapacityModal
         isOpen={!!selectedClassForCapacity}
         classOffering={selectedClassForCapacity}
@@ -284,7 +262,6 @@ export default function ClassesPage() {
         onSubmit={handleChangeCapacity}
       />
 
-      {/* Assign Instructor */}
       <AssignInstructorModal
         isOpen={!!selectedClassForAssign}
         classOffering={selectedClassForAssign}
@@ -293,7 +270,6 @@ export default function ClassesPage() {
         onSubmit={handleAssignInstructor}
       />
 
-      {/* Class Details & Sessions Management (Timeline List) */}
       <ClassDetailModal
         isOpen={!!selectedClassForDetail}
         classOffering={selectedClassForDetail}
@@ -302,7 +278,6 @@ export default function ClassesPage() {
         onClassUpdated={loadClassesData}
       />
 
-      {/* Cancel Class Modal */}
       <CancelClassModal
         isOpen={!!selectedClassForCancel}
         classOffering={selectedClassForCancel}
@@ -310,7 +285,6 @@ export default function ClassesPage() {
         onSubmit={handleCancelClass}
       />
 
-      {/* Delete Class Modal */}
       <DeleteClassModal
         isOpen={!!selectedClassForDelete}
         classOffering={selectedClassForDelete}

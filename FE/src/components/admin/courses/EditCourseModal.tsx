@@ -48,6 +48,7 @@ export function EditCourseModal({ isOpen, course, onClose, onSubmit }: EditCours
     try {
       setIsSubmitting(true);
       await onSubmit(course.id, {
+        code: course.code,
         name: name.trim(),
         credits: Number(credits),
         durationHours: Number(durationHours),

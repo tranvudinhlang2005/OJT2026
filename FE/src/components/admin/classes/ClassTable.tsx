@@ -129,7 +129,6 @@ export function ClassTable({
 
               return (
                 <tr key={cls.id} className="hover:bg-slate-50/75 transition-colors">
-                  {/* Mã lớp & Môn học */}
                   <td className="px-5 py-4">
                     <div className="flex flex-col">
                       <span className="font-semibold text-indigo-700 text-sm">{cls.classCode}</span>
@@ -140,7 +139,6 @@ export function ClassTable({
                     </div>
                   </td>
 
-                  {/* Học kỳ & Thời gian */}
                   <td className="px-4 py-4">
                     <div className="flex flex-col text-xs">
                       <span className="font-medium text-slate-800">{cls.semester}</span>
@@ -150,7 +148,6 @@ export function ClassTable({
                     </div>
                   </td>
 
-                  {/* Giảng viên */}
                   <td className="px-4 py-4">
                     {cls.instructor ? (
                       <div className="flex flex-col text-xs">
@@ -164,7 +161,6 @@ export function ClassTable({
                     )}
                   </td>
 
-                  {/* Sĩ số */}
                   <td className="px-4 py-4">
                     <div className="w-32">
                       <div className="flex items-center justify-between text-xs mb-1">
@@ -188,7 +184,6 @@ export function ClassTable({
                     </div>
                   </td>
 
-                  {/* Lịch học */}
                   <td className="px-4 py-4">
                     <button
                       type="button"
@@ -201,15 +196,12 @@ export function ClassTable({
                     </button>
                   </td>
 
-                  {/* Trạng thái */}
                   <td className="px-4 py-4">
                     {getStatusBadge(cls.status, cls.cancelReason)}
                   </td>
 
-                  {/* Thao tác */}
                   <td className="px-5 py-4 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {/* Xem chi tiết */}
                       <button
                         type="button"
                         onClick={() => onViewDetails(cls)}
@@ -219,10 +211,8 @@ export function ClassTable({
                         <Eye className="h-4 w-4" />
                       </button>
 
-                      {/* Các thao tác Quản trị (Ẩn nếu là TRAINING_MANAGER) */}
                       {canManage && (
                         <>
-                          {/* Điều chỉnh sĩ số tối đa */}
                           {['DRAFT', 'OPEN'].includes(cls.status) && onChangeCapacity && (
                             <button
                               type="button"
@@ -234,7 +224,6 @@ export function ClassTable({
                             </button>
                           )}
 
-                          {/* Phân công / Đổi giảng viên */}
                           {['DRAFT', 'OPEN'].includes(cls.status) && (
                             <button
                               type="button"
@@ -246,7 +235,6 @@ export function ClassTable({
                             </button>
                           )}
 
-                          {/* Chỉnh sửa */}
                           {['DRAFT', 'OPEN'].includes(cls.status) && (
                             <button
                               type="button"
@@ -258,7 +246,6 @@ export function ClassTable({
                             </button>
                           )}
 
-                          {/* Publish: DRAFT -> OPEN */}
                           {cls.status === 'DRAFT' && (
                             <button
                               type="button"
@@ -271,7 +258,6 @@ export function ClassTable({
                             </button>
                           )}
 
-                          {/* Start: OPEN -> IN_PROGRESS */}
                           {cls.status === 'OPEN' && (
                             <button
                               type="button"
@@ -284,7 +270,6 @@ export function ClassTable({
                             </button>
                           )}
 
-                          {/* Close: IN_PROGRESS -> CLOSED */}
                           {cls.status === 'IN_PROGRESS' && (
                             <button
                               type="button"
@@ -297,7 +282,6 @@ export function ClassTable({
                             </button>
                           )}
 
-                          {/* Cancel: OPEN / IN_PROGRESS -> CANCELLED */}
                           {['OPEN', 'IN_PROGRESS'].includes(cls.status) && (
                             <button
                               type="button"
@@ -309,7 +293,6 @@ export function ClassTable({
                             </button>
                           )}
 
-                          {/* Delete: DRAFT with 0 enrollments */}
                           {cls.status === 'DRAFT' && cls.enrolledCount === 0 && (
                             <button
                               type="button"

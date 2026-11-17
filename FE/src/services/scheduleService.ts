@@ -2,9 +2,9 @@ import { axiosClient } from './axiosClient';
 
 export interface ScheduleItem {
   id: string;
-  sessionDate: string; // YYYY-MM-DD
-  startTime: string; // HH:mm
-  endTime: string; // HH:mm
+  sessionDate: string;
+  startTime: string;
+  endTime: string;
   roomCode: string;
   classCode: string;
   courseName: string;
@@ -22,10 +22,6 @@ interface BackendScheduleResponse {
 }
 
 export const scheduleService = {
-  /**
-   * Lấy lịch học / lịch dạy cá nhân (GET /api/v1/me/schedule)
-   * Sử dụng chung cho cả Giảng viên và Sinh viên
-   */
   async getMySchedule(from?: string, to?: string): Promise<ScheduleItem[]> {
     const params: Record<string, string> = {};
     if (from) params.from = from;

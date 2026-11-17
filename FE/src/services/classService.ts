@@ -81,12 +81,13 @@ interface BackendStudentRosterResponse {
 }
 
 function mapToClassOffering(item: BackendClassResponse): ClassOffering {
+  const courseIdStr = item.courseId ? String(item.courseId) : '';
   return {
     id: String(item.id),
     classCode: item.classCode,
-    courseId: String(item.courseId),
+    courseId: courseIdStr,
     course: {
-      id: String(item.courseId),
+      id: courseIdStr,
       code: item.courseCode,
       name: item.courseName,
       credits: 3,
@@ -136,9 +137,6 @@ function mapToSession(s: BackendSessionResponse): ClassSession {
 }
 
 export const classService = {
-  /**
-   * Lấy danh sách lớp học theo bộ lọc từ Backend (GET /api/v1/classes)
-   */
   async getClasses(filter: ClassFilter = {}): Promise<ClassOffering[]> {
     const params: Record<string, string | number> = {
       page: 0,
@@ -156,17 +154,11 @@ export const classService = {
     return items.map(mapToClassOffering);
   },
 
-  /**
-   * Lấy chi tiết lớp học theo ID (GET /api/v1/classes/{id})
-   */
   async getClassById(id: string): Promise<ClassOffering> {
     const res = await axiosClient.get<BackendClassResponse>(`/classes/${id}`);
     return mapToClassOffering(res.data);
   },
 
-  /**
-   * Tạo mới lớp học (POST /api/v1/classes)
-   */
   async createClass(payload: CreateClassPayload): Promise<ClassOffering> {
     let cancelDeadline = payload.cancelDeadline;
     if (cancelDeadline && !cancelDeadline.includes('T')) {
@@ -186,7 +178,6 @@ export const classService = {
     const res = await axiosClient.post<BackendClassResponse>('/classes', body);
     const createdClass = mapToClassOffering(res.data);
 
-    // Nếu có chọn giảng viên lúc tạo, gọi gán giảng viên luôn
     if (payload.instructorId) {
       await this.assignInstructor(createdClass.id, payload.instructorId);
     }
@@ -194,9 +185,6 @@ export const classService = {
     return createdClass;
   },
 
-  /**
-   * Cập nhật thông tin cơ bản lớp học (PUT /api/v1/classes/{id})
-   */
   async updateClass(id: string, payload: UpdateClassPayload): Promise<ClassOffering> {
     let cancelDeadline = payload.cancelDeadline;
     if (cancelDeadline && !cancelDeadline.includes('T')) {
@@ -218,9 +206,6 @@ export const classService = {
     return mapToClassOffering(res.data);
   },
 
-  /**
-   * Đổi sĩ số tối đa của lớp học (PATCH /api/v1/classes/{id}/capacity)
-   */
   async changeCapacity(id: string, maxCapacity: number): Promise<ClassOffering> {
     const res = await axiosClient.patch<BackendClassResponse>(`/classes/${id}/capacity`, {
       maxCapacity: Number(maxCapacity),
@@ -228,9 +213,6 @@ export const classService = {
     return mapToClassOffering(res.data);
   },
 
-  /**
-   * Gán giảng viên phụ trách lớp (PUT /api/v1/classes/{id}/instructor)
-   */
   async assignInstructor(classId: string, instructorId: string | null): Promise<ClassOffering> {
     if (!instructorId) {
       throw new Error('Vui lòng chọn giảng viên phụ trách');
@@ -241,33 +223,21 @@ export const classService = {
     return mapToClassOffering(res.data);
   },
 
-  /**
-   * Phát hành lớp học để mở đăng ký (POST /api/v1/classes/{id}/publish)
-   */
   async publishClass(id: string): Promise<ClassOffering> {
     const res = await axiosClient.post<BackendClassResponse>(`/classes/${id}/publish`);
     return mapToClassOffering(res.data);
   },
 
-  /**
-   * Rút lớp học về trạng thái nháp (POST /api/v1/classes/{id}/unpublish)
-   */
   async unpublishClass(id: string): Promise<ClassOffering> {
     const res = await axiosClient.post<BackendClassResponse>(`/classes/${id}/unpublish`);
     return mapToClassOffering(res.data);
   },
 
-  /**
-   * Bắt đầu lớp học (POST /api/v1/classes/{id}/start)
-   */
   async startClass(id: string): Promise<ClassOffering> {
     const res = await axiosClient.post<BackendClassResponse>(`/classes/${id}/start`);
     return mapToClassOffering(res.data);
   },
 
-  /**
-   * Hủy lớp học (POST /api/v1/classes/{id}/cancel)
-   */
   async cancelClass(id: string, reason: string): Promise<ClassOffering> {
     const res = await axiosClient.post<BackendClassResponse>(`/classes/${id}/cancel`, {
       reason: reason.trim(),
@@ -275,33 +245,21 @@ export const classService = {
     return mapToClassOffering(res.data);
   },
 
-  /**
-   * Đóng lớp học (Complete class khi kết thúc)
-   */
   async closeClass(id: string): Promise<ClassOffering> {
     const res = await axiosClient.post<BackendClassResponse>(`/classes/${id}/complete`);
     return mapToClassOffering(res.data);
   },
 
-  /**
-   * Xóa lớp học ở trạng thái Nháp (DELETE /api/v1/classes/{id})
-   */
   async deleteClass(id: string): Promise<void> {
     await axiosClient.delete(`/classes/${id}`);
   },
 
-  /**
-   * Lấy danh sách buổi học của lớp (GET /api/v1/classes/{id}/sessions)
-   */
   async getSessions(classId: string): Promise<ClassSession[]> {
     const res = await axiosClient.get<BackendSessionResponse[]>(`/classes/${classId}/sessions`);
     const list = Array.isArray(res.data) ? res.data : [];
     return list.map(mapToSession);
   },
 
-  /**
-   * Thêm buổi học mới (POST /api/v1/classes/{id}/sessions)
-   */
   async addSession(classId: string, payload: CreateSessionPayload): Promise<ClassSession> {
     const body = {
       sessionDate: payload.sessionDate,
@@ -315,16 +273,10 @@ export const classService = {
     return mapToSession(res.data);
   },
 
-  /**
-   * Alias cho addSession
-   */
   async createSession(payload: CreateSessionPayload): Promise<ClassSession> {
     return this.addSession(payload.classId, payload);
   },
 
-  /**
-   * Cập nhật buổi học (PUT /api/v1/sessions/{id})
-   */
   async updateSession(sessionId: string, payload: UpdateSessionPayload): Promise<ClassSession> {
     const start = payload.startTime || '08:00';
     const end = payload.endTime || '11:30';
@@ -341,23 +293,14 @@ export const classService = {
     return mapToSession(res.data);
   },
 
-  /**
-   * Xóa buổi học (DELETE /api/v1/sessions/{id})
-   */
   async deleteSession(sessionId: string): Promise<void> {
     await axiosClient.delete(`/sessions/${sessionId}`);
   },
 
-  /**
-   * Mở khóa điểm danh cho buổi học
-   */
   async unlockSessionAttendance(sessionId: string, reason: string): Promise<void> {
     await axiosClient.post(`/sessions/${sessionId}/unlock`, { reason: reason.trim() });
   },
 
-  /**
-   * Lấy danh sách sinh viên đăng ký lớp học (GET /api/v1/classes/{id}/students)
-   */
   async getClassStudents(classId: string) {
     const res = await axiosClient.get<PageResponse<BackendStudentRosterResponse>>(`/classes/${classId}/students`, {
       params: { size: 100 },
@@ -373,14 +316,19 @@ export const classService = {
     }));
   },
 
-  /**
-   * Lấy danh mục môn học phục vụ chọn lựa (GET /api/v1/courses)
-   */
   async getCourses(): Promise<CourseSummary[]> {
-    const res = await axiosClient.get<PageResponse<{ id: number; code: string; name: string; credits: number }>>(
-      '/courses',
-      { params: { size: 100, isActive: true } }
-    );
+    const res = await axiosClient.get<
+      PageResponse<{
+        id: number;
+        code: string;
+        name: string;
+        credits: number;
+        minAttendancePct?: number;
+        passScore?: number;
+        midtermWeight?: number;
+        finalWeight?: number;
+      }>
+    >('/courses', { params: { size: 100, isActive: true } });
     const items = res.data?.items || [];
     return items.map((c) => ({
       id: String(c.id),
@@ -388,12 +336,13 @@ export const classService = {
       name: c.name,
       credits: c.credits,
       department: 'Khoa Công nghệ Thông tin',
+      minAttendancePct: c.minAttendancePct != null ? Number(c.minAttendancePct) : undefined,
+      passScore: c.passScore != null ? Number(c.passScore) : undefined,
+      midtermWeight: c.midtermWeight != null ? Number(c.midtermWeight) : undefined,
+      finalWeight: c.finalWeight != null ? Number(c.finalWeight) : undefined,
     }));
   },
 
-  /**
-   * Lấy danh mục giảng viên (GET /api/v1/instructors)
-   */
   async getInstructors(): Promise<InstructorSummary[]> {
     const res = await axiosClient.get<PageResponse<BackendInstructorResponse>>('/instructors', {
       params: { size: 100, isActive: true },
@@ -411,9 +360,6 @@ export const classService = {
     }));
   },
 
-  /**
-   * Lấy danh mục phòng học (GET /api/v1/rooms)
-   */
   async getRooms(): Promise<RoomSummary[]> {
     const res = await axiosClient.get<PageResponse<{ id: number; code: string; capacity: number; isActive: boolean }>>(
       '/rooms',
@@ -424,14 +370,10 @@ export const classService = {
       id: String(r.id),
       code: r.code,
       capacity: r.capacity,
-      building: 'Khu giảng đường',
       isActive: r.isActive,
     }));
   },
 
-  /**
-   * Kiểm tra trùng lịch phòng học và giảng viên
-   */
   async checkSessionConflict(
     _classId: string,
     _sessionDate: string,

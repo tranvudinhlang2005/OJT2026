@@ -49,9 +49,6 @@ interface PageResponse<T> {
 }
 
 export const studentService = {
-  /**
-   * Lấy hồ sơ cá nhân của sinh viên đăng nhập (GET /api/v1/students/me)
-   */
   async getMyProfile(): Promise<StudentProfile> {
     const res = await axiosClient.get<{
       id: number;
@@ -75,9 +72,6 @@ export const studentService = {
     };
   },
 
-  /**
-   * Lấy danh sách các lớp đã ghi danh của sinh viên (GET /api/v1/students/me/enrollments)
-   */
   async getMyEnrollments(status?: string): Promise<StudentEnrollment[]> {
     const params: Record<string, string | number> = {
       page: 0,
@@ -121,9 +115,6 @@ export const studentService = {
     }));
   },
 
-  /**
-   * Lấy bảng điểm cá nhân của sinh viên cho các lớp đã CONFIRMED (GET /api/v1/students/me/results)
-   */
   async getMyResults(): Promise<StudentResult[]> {
     const res = await axiosClient.get<PageResponse<{
       classId: number;
@@ -153,9 +144,6 @@ export const studentService = {
     }));
   },
 
-  /**
-   * Đăng ký tham gia một lớp học (POST /api/v1/enrollments)
-   */
   async enrollClass(classId: string | number): Promise<StudentEnrollment> {
     const res = await axiosClient.post<{
       enrollmentId: number;
@@ -189,9 +177,6 @@ export const studentService = {
     };
   },
 
-  /**
-   * Hủy đăng ký lớp học (POST /api/v1/enrollments/{enrollmentId}/cancel)
-   */
   async cancelEnrollment(enrollmentId: string | number): Promise<void> {
     await axiosClient.post(`/enrollments/${enrollmentId}/cancel`);
   },

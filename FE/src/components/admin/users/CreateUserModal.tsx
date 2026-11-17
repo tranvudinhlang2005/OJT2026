@@ -19,12 +19,10 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('Password@123');
 
-  // Specific for Student
   const [studentCode, setStudentCode] = useState('');
   const [homeroomClass, setHomeroomClass] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
 
-  // Specific for Instructor
   const [instructorCode, setInstructorCode] = useState('');
   const [department, setDepartment] = useState('Công nghệ thông tin');
   const [phone, setPhone] = useState('');
@@ -38,7 +36,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
     e.preventDefault();
     setError(null);
 
-    // Validation
     if (username.length < 4 || username.length > 50) {
       setError('Tên đăng nhập phải từ 4 đến 50 ký tự');
       return;
@@ -97,7 +94,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
       <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
           <div className="flex items-center gap-2 text-indigo-600 font-semibold text-base">
             <UserPlus className="h-5 w-5" />
@@ -111,7 +107,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
           </button>
         </div>
 
-        {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
           {error && (
             <div className="flex items-start gap-2.5 rounded-lg bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200">
@@ -120,7 +115,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
             </div>
           )}
 
-          {/* Chọn vai trò */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
               Vai trò hệ thống <span className="text-rose-500">*</span>
@@ -135,7 +129,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
               <option value="TRAINING_MANAGER">Quản lý đào tạo (Training Manager)</option>
             </select>
 
-            {/* Thông báo quy định Admin */}
             <div className="mt-2 flex items-start gap-2 rounded-lg bg-indigo-50/70 p-2.5 text-xs text-indigo-900 border border-indigo-100">
               <Info className="h-4 w-4 shrink-0 text-indigo-600 mt-0.5" />
               <span>
@@ -145,7 +138,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Tên đăng nhập */}
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">
                 Tên đăng nhập <span className="text-rose-500">*</span>
@@ -160,7 +152,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
               />
             </div>
 
-            {/* Họ và tên */}
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">
                 Họ và tên <span className="text-rose-500">*</span>
@@ -177,7 +168,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Email */}
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">
                 Địa chỉ Email <span className="text-rose-500">*</span>
@@ -192,7 +182,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
               />
             </div>
 
-            {/* Mật khẩu khởi tạo */}
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">
                 Mật khẩu khởi tạo <span className="text-rose-500">*</span>
@@ -207,7 +196,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
             </div>
           </div>
 
-          {/* Trường riêng cho Học viên */}
           {role === 'STUDENT' && (
             <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 space-y-3">
               <span className="text-xs font-bold text-emerald-800 uppercase tracking-wide block">
@@ -254,7 +242,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
             </div>
           )}
 
-          {/* Trường riêng cho Giảng viên */}
           {role === 'INSTRUCTOR' && (
             <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-4 space-y-3">
               <span className="text-xs font-bold text-blue-800 uppercase tracking-wide block">
@@ -302,7 +289,6 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
             </div>
           )}
 
-          {/* Footer buttons */}
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
             <button
               type="button"

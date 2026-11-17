@@ -21,16 +21,13 @@ function RootRedirect() {
   return <Navigate to={ROUTES.ADMIN.DASHBOARD} replace />;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const router = createBrowserRouter([
-  // 1. Root redirect: Điều hướng theo vai trò đã lưu
   {
     path: ROUTES.HOME,
     element: <RootRedirect />,
     errorElement: <RouteErrorBoundary />,
   },
 
-  // 2. Auth Routes (Public)
   {
     path: ROUTES.AUTH.LOGIN,
     lazy: async () => {
@@ -40,7 +37,6 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
   },
 
-  // 3. Phân hệ Quản trị & Quản lý Đào tạo (Admin & Manager)
   {
     element: <ProtectedRoute allowedRoles={['TRAINING_ADMIN', 'TRAINING_MANAGER']} />,
     errorElement: <RouteErrorBoundary />,
@@ -101,7 +97,6 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // 4. Phân hệ Giảng viên (Protected - chỉ dành cho vai trò 'INSTRUCTOR')
   {
     element: <ProtectedRoute allowedRoles={['INSTRUCTOR']} />,
     errorElement: <RouteErrorBoundary />,
@@ -146,7 +141,6 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // 5. Phân hệ Sinh viên (Protected - chỉ dành cho vai trò 'STUDENT')
   {
     element: <ProtectedRoute allowedRoles={['STUDENT']} />,
     errorElement: <RouteErrorBoundary />,
@@ -200,7 +194,6 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // 6. Trang thông báo không có quyền truy cập (403 Forbidden)
   {
     path: ROUTES.UNAUTHORIZED,
     element: (
@@ -214,7 +207,6 @@ export const router = createBrowserRouter([
     ),
   },
 
-  // 5. Catch-all: 404 Not Found
   {
     path: '*',
     element: (

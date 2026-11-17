@@ -28,12 +28,10 @@ const EditUserModalContent: React.FC<{
   const [fullName, setFullName] = useState(user.fullName);
   const [email, setEmail] = useState(user.email);
 
-  // Instructor
   const [department, setDepartment] = useState(user.instructorProfile?.department || '');
   const [phone, setPhone] = useState(user.instructorProfile?.phone || '');
   const [teachingActive, setTeachingActive] = useState(user.instructorProfile?.teachingActive ?? true);
 
-  // Student
   const [homeroomClass, setHomeroomClass] = useState(user.studentProfile?.homeroomClass || '');
   const [dateOfBirth, setDateOfBirth] = useState(user.studentProfile?.dateOfBirth || '');
   const [studentStatus, setStudentStatus] = useState<StudentStatus>(user.studentProfile?.status || 'ACTIVE');
@@ -77,7 +75,6 @@ const EditUserModalContent: React.FC<{
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
       <div className="relative w-full max-w-lg rounded-2xl bg-white shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
           <div className="flex items-center gap-2 text-indigo-600 font-semibold text-base">
             <Edit className="h-5 w-5" />
@@ -91,7 +88,6 @@ const EditUserModalContent: React.FC<{
           </button>
         </div>
 
-        {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
           {error && (
             <div className="flex items-start gap-2.5 rounded-lg bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200">
@@ -100,7 +96,6 @@ const EditUserModalContent: React.FC<{
             </div>
           )}
 
-          {/* Thông tin tài khoản tĩnh */}
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs text-slate-600 grid grid-cols-2 gap-2">
             <div>
               <span className="text-slate-400 block">Tên đăng nhập:</span>
@@ -120,7 +115,6 @@ const EditUserModalContent: React.FC<{
             </div>
           </div>
 
-          {/* Họ và tên & Email */}
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1">
               Họ và tên <span className="text-rose-500">*</span>
@@ -147,7 +141,6 @@ const EditUserModalContent: React.FC<{
             />
           </div>
 
-          {/* Giảng viên profile */}
           {user.role === 'INSTRUCTOR' && user.instructorProfile && (
             <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-4 space-y-3">
               <span className="text-xs font-bold text-blue-800 uppercase tracking-wide block">
@@ -188,7 +181,6 @@ const EditUserModalContent: React.FC<{
             </div>
           )}
 
-          {/* Học viên profile */}
           {user.role === 'STUDENT' && user.studentProfile && (
             <div className="rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 space-y-3">
               <span className="text-xs font-bold text-emerald-800 uppercase tracking-wide block">
@@ -229,7 +221,6 @@ const EditUserModalContent: React.FC<{
             </div>
           )}
 
-          {/* Footer buttons */}
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
             <button
               type="button"

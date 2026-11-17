@@ -15,20 +15,13 @@ export interface AuthUserResponse {
 }
 
 export const authService = {
-  /**
-   * Lấy mã token CSRF (Set Cookie XSRF-TOKEN từ Backend)
-   */
   async getCsrfToken(): Promise<void> {
     try {
       await axiosClient.get('/auth/csrf');
     } catch {
-      // Cho phép im lặng nếu backend chưa online
     }
   },
 
-  /**
-   * Đăng nhập tài khoản
-   */
   async login(credentials: LoginCredentials): Promise<User> {
     await this.getCsrfToken();
     const response = await axiosClient.post<AuthUserResponse>('/auth/login', credentials);
@@ -48,9 +41,6 @@ export const authService = {
     return user;
   },
 
-  /**
-   * Đăng xuất khỏi hệ thống
-   */
   async logout(): Promise<void> {
     try {
       await axiosClient.post('/auth/logout');
@@ -61,9 +51,6 @@ export const authService = {
     }
   },
 
-  /**
-   * Lấy thông tin phiên làm việc hiện tại từ Backend (/auth/me)
-   */
   async getCurrentUser(): Promise<User | null> {
     try {
       const response = await axiosClient.get<AuthUserResponse>('/auth/me');
@@ -83,9 +70,6 @@ export const authService = {
     }
   },
 
-  /**
-   * Đổi mật khẩu cá nhân
-   */
   async changePassword(oldPassword: string, newPassword: string): Promise<void> {
     await axiosClient.patch('/auth/password', { oldPassword, newPassword });
   },

@@ -144,7 +144,6 @@ export function ClassDetailModal({
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
         <div className="relative flex flex-col w-full max-w-4xl h-[88vh] rounded-2xl bg-white shadow-2xl overflow-hidden">
-          {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/80 px-6 py-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-xs">
@@ -172,7 +171,6 @@ export function ClassDetailModal({
             </button>
           </div>
 
-          {/* Navigation Tabs */}
           <div className="flex items-center gap-6 border-b border-slate-200 px-6 bg-white text-sm">
             <button
               type="button"
@@ -216,7 +214,6 @@ export function ClassDetailModal({
             </button>
           </div>
 
-          {/* Body Content */}
           <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
             {actionError && (
               <div className="mb-4 flex items-center gap-2 rounded-lg bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200">
@@ -225,7 +222,6 @@ export function ClassDetailModal({
               </div>
             )}
 
-            {/* TAB 1: SESSIONS (Timeline List) */}
             {activeTab === 'sessions' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -285,7 +281,6 @@ export function ClassDetailModal({
                         key={sess.id}
                         className="relative rounded-xl border border-slate-200 bg-white p-4 shadow-xs hover:border-indigo-300 transition"
                       >
-                        {/* Timeline dot */}
                         <div className="absolute -left-[31px] top-4.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white shadow-xs">
                           {idx + 1}
                         </div>
@@ -344,7 +339,6 @@ export function ClassDetailModal({
                             </div>
                           </div>
 
-                          {/* Actions */}
                           {canEditSessions && (
                             <div className="flex items-center gap-1 self-end sm:self-center">
                               <button
@@ -376,7 +370,6 @@ export function ClassDetailModal({
               </div>
             )}
 
-            {/* TAB 2: OVERVIEW */}
             {activeTab === 'overview' && (
               <div className="space-y-5">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -464,7 +457,6 @@ export function ClassDetailModal({
               </div>
             )}
 
-            {/* TAB 3: ROSTER */}
             {activeTab === 'roster' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -549,7 +541,6 @@ export function ClassDetailModal({
             )}
           </div>
 
-          {/* Footer */}
           <div className="flex items-center justify-between border-t border-slate-200 bg-white px-6 py-3.5">
             <span className="text-xs text-slate-400">
               Cập nhật lần cuối: {new Date(classOffering.updatedAt).toLocaleString('vi-VN')}
@@ -565,7 +556,6 @@ export function ClassDetailModal({
         </div>
       </div>
 
-      {/* Sub-modal: Add / Edit Session */}
       <AddSessionModal
         isOpen={isAddSessionModalOpen}
         classId={classOffering.id}
@@ -580,7 +570,6 @@ export function ClassDetailModal({
         onUpdate={handleUpdateSession}
       />
 
-      {/* Sub-modal: Unlock Attendance */}
       <UnlockAttendanceModal
         isOpen={!!unlockingSession}
         session={unlockingSession}

@@ -36,7 +36,6 @@ export function EditClassModal({
       setStartDate(classOffering.startDate);
       setEndDate(classOffering.endDate);
       setMaxCapacity(classOffering.maxCapacity);
-      // Format cancelDeadline to date YYYY-MM-DD
       const datePart = classOffering.cancelDeadline.split('T')[0];
       setCancelDeadline(datePart);
       setMinAttendancePct(classOffering.minAttendancePct);

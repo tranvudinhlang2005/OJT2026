@@ -29,7 +29,6 @@ export function AssignInstructorModal({
 
   if (!isOpen || !classOffering) return null;
 
-  // Filter instructors qualified for this class course
   const qualifiedInstructors = instructors.filter(
     (inst) => inst.teachableCourses.includes(classOffering.courseId)
   );
@@ -86,7 +85,6 @@ export function AssignInstructorModal({
               Chọn giảng viên giảng dạy
             </label>
             <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-              {/* Option to clear instructor if DRAFT */}
               {classOffering.status === 'DRAFT' && (
                 <label
                   className={`flex items-center justify-between p-3 rounded-xl border text-sm cursor-pointer transition ${

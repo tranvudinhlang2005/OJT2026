@@ -36,7 +36,6 @@ export default function ApprovalsPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Modals state
   const [selectedDetail, setSelectedDetail] = useState<ClassResultDetail | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
@@ -66,7 +65,6 @@ export default function ApprovalsPage() {
     studentsCount: 0,
   });
 
-  // Tải danh sách và thống kê
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -77,7 +75,6 @@ export default function ApprovalsPage() {
       setItems(listData);
       setStats(statsData);
 
-      // Nếu đang mở modal chi tiết, đồng bộ lại dữ liệu mới nhất
       if (selectedDetail) {
         const refreshed = await approvalService.getClassResults(selectedDetail.classId);
         setSelectedDetail(refreshed);
@@ -93,10 +90,8 @@ export default function ApprovalsPage() {
     loadData();
   }, [filter]);
 
-  // Danh sách các học kỳ không trùng lặp
   const distinctSemesters = Array.from(new Set(items.map((i) => i.semester)));
 
-  // Mở modal chi tiết để xem hoặc xét duyệt
   const handleOpenReview = async (classId: string) => {
     try {
       const detail = await approvalService.getClassResults(classId);
@@ -107,7 +102,6 @@ export default function ApprovalsPage() {
     }
   };
 
-  // TR16: Phê duyệt kết quả
   const handleConfirmResult = async () => {
     if (!selectedDetail) return;
     try {
@@ -122,7 +116,6 @@ export default function ApprovalsPage() {
     }
   };
 
-  // Mở modal trả về sửa
   const handleOpenReturnModal = () => {
     if (!selectedDetail) return;
     setReturnModal({
@@ -133,7 +126,6 @@ export default function ApprovalsPage() {
     });
   };
 
-  // TR16: Trả về kết quả kèm lý do
   const handleReturnSubmit = async (reason: string) => {
     try {
       await approvalService.returnResults(returnModal.classId, reason);
@@ -147,7 +139,6 @@ export default function ApprovalsPage() {
     }
   };
 
-  // Mở modal đóng/hoàn tất lớp từ Modal chi tiết
   const handleOpenCompleteFromDetail = () => {
     if (!selectedDetail) return;
     setCompleteModal({
@@ -159,7 +150,6 @@ export default function ApprovalsPage() {
     });
   };
 
-  // Mở modal đóng/hoàn tất lớp từ dòng của Bảng
   const handleOpenCompleteFromTable = (item: ApprovalSummaryItem) => {
     setCompleteModal({
       isOpen: true,
@@ -170,7 +160,6 @@ export default function ApprovalsPage() {
     });
   };
 
-  // TR16: Hoàn tất lớp học (CLOSED)
   const handleCompleteSubmit = async () => {
     try {
       await approvalService.completeClass(completeModal.classId);
@@ -186,7 +175,6 @@ export default function ApprovalsPage() {
     }
   };
 
-  // Hỗ trợ chốt nhanh các buổi học chưa chốt (tiện ích test TR16)
   const handleQuickLockSessions = async () => {
     if (!selectedDetail) return;
     try {
@@ -202,7 +190,6 @@ export default function ApprovalsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
       <div className="border-b border-slate-200 pb-5">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">
@@ -228,10 +215,8 @@ export default function ApprovalsPage() {
         </div>
       )}
 
-      {/* Thống kê 4 thẻ */}
       <ApprovalStatsCards stats={stats} />
 
-      {/* Bộ lọc tìm kiếm */}
       <ApprovalFilters
         filter={filter}
         semesters={distinctSemesters}
@@ -245,7 +230,6 @@ export default function ApprovalsPage() {
         }
       />
 
-      {/* Bảng danh sách */}
       <ApprovalTable
         items={items}
         isLoading={isLoading}
@@ -253,7 +237,6 @@ export default function ApprovalsPage() {
         onOpenCompleteModal={handleOpenCompleteFromTable}
       />
 
-      {/* Modal chi tiết bảng điểm & xét duyệt */}
       <ApprovalDetailModal
         isOpen={isDetailOpen}
         resultDetail={selectedDetail}
@@ -264,7 +247,6 @@ export default function ApprovalsPage() {
         onQuickLockSessions={handleQuickLockSessions}
       />
 
-      {/* Modal trả về yêu cầu sửa */}
       <ReturnResultModal
         isOpen={returnModal.isOpen}
         classCode={returnModal.classCode}
@@ -273,7 +255,6 @@ export default function ApprovalsPage() {
         onSubmit={handleReturnSubmit}
       />
 
-      {/* Modal xác nhận hoàn tất lớp học */}
       <CompleteClassModal
         isOpen={completeModal.isOpen}
         classCode={completeModal.classCode}

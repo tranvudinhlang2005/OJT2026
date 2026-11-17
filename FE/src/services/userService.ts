@@ -1,5 +1,13 @@
 import { axiosClient } from './axiosClient';
-import type { ManagedUser, UserFilter, CreateUserPayload, UpdateUserPayload, SystemRole } from '../types/user';
+import type {
+  ManagedUser,
+  UserFilter,
+  CreateUserPayload,
+  UpdateUserPayload,
+  SystemRole,
+  StudentStatus,
+  TeachableCourseItem,
+} from '../types/user';
 
 interface BackendUserResponse {
   id: number;
@@ -9,6 +17,8 @@ interface BackendUserResponse {
   role: SystemRole;
   isActive: boolean;
   lockedUntil: string | null;
+  createdAt: string;
+  failedLoginCount: number;
 }
 
 interface PageResponse<T> {
@@ -19,27 +29,46 @@ interface PageResponse<T> {
   totalPages: number;
 }
 
-interface BackendStudentSummary {
+interface BackendStudentResponse {
   id: number;
-  studentCode: string;
+  userId: number;
+  username: string;
   fullName: string;
   email: string;
+  accountActive: boolean;
+  studentCode: string;
+  dateOfBirth?: string;
+  homeroomClass?: string;
+  status: StudentStatus;
 }
 
 interface BackendInstructorSummary {
   id: number;
-  instructorCode: string;
+  userId: number;
+  username: string;
   fullName: string;
   email: string;
+  instructorCode: string;
   department: string;
   phone: string;
+  isActive: boolean;
+}
+
+interface BackendInstructorDetailResponse {
+  id: number;
+  userId: number;
+  username: string;
+  fullName: string;
+  email: string;
+  accountActive: boolean;
+  instructorCode: string;
+  department: string;
+  phone: string;
+  isActive: boolean;
+  courses: Array<{ id: number; code: string; name: string; isActive: boolean }>;
 }
 
 export const userService = {
-  /**
-   * Lấy danh sách người dùng với bộ lọc từ Backend (GET /api/v1/users)
-   * Áp dụng Data Enrichment để ghép thêm studentCode và instructorCode nếu có.
-   */
   async getUsers(filter: UserFilter = {}): Promise<ManagedUser[]> {
     const params: Record<string, string | boolean | number> = {
       page: 0,
@@ -57,39 +86,34 @@ export const userService = {
       params.keyword = filter.keyword.trim();
     }
 
-    // 1. Lấy danh sách tài khoản
     const usersRes = await axiosClient.get<PageResponse<BackendUserResponse>>('/users', { params });
     const users = usersRes.data?.items || [];
 
-    // 2. Data Enrichment (ghép thông tin hồ sơ phụ trợ)
-    let studentsMap = new Map<string, BackendStudentSummary>();
-    let instructorsMap = new Map<string, BackendInstructorSummary>();
+    let studentsMap = new Map<number, BackendStudentResponse>();
+    let instructorsMap = new Map<number, BackendInstructorSummary>();
 
     try {
       const [stdRes, instRes] = await Promise.allSettled([
-        axiosClient.get<PageResponse<BackendStudentSummary>>('/students', { params: { size: 100 } }),
+        axiosClient.get<PageResponse<BackendStudentResponse>>('/students', { params: { size: 100 } }),
         axiosClient.get<PageResponse<BackendInstructorSummary>>('/instructors', { params: { size: 100 } }),
       ]);
 
       if (stdRes.status === 'fulfilled' && stdRes.value.data?.items) {
         stdRes.value.data.items.forEach((s) => {
-          if (s.email) studentsMap.set(s.email.toLowerCase(), s);
+          studentsMap.set(s.userId, s);
         });
       }
       if (instRes.status === 'fulfilled' && instRes.value.data?.items) {
         instRes.value.data.items.forEach((i) => {
-          if (i.email) instructorsMap.set(i.email.toLowerCase(), i);
+          instructorsMap.set(i.userId, i);
         });
       }
     } catch {
-      // Nếu không có quyền đọc danh sách hồ sơ, bỏ qua enrichment
     }
 
-    // 3. Map sang ManagedUser
     return users.map((u) => {
-      const emailKey = u.email.toLowerCase();
-      const std = studentsMap.get(emailKey);
-      const inst = instructorsMap.get(emailKey);
+      const std = studentsMap.get(u.id);
+      const inst = instructorsMap.get(u.id);
 
       const managed: ManagedUser = {
         id: String(u.id),
@@ -98,23 +122,26 @@ export const userService = {
         fullName: u.fullName,
         role: u.role,
         isActive: u.isActive,
-        failedLoginCount: 0,
+        failedLoginCount: u.failedLoginCount ?? 0,
         lockedUntil: u.lockedUntil,
-        createdAt: new Date().toISOString(),
+        createdAt: u.createdAt || new Date().toISOString(),
       };
 
       if (u.role === 'STUDENT' && std) {
         managed.studentProfile = {
+          id: String(std.id),
           studentCode: std.studentCode,
-          homeroomClass: 'Chưa gán',
-          status: 'ACTIVE',
+          dateOfBirth: std.dateOfBirth,
+          homeroomClass: std.homeroomClass || 'Chưa gán',
+          status: std.status,
         };
       } else if (u.role === 'INSTRUCTOR' && inst) {
         managed.instructorProfile = {
+          id: String(inst.id),
           instructorCode: inst.instructorCode,
           department: inst.department || 'Khoa Công nghệ Thông tin',
           phone: inst.phone || '',
-          teachingActive: true,
+          teachingActive: inst.isActive,
           teachableCourses: [],
         };
       }
@@ -123,9 +150,65 @@ export const userService = {
     });
   },
 
-  /**
-   * Tạo mới tài khoản (Admin) (POST /api/v1/users)
-   */
+  async getStudentById(id: string): Promise<BackendStudentResponse> {
+    const res = await axiosClient.get<BackendStudentResponse>(`/students/${id}`);
+    return res.data;
+  },
+
+  async updateStudentProfile(
+    profileId: string,
+    payload: { studentCode: string; dateOfBirth?: string; homeroomClass?: string }
+  ): Promise<BackendStudentResponse> {
+    const body = {
+      studentCode: payload.studentCode.trim().toUpperCase(),
+      dateOfBirth: payload.dateOfBirth || null,
+      homeroomClass: payload.homeroomClass?.trim() || null,
+    };
+    const res = await axiosClient.put<BackendStudentResponse>(`/students/${profileId}`, body);
+    return res.data;
+  },
+
+  async changeStudentStatus(profileId: string, status: StudentStatus): Promise<BackendStudentResponse> {
+    const res = await axiosClient.patch<BackendStudentResponse>(`/students/${profileId}/status`, { status });
+    return res.data;
+  },
+
+  async getInstructorById(id: string): Promise<BackendInstructorDetailResponse> {
+    const res = await axiosClient.get<BackendInstructorDetailResponse>(`/instructors/${id}`);
+    return res.data;
+  },
+
+  async updateInstructorProfile(
+    profileId: string,
+    payload: { instructorCode: string; department?: string; phone?: string }
+  ): Promise<BackendInstructorSummary> {
+    const body = {
+      instructorCode: payload.instructorCode.trim().toUpperCase(),
+      department: payload.department?.trim() || null,
+      phone: payload.phone?.trim() || null,
+    };
+    const res = await axiosClient.put<BackendInstructorSummary>(`/instructors/${profileId}`, body);
+    return res.data;
+  },
+
+  async toggleInstructorTeachingStatus(profileId: string, isActive: boolean): Promise<BackendInstructorSummary> {
+    const res = await axiosClient.patch<BackendInstructorSummary>(`/instructors/${profileId}/status`, { isActive });
+    return res.data;
+  },
+
+  async assignInstructorCourses(profileId: string, courseIds: number[]): Promise<TeachableCourseItem[]> {
+    const res = await axiosClient.put<Array<{ id: number; code: string; name: string }>>(
+      `/instructors/${profileId}/courses`,
+      { courseIds }
+    );
+    const items = res.data || [];
+    return items.map((c) => ({
+      id: String(c.id),
+      code: c.code,
+      name: c.name,
+    }));
+  },
+
   async createUser(payload: CreateUserPayload): Promise<ManagedUser> {
     const body = {
       username: payload.username.trim(),
@@ -133,12 +216,66 @@ export const userService = {
       password: payload.password,
       fullName: payload.fullName.trim(),
       role: payload.role,
-      studentCode: payload.role === 'STUDENT' ? payload.studentCode?.trim() : undefined,
-      instructorCode: payload.role === 'INSTRUCTOR' ? payload.instructorCode?.trim() : undefined,
+      studentCode: payload.role === 'STUDENT' ? payload.studentCode?.trim().toUpperCase() : undefined,
+      instructorCode: payload.role === 'INSTRUCTOR' ? payload.instructorCode?.trim().toUpperCase() : undefined,
     };
 
     const res = await axiosClient.post<BackendUserResponse>('/users', body);
     const u = res.data;
+
+    let studentProfile = undefined;
+    let instructorProfile = undefined;
+
+    if (payload.role === 'STUDENT' && payload.studentCode) {
+      try {
+        const stdListRes = await axiosClient.get<PageResponse<BackendStudentResponse>>('/students', {
+          params: { keyword: payload.studentCode.trim() },
+        });
+        const matchedStd = stdListRes.data?.items?.find((s) => s.userId === u.id);
+        if (matchedStd) {
+          studentProfile = {
+            id: String(matchedStd.id),
+            studentCode: matchedStd.studentCode,
+            dateOfBirth: payload.dateOfBirth,
+            homeroomClass: payload.homeroomClass || 'Chưa gán',
+            status: matchedStd.status,
+          };
+          if (payload.dateOfBirth || payload.homeroomClass) {
+            await this.updateStudentProfile(String(matchedStd.id), {
+              studentCode: payload.studentCode,
+              dateOfBirth: payload.dateOfBirth,
+              homeroomClass: payload.homeroomClass,
+            });
+          }
+        }
+      } catch {
+      }
+    } else if (payload.role === 'INSTRUCTOR' && payload.instructorCode) {
+      try {
+        const instListRes = await axiosClient.get<PageResponse<BackendInstructorSummary>>('/instructors', {
+          params: { keyword: payload.instructorCode.trim() },
+        });
+        const matchedInst = instListRes.data?.items?.find((i) => i.userId === u.id);
+        if (matchedInst) {
+          instructorProfile = {
+            id: String(matchedInst.id),
+            instructorCode: matchedInst.instructorCode,
+            department: payload.department || 'Khoa CNTT',
+            phone: payload.phone || '',
+            teachingActive: true,
+            teachableCourses: [],
+          };
+          if (payload.department || payload.phone) {
+            await this.updateInstructorProfile(String(matchedInst.id), {
+              instructorCode: payload.instructorCode,
+              department: payload.department,
+              phone: payload.phone,
+            });
+          }
+        }
+      } catch {
+      }
+    }
 
     return {
       id: String(u.id),
@@ -149,25 +286,13 @@ export const userService = {
       isActive: u.isActive,
       failedLoginCount: 0,
       lockedUntil: u.lockedUntil,
-      createdAt: new Date().toISOString(),
-      studentProfile: payload.studentCode
-        ? { studentCode: payload.studentCode, homeroomClass: 'Chưa gán', status: 'ACTIVE' }
-        : undefined,
-      instructorProfile: payload.instructorCode
-        ? {
-            instructorCode: payload.instructorCode,
-            department: payload.department || 'Khoa CNTT',
-            phone: payload.phone || '',
-            teachingActive: true,
-          }
-        : undefined,
+      createdAt: u.createdAt || new Date().toISOString(),
+      studentProfile,
+      instructorProfile,
     };
   },
 
-  /**
-   * Cập nhật thông tin cơ bản người dùng (PATCH /api/v1/users/{id})
-   */
-  async updateUser(id: string, payload: UpdateUserPayload): Promise<ManagedUser> {
+  async updateUser(id: string, payload: UpdateUserPayload, user?: ManagedUser): Promise<ManagedUser> {
     const body: Record<string, string> = {};
     if (payload.fullName) body.fullName = payload.fullName.trim();
     if (payload.email) body.email = payload.email.trim();
@@ -175,6 +300,30 @@ export const userService = {
     const res = await axiosClient.patch<BackendUserResponse>(`/users/${id}`, body);
     const u = res.data;
 
+    if (user?.role === 'STUDENT' && user.studentProfile?.id) {
+      const studentCode = payload.studentCode || user.studentProfile.studentCode;
+      await this.updateStudentProfile(user.studentProfile.id, {
+        studentCode,
+        dateOfBirth: payload.dateOfBirth ?? user.studentProfile.dateOfBirth,
+        homeroomClass: payload.homeroomClass ?? user.studentProfile.homeroomClass,
+      });
+
+      if (payload.studentStatus && payload.studentStatus !== user.studentProfile.status) {
+        await this.changeStudentStatus(user.studentProfile.id, payload.studentStatus);
+      }
+    } else if (user?.role === 'INSTRUCTOR' && user.instructorProfile?.id) {
+      const instructorCode = payload.instructorCode || user.instructorProfile.instructorCode;
+      await this.updateInstructorProfile(user.instructorProfile.id, {
+        instructorCode,
+        department: payload.department ?? user.instructorProfile.department,
+        phone: payload.phone ?? user.instructorProfile.phone,
+      });
+
+      if (payload.teachingActive !== undefined && payload.teachingActive !== user.instructorProfile.teachingActive) {
+        await this.toggleInstructorTeachingStatus(user.instructorProfile.id, payload.teachingActive);
+      }
+    }
+
     return {
       id: String(u.id),
       username: u.username,
@@ -182,17 +331,14 @@ export const userService = {
       fullName: u.fullName,
       role: u.role,
       isActive: u.isActive,
-      failedLoginCount: 0,
+      failedLoginCount: u.failedLoginCount ?? 0,
       lockedUntil: u.lockedUntil,
-      createdAt: new Date().toISOString(),
+      createdAt: u.createdAt || new Date().toISOString(),
     };
   },
 
-  /**
-   * Chuyển đổi vai trò tài khoản (PATCH /api/v1/users/{id}/role)
-   */
   async changeRole(id: string, newRole: SystemRole, _currentAdminId?: string): Promise<ManagedUser> {
-    const res = await axiosClient.patch<BackendUserResponse>(`/users/${id}/role`, { newRole });
+    const res = await axiosClient.patch<BackendUserResponse>(`/users/${id}/role`, { role: newRole });
     const u = res.data;
 
     return {
@@ -202,17 +348,13 @@ export const userService = {
       fullName: u.fullName,
       role: u.role,
       isActive: u.isActive,
-      failedLoginCount: 0,
+      failedLoginCount: u.failedLoginCount ?? 0,
       lockedUntil: u.lockedUntil,
-      createdAt: new Date().toISOString(),
+      createdAt: u.createdAt || new Date().toISOString(),
     };
   },
 
-  /**
-   * Kích hoạt / Vô hiệu hóa tài khoản (PATCH /api/v1/users/{id}/status)
-   */
   async toggleUserStatus(id: string, _currentAdminId?: string): Promise<ManagedUser> {
-    // 1. Lấy thông tin user hiện tại để xác định nextStatus
     const users = await this.getUsers();
     const current = users.find((u) => u.id === id);
     const nextStatus = current ? !current.isActive : true;
@@ -227,15 +369,12 @@ export const userService = {
       fullName: u.fullName,
       role: u.role,
       isActive: u.isActive,
-      failedLoginCount: 0,
+      failedLoginCount: u.failedLoginCount ?? 0,
       lockedUntil: u.lockedUntil,
-      createdAt: new Date().toISOString(),
+      createdAt: u.createdAt || new Date().toISOString(),
     };
   },
 
-  /**
-   * Mở khóa tài khoản bị khóa tạm thời 15 phút (PATCH /api/v1/users/{id}/status với isActive = true)
-   */
   async unlockUser(id: string): Promise<ManagedUser> {
     const res = await axiosClient.patch<BackendUserResponse>(`/users/${id}/status`, { isActive: true });
     const u = res.data;
@@ -249,13 +388,10 @@ export const userService = {
       isActive: u.isActive,
       failedLoginCount: 0,
       lockedUntil: null,
-      createdAt: new Date().toISOString(),
+      createdAt: u.createdAt || new Date().toISOString(),
     };
   },
 
-  /**
-   * Đặt lại mật khẩu tài khoản (Admin) (PATCH /api/v1/users/{id}/password)
-   */
   async resetPassword(id: string): Promise<{ tempPassword: string; message: string }> {
     const tempPassword = `Pass@${Math.floor(100000 + Math.random() * 900000)}`;
     await axiosClient.patch(`/users/${id}/password`, { newPassword: tempPassword });

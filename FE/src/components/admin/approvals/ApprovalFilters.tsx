@@ -23,7 +23,6 @@ export function ApprovalFilters({
 
   return (
     <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
-      {/* Status tabs */}
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-3">
         <span className="mr-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
           Trạng thái:
@@ -47,9 +46,7 @@ export function ApprovalFilters({
         })}
       </div>
 
-      {/* Inputs row */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
-        {/* Search Input */}
         <div className="relative sm:col-span-7 lg:col-span-8">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -61,7 +58,6 @@ export function ApprovalFilters({
           />
         </div>
 
-        {/* Semester select */}
         <div className="sm:col-span-4 lg:col-span-3">
           <div className="relative">
             <Filter className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -80,7 +76,6 @@ export function ApprovalFilters({
           </div>
         </div>
 
-        {/* Reset button */}
         <div className="flex items-center justify-end sm:col-span-1 lg:col-span-1">
           <button
             type="button"

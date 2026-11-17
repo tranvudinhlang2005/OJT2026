@@ -38,7 +38,6 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
       <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
           <div className="flex items-center gap-2 text-amber-600 font-semibold text-base">
             <KeyRound className="h-5 w-5" />
@@ -52,7 +51,6 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
           </button>
         </div>
 
-        {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
             <div className="flex items-start gap-2.5 rounded-lg bg-rose-50 p-3 text-xs text-rose-700 border border-rose-200">
@@ -76,7 +74,6 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
             </p>
           </div>
 
-          {/* Footer buttons */}
           <div className="flex items-center justify-end gap-3 pt-3">
             <button
               type="button"

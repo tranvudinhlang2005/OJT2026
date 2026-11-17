@@ -29,9 +29,8 @@ export default function StudentProfilePage() {
         if (!isMounted) return;
         setProfile(prof);
 
-        // Tính toán Client-side Computation
         const passed = results.filter((r) => r.finalStatus === 'PASSED');
-        setAccumulatedCredits(passed.length * 3); // 3 tín chỉ mặc định mỗi môn
+        setAccumulatedCredits(passed.length * 3);
 
         const withScore = results.filter((r) => r.totalScore !== null);
         if (withScore.length > 0) {
@@ -39,7 +38,6 @@ export default function StudentProfilePage() {
           setGpa4((avg10 / 10) * 4);
         }
       } catch {
-        // Fallback profile if offline
         if (isMounted) {
           setProfile({
             id: '1',
@@ -74,7 +72,6 @@ export default function StudentProfilePage() {
 
   return (
     <div className="space-y-6">
-      {/* Profile Header Hero Card */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
@@ -111,9 +108,7 @@ export default function StudentProfilePage() {
         </div>
       </div>
 
-      {/* Grid 2 Columns: Academic Information & Personal Contact */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Thông tin học vụ */}
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
             <GraduationCap className="h-5 w-5 text-blue-600" />
@@ -156,7 +151,6 @@ export default function StudentProfilePage() {
           </dl>
         </div>
 
-        {/* Thông tin cá nhân & Liên hệ */}
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs space-y-4">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
             <User className="h-5 w-5 text-blue-600" />

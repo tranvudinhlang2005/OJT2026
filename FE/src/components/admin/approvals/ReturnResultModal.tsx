@@ -55,7 +55,6 @@ export function ReturnResultModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs">
       <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl transition-all">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <div className="flex items-center gap-2.5 text-rose-600">
             <div className="rounded-lg bg-rose-50 p-2">
@@ -75,7 +74,6 @@ export function ReturnResultModal({
           </button>
         </div>
 
-        {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="rounded-xl bg-slate-50 p-3.5 border border-slate-200 text-xs text-slate-600">
             <span className="font-semibold text-slate-900">Lớp học phần:</span> {classCode} - {courseName}
@@ -112,7 +110,6 @@ export function ReturnResultModal({
             </div>
           )}
 
-          {/* Footer Buttons */}
           <div className="flex items-center justify-end gap-2.5 pt-2">
             <button
               type="button"

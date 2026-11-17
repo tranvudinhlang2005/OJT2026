@@ -6,6 +6,7 @@ import { CreateUserModal } from '../../components/admin/users/CreateUserModal';
 import { EditUserModal } from '../../components/admin/users/EditUserModal';
 import { ChangeRoleModal } from '../../components/admin/users/ChangeRoleModal';
 import { ResetPasswordModal } from '../../components/admin/users/ResetPasswordModal';
+import { AssignCoursesModal } from '../../components/admin/users/AssignCoursesModal';
 import { userService } from '../../services/userService';
 import type {
   ManagedUser,
@@ -27,18 +28,18 @@ export default function UsersPage() {
   const [filter, setFilter] = useState<UserFilter>({ role: 'ALL', status: 'ALL', keyword: '' });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedUserForEdit, setSelectedUserForEdit] = useState<ManagedUser | null>(null);
   const [selectedUserForRoleChange, setSelectedUserForRoleChange] = useState<ManagedUser | null>(null);
   const [selectedUserForResetPass, setSelectedUserForResetPass] = useState<ManagedUser | null>(null);
+  const [selectedUserForAssignCourses, setSelectedUserForAssignCourses] = useState<ManagedUser | null>(null);
 
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
       const [filteredData, fullData] = await Promise.all([
         userService.getUsers(filter),
-        userService.getUsers(), // Để tính stats
+        userService.getUsers(),
       ]);
       setUsers(filteredData);
       setAllUsersCount(fullData);
@@ -53,7 +54,6 @@ export default function UsersPage() {
     loadData();
   }, [loadData]);
 
-  // Thao tác Tạo mới
   const handleCreateUser = async (payload: CreateUserPayload) => {
     try {
       const created = await userService.createUser(payload);
@@ -66,20 +66,19 @@ export default function UsersPage() {
     }
   };
 
-  // Thao tác Sửa thông tin
   const handleUpdateUser = async (id: string, payload: UpdateUserPayload) => {
     try {
-      await userService.updateUser(id, payload);
+      await userService.updateUser(id, payload, selectedUserForEdit || undefined);
       toast.success('Cập nhật thông tin hồ sơ thành công');
       loadData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi cập nhật hồ sơ';
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg = axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi cập nhật hồ sơ');
       toast.error(msg);
-      throw err;
+      throw new Error(msg);
     }
   };
 
-  // Thao tác Đổi trạng thái hoạt động (is_active)
   const handleToggleStatus = async (user: ManagedUser) => {
     try {
       const updated = await userService.toggleUserStatus(user.id, currentAuthUser?.id);
@@ -94,7 +93,6 @@ export default function UsersPage() {
     }
   };
 
-  // Mở khóa khẩn cấp nếu bị khóa tạm thời 15p
   const handleUnlockUser = async (user: ManagedUser) => {
     try {
       await userService.unlockUser(user.id);
@@ -105,7 +103,6 @@ export default function UsersPage() {
     }
   };
 
-  // Thao tác Đổi vai trò (Nâng lên Admin hoặc Hạ về Quản lý)
   const handleChangeRole = async (id: string, newRole: SystemRole) => {
     try {
       await userService.changeRole(id, newRole, currentAuthUser?.id);
@@ -122,7 +119,6 @@ export default function UsersPage() {
     }
   };
 
-  // Thao tác Đặt lại mật khẩu
   const handleResetPassword = async (id: string) => {
     try {
       const result = await userService.resetPassword(id);
@@ -137,7 +133,6 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header trang */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Quản lý Tài khoản & Hồ sơ</h1>
@@ -157,17 +152,14 @@ export default function UsersPage() {
         </button>
       </div>
 
-      {/* Thẻ thống kê */}
       <UserStatsCards users={allUsersCount} />
 
-      {/* Bộ lọc & Tìm kiếm */}
       <UserFilters
         filter={filter}
         onFilterChange={setFilter}
         onCreateClick={() => setIsCreateModalOpen(true)}
       />
 
-      {/* Bảng danh sách tài khoản */}
       <UserTable
         users={users}
         currentAdminUsername={currentAuthUser?.name?.includes('Admin') ? 'admin' : 'admin'}
@@ -176,9 +168,9 @@ export default function UsersPage() {
         onToggleStatus={handleToggleStatus}
         onUnlock={handleUnlockUser}
         onResetPassword={user => setSelectedUserForResetPass(user)}
+        onAssignCourses={user => setSelectedUserForAssignCourses(user)}
       />
 
-      {/* Các Modals nghiệp vụ */}
       <CreateUserModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -204,6 +196,16 @@ export default function UsersPage() {
         user={selectedUserForResetPass}
         onClose={() => setSelectedUserForResetPass(null)}
         onSubmit={handleResetPassword}
+      />
+
+      <AssignCoursesModal
+        isOpen={!!selectedUserForAssignCourses}
+        user={selectedUserForAssignCourses}
+        onClose={() => setSelectedUserForAssignCourses(null)}
+        onSuccess={() => {
+          toast.success('Phân công môn học thành công');
+          loadData();
+        }}
       />
     </div>
   );

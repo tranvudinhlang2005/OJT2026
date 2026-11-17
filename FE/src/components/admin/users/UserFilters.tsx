@@ -36,7 +36,6 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
   return (
     <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Thanh tìm kiếm */}
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -48,9 +47,7 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
           />
         </div>
 
-        {/* Nút hành động */}
         <div className="flex items-center gap-2">
-          {/* Lọc trạng thái */}
           <div className="relative flex items-center">
             <Filter className="absolute left-3 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
             <select
@@ -75,7 +72,6 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
         </div>
       </div>
 
-      {/* Tabs vai trò */}
       <div className="flex flex-wrap gap-1.5 border-t border-slate-100 pt-3">
         {roleTabs.map(tab => {
           const isActive = (filter.role || 'ALL') === tab.key;

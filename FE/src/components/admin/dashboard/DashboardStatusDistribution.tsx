@@ -78,7 +78,6 @@ export function DashboardStatusDistribution({
         </div>
       </div>
 
-      {/* Multi-segment stacked progress bar */}
       <div className="mt-4">
         <div className="flex h-3.5 w-full overflow-hidden rounded-full bg-slate-100">
           {totalClasses > 0 ? (
@@ -100,7 +99,6 @@ export function DashboardStatusDistribution({
         </div>
       </div>
 
-      {/* Status Breakdown Legend & Counts */}
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {statuses.map((item) => {
           const pct = totalClasses > 0 ? ((item.count / totalClasses) * 100).toFixed(0) : '0';
