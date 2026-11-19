@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, KeyRound, AlertTriangle } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { X, KeyRound, AlertTriangle, Loader2 } from 'lucide-react';
 import type { ManagedUser } from '../../../types/user';
 
 interface ResetPasswordModalProps {
@@ -17,20 +17,43 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
 }) => {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+
+  const resetForm = useCallback(() => {
+    setError(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen, resetForm]);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   if (!isOpen || !user) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || submittingRef.current) return;
     setError(null);
 
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       await onSubmit(user.id);
+      resetForm();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi đặt lại mật khẩu');
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Có lỗi xảy ra khi đặt lại mật khẩu'));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -44,8 +67,10 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
             <span>Đặt lại mật khẩu người dùng</span>
           </div>
           <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            type="button"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X className="h-5 w-5" />
           </button>
@@ -77,17 +102,25 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
           <div className="flex items-center justify-end gap-3 pt-3">
             <button
               type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+              onClick={handleClose}
+              disabled={isSubmitting}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-amber-600 px-5 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50 transition shadow-xs"
+              className="flex items-center gap-2 rounded-lg bg-amber-600 px-5 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-60 disabled:cursor-not-allowed transition shadow-xs"
             >
-              {isSubmitting ? 'Đang thực hiện...' : 'Xác nhận đặt lại'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Đang thực hiện...</span>
+                </>
+              ) : (
+                <span>Xác nhận đặt lại</span>
+              )}
             </button>
           </div>
         </form>

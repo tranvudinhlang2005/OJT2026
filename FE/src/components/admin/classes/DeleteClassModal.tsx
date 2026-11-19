@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Trash2, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { X, Trash2, AlertTriangle, ShieldAlert, Loader2 } from 'lucide-react';
 import type { ClassOffering } from '../../../types/classOffering';
 
 interface DeleteClassModalProps {
@@ -17,18 +17,31 @@ export function DeleteClassModal({
 }: DeleteClassModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen || !classOffering) {
+      setError(null);
+      setIsSubmitting(false);
+      submittingRef.current = false;
+    }
+  }, [isOpen, classOffering]);
 
   if (!isOpen || !classOffering) return null;
 
   const handleDelete = async () => {
+    if (isSubmitting || submittingRef.current) return;
     setError(null);
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       await onSubmit(classOffering.id);
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Lỗi khi xóa lớp');
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi xóa lớp'));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -49,7 +62,8 @@ export function DeleteClassModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            disabled={isSubmitting}
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X className="h-5 w-5" />
           </button>
@@ -86,7 +100,7 @@ export function DeleteClassModal({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="rounded-lg border border-slate-300 px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+            className="rounded-lg border border-slate-300 px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Hủy bỏ
           </button>
@@ -94,9 +108,16 @@ export function DeleteClassModal({
             type="button"
             onClick={handleDelete}
             disabled={isSubmitting}
-            className="rounded-lg bg-rose-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-rose-700 shadow-xs transition disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-rose-700 shadow-xs transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Đang xóa...' : 'Xác nhận xóa vĩnh viễn'}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Đang xóa...</span>
+              </>
+            ) : (
+              <span>Xác nhận xóa vĩnh viễn</span>
+            )}
           </button>
         </div>
       </div>

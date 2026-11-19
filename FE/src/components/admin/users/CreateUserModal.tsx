@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, UserPlus, AlertCircle, Info } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { X, UserPlus, AlertCircle, Info, Loader2 } from 'lucide-react';
 import type { CreateUserPayload, CreatableUserRole } from '../../../types/user';
 
 interface CreateUserModalProps {
@@ -17,23 +17,53 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('Password@123');
+  const [password, setPassword] = useState('');
 
   const [studentCode, setStudentCode] = useState('');
   const [homeroomClass, setHomeroomClass] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
 
   const [instructorCode, setInstructorCode] = useState('');
-  const [department, setDepartment] = useState('Công nghệ thông tin');
+  const [department, setDepartment] = useState('');
   const [phone, setPhone] = useState('');
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+
+  const resetForm = useCallback(() => {
+    setRole('STUDENT');
+    setUsername('');
+    setFullName('');
+    setEmail('');
+    setPassword('');
+    setStudentCode('');
+    setHomeroomClass('');
+    setDateOfBirth('');
+    setInstructorCode('');
+    setDepartment('');
+    setPhone('');
+    setError(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen, resetForm]);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || submittingRef.current) return;
     setError(null);
 
     if (username.length < 4 || username.length > 50) {
@@ -69,6 +99,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
     }
 
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       await onSubmit({
         username,
@@ -83,10 +114,13 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
         department: role === 'INSTRUCTOR' ? department : undefined,
         phone: role === 'INSTRUCTOR' ? phone : undefined,
       });
+      resetForm();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi tạo tài khoản');
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Có lỗi xảy ra khi tạo tài khoản'));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -100,8 +134,10 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
             <span>Thêm tài khoản người dùng mới</span>
           </div>
           <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            type="button"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X className="h-5 w-5" />
           </button>
@@ -191,6 +227,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
+                placeholder="VD: Password@123"
                 className="w-full rounded-lg border border-slate-300 p-2 text-sm font-mono text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
@@ -292,17 +329,25 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
             <button
               type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+              onClick={handleClose}
+              disabled={isSubmitting}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition shadow-xs"
+              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition shadow-xs"
             >
-              {isSubmitting ? 'Đang tạo...' : 'Tạo tài khoản'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Đang tạo...</span>
+                </>
+              ) : (
+                <span>Tạo tài khoản</span>
+              )}
             </button>
           </div>
         </form>

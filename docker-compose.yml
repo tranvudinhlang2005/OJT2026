@@ -1,0 +1,108 @@
+services:
+  # =============================================================================
+  # PostgreSQL Database Service
+  # =============================================================================
+  postgres:
+    image: postgres:17-alpine
+    container_name: p02_postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-p02_training}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-p02_training}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - app-network
+
+  # =============================================================================
+  # Backend API Service (Spring Boot 3 + Java 21)
+  # =============================================================================
+  backend:
+    build:
+      context: ./BE
+      dockerfile: Dockerfile
+    container_name: p02_backend
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-p02_training}
+      DB_USERNAME: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_at_least_32_bytes_long_123456}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:3000}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/v3/api-docs || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
+    networks:
+      - app-network
+
+  # =============================================================================
+  # DB Seed Service (Loads Demo Accounts & Seed Data Automatically)
+  # =============================================================================
+  db-seed:
+    image: postgres:17-alpine
+    container_name: p02_db_seed
+    restart: "no"
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./BE/src/main/resources/db/seed/demo-seed-querytool.sql:/seed.sql:ro
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting for Flyway schema migration to complete..."
+        until psql -h postgres -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-p02_training} -c "SELECT 1 FROM class_offering LIMIT 1;" > /dev/null 2>&1; do
+          sleep 2
+        done
+        echo "Flyway schema is ready. Seeding demo accounts and dataset..."
+        psql -h postgres -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-p02_training} -f /seed.sql
+        echo "Demo dataset seeded successfully!"
+    networks:
+      - app-network
+
+  # =============================================================================
+  # Frontend Service (React 19 + Vite + Tailwind via Nginx Reverse Proxy)
+  # =============================================================================
+  frontend:
+    build:
+      context: ./FE
+      dockerfile: Dockerfile
+    container_name: p02_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

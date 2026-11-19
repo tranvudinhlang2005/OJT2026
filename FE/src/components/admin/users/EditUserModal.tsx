@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Edit, AlertCircle, Save } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { X, Edit, AlertCircle, Save, Loader2 } from 'lucide-react';
 import type { ManagedUser, UpdateUserPayload, StudentStatus } from '../../../types/user';
 
 interface EditUserModalProps {
@@ -17,7 +17,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
 }) => {
   if (!isOpen || !user) return null;
 
-  return <EditUserModalContent user={user} onClose={onClose} onSubmit={onSubmit} />;
+  return <EditUserModalContent key={user.id} user={user} onClose={onClose} onSubmit={onSubmit} />;
 };
 
 const EditUserModalContent: React.FC<{
@@ -38,9 +38,44 @@ const EditUserModalContent: React.FC<{
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+
+  const resetForm = useCallback(() => {
+    setFullName('');
+    setEmail('');
+    setDepartment('');
+    setPhone('');
+    setTeachingActive(true);
+    setHomeroomClass('');
+    setDateOfBirth('');
+    setStudentStatus('ACTIVE');
+    setError(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    setFullName(user.fullName);
+    setEmail(user.email);
+    setDepartment(user.instructorProfile?.department || '');
+    setPhone(user.instructorProfile?.phone || '');
+    setTeachingActive(user.instructorProfile?.teachingActive ?? true);
+    setHomeroomClass(user.studentProfile?.homeroomClass || '');
+    setDateOfBirth(user.studentProfile?.dateOfBirth || '');
+    setStudentStatus(user.studentProfile?.status || 'ACTIVE');
+    setError(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, [user]);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || submittingRef.current) return;
     setError(null);
 
     if (!fullName.trim()) {
@@ -53,6 +88,7 @@ const EditUserModalContent: React.FC<{
     }
 
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       await onSubmit(user.id, {
         fullName,
@@ -64,10 +100,13 @@ const EditUserModalContent: React.FC<{
         dateOfBirth: user.role === 'STUDENT' ? dateOfBirth : undefined,
         studentStatus: user.role === 'STUDENT' ? studentStatus : undefined,
       });
+      resetForm();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Lỗi khi cập nhật');
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi cập nhật'));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -81,8 +120,10 @@ const EditUserModalContent: React.FC<{
             <span>Chỉnh sửa thông tin tài khoản & hồ sơ</span>
           </div>
           <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            type="button"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X className="h-5 w-5" />
           </button>
@@ -224,18 +265,28 @@ const EditUserModalContent: React.FC<{
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
             <button
               type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+              onClick={handleClose}
+              disabled={isSubmitting}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 transition shadow-xs"
+              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition shadow-xs"
             >
-              <Save className="h-4 w-4" />
-              {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Đang lưu...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  <span>Lưu thay đổi</span>
+                </>
+              )}
             </button>
           </div>
         </form>

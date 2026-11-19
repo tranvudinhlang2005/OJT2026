@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Unlock, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { X, Unlock, AlertCircle, Loader2 } from 'lucide-react';
 import type { ClassSession } from '../../../types/classOffering';
 import { formatDate } from '../../../utils/dateFormat';
 
@@ -19,25 +19,48 @@ export function UnlockAttendanceModal({
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+
+  const resetForm = useCallback(() => {
+    setReason('');
+    setError(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, []);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  useEffect(() => {
+    if (!isOpen || !session) {
+      resetForm();
+    }
+  }, [isOpen, session, resetForm]);
 
   if (!isOpen || !session) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || submittingRef.current) return;
     if (!reason.trim() || reason.trim().length < 5) {
       setError('Vui lòng nhập lý do mở khóa điểm danh (tối thiểu 5 ký tự).');
       return;
     }
 
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       setError(null);
       await onConfirm(session.id, reason.trim());
-      setReason('');
+      resetForm();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Lỗi khi mở khóa điểm danh.');
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi mở khóa điểm danh.'));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -57,7 +80,12 @@ export function UnlockAttendanceModal({
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:bg-slate-200/60 rounded-lg">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="p-1.5 text-slate-400 hover:bg-slate-200/60 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -91,17 +119,25 @@ export function UnlockAttendanceModal({
           <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
             <button
               type="button"
-              onClick={onClose}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+              onClick={handleClose}
+              disabled={isSubmitting}
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-xl bg-amber-600 px-5 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition shadow-xs disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-amber-600 px-5 py-2 text-sm font-semibold text-white hover:bg-amber-700 transition shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Đang mở khóa...' : 'Xác nhận Mở khóa'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Đang mở khóa...</span>
+                </>
+              ) : (
+                <span>Xác nhận Mở khóa</span>
+              )}
             </button>
           </div>
         </form>

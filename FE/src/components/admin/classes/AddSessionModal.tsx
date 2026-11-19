@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Calendar, Clock, DoorOpen, ShieldAlert, AlertTriangle } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { X, Calendar, Clock, DoorOpen, ShieldAlert, AlertTriangle, Loader2 } from 'lucide-react';
 import type { RoomSummary, CreateSessionPayload, ClassSession } from '../../../types/classOffering';
 
 interface AddSessionModalProps {
@@ -39,6 +39,36 @@ export function AddSessionModal({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
+
+  const resetForm = useCallback(() => {
+    setSessionDate(editingSession ? editingSession.sessionDate : startDate || '');
+    setStartTime(editingSession ? editingSession.startTime : '07:30');
+    setEndTime(editingSession ? editingSession.endTime : '11:30');
+    setRoomId(editingSession ? editingSession.roomId : (rooms[0]?.id || ''));
+    setTopic(editingSession ? (editingSession.topic || '') : '');
+    setError(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, [editingSession, startDate, rooms]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    } else {
+      setSessionDate(editingSession ? editingSession.sessionDate : startDate || '');
+      setStartTime(editingSession ? editingSession.startTime : '07:30');
+      setEndTime(editingSession ? editingSession.endTime : '11:30');
+      setRoomId(editingSession ? editingSession.roomId : (rooms[0]?.id || ''));
+      setTopic(editingSession ? (editingSession.topic || '') : '');
+      setError(null);
+    }
+  }, [isOpen, editingSession, startDate, rooms, resetForm]);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -47,6 +77,7 @@ export function AddSessionModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || submittingRef.current) return;
     setError(null);
 
     if (!sessionDate) {
@@ -70,6 +101,7 @@ export function AddSessionModal({
     }
 
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       if (editingSession && onUpdate) {
         await onUpdate(editingSession.id, {
@@ -89,10 +121,13 @@ export function AddSessionModal({
           topic,
         });
       }
+      resetForm();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Lỗi khi xếp lịch buổi học');
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi xếp lịch buổi học'));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -114,8 +149,9 @@ export function AddSessionModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X className="h-5 w-5" />
           </button>
@@ -227,22 +263,27 @@ export function AddSessionModal({
           <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isSubmitting}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+              className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Hủy bỏ
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 shadow-xs transition disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 shadow-xs transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isSubmitting
-                ? 'Đang kiểm tra & lưu...'
-                : editingSession
-                ? 'Lưu thay đổi'
-                : 'Thêm buổi học'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Đang kiểm tra & lưu...</span>
+                </>
+              ) : editingSession ? (
+                'Lưu thay đổi'
+              ) : (
+                'Thêm buổi học'
+              )}
             </button>
           </div>
         </form>

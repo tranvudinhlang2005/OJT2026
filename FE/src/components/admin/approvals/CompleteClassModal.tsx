@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, CheckCircle2, Lock } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { X, CheckCircle2, Lock, Loader2 } from 'lucide-react';
 
 interface CompleteClassModalProps {
   isOpen: boolean;
@@ -20,18 +20,31 @@ export function CompleteClassModal({
 }: CompleteClassModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const submittingRef = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setErrorMessage(null);
+      setIsSubmitting(false);
+      submittingRef.current = false;
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleConfirm = async () => {
+    if (isSubmitting || submittingRef.current) return;
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       setErrorMessage(null);
       await onConfirm();
       onClose();
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'Có lỗi xảy ra khi hoàn tất lớp học');
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setErrorMessage(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Có lỗi xảy ra khi hoàn tất lớp học'));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -52,7 +65,8 @@ export function CompleteClassModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            disabled={isSubmitting}
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X className="h-5 w-5" />
           </button>
@@ -91,7 +105,7 @@ export function CompleteClassModal({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Hủy bỏ
             </button>
@@ -99,10 +113,19 @@ export function CompleteClassModal({
               type="button"
               onClick={handleConfirm}
               disabled={isSubmitting}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-50 transition"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
             >
-              <Lock className="h-3.5 w-3.5" />
-              {isSubmitting ? 'Đang xử lý...' : 'Xác nhận đóng lớp'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Đang xử lý...</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="h-3.5 w-3.5" />
+                  <span>Xác nhận đóng lớp</span>
+                </>
+              )}
             </button>
           </div>
         </div>

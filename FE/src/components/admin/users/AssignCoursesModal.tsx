@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, BookOpen, AlertCircle, Check, Loader2 } from 'lucide-react';
 import type { ManagedUser } from '../../../types/user';
 import type { CourseItem } from '../../../types/course';
@@ -20,7 +20,7 @@ export const AssignCoursesModal: React.FC<AssignCoursesModalProps> = ({
 }) => {
   if (!isOpen || !user || user.role !== 'INSTRUCTOR') return null;
 
-  return <AssignCoursesModalContent user={user} onClose={onClose} onSuccess={onSuccess} />;
+  return <AssignCoursesModalContent key={user.id} user={user} onClose={onClose} onSuccess={onSuccess} />;
 };
 
 const AssignCoursesModalContent: React.FC<{
@@ -32,7 +32,20 @@ const AssignCoursesModalContent: React.FC<{
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
+
+  const resetForm = useCallback(() => {
+    setSelectedIds([]);
+    setError(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, []);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -76,15 +89,18 @@ const AssignCoursesModalContent: React.FC<{
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || submittingRef.current) return;
     if (!user.instructorProfile?.id) {
       setError('Tài khoản này chưa có hồ sơ giảng viên');
       return;
     }
 
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       setError(null);
       await userService.assignInstructorCourses(user.instructorProfile.id, selectedIds);
+      resetForm();
       onSuccess();
       onClose();
     } catch (err: unknown) {
@@ -92,6 +108,7 @@ const AssignCoursesModalContent: React.FC<{
       const msg = axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Có lỗi khi phân công môn học');
       setError(msg);
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -105,8 +122,10 @@ const AssignCoursesModalContent: React.FC<{
             <span>Phân công môn giảng dạy</span>
           </div>
           <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            type="button"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X className="h-5 w-5" />
           </button>
@@ -184,16 +203,16 @@ const AssignCoursesModalContent: React.FC<{
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isSubmitting}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition"
+              className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={isSubmitting || isLoading}
-              className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 transition shadow-xs disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-700 transition shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, GraduationCap, ShieldAlert } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { X, GraduationCap, ShieldAlert, Loader2 } from 'lucide-react';
 import type { CourseSummary, InstructorSummary, CreateClassPayload } from '../../../types/classOffering';
 
 interface CreateClassModalProps {
@@ -32,6 +32,36 @@ export function CreateClassModal({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
+
+  const resetForm = useCallback(() => {
+    setClassCode('');
+    setCourseId('');
+    setSemester('Học kỳ II (2026 - 2027)');
+    setStartDate('');
+    setEndDate('');
+    setInstructorId('');
+    setMaxCapacity(40);
+    setCancelDeadline('');
+    setMinAttendancePct(80.0);
+    setPassScore(5.0);
+    setMidtermWeight(0.3);
+    setFinalWeight(0.7);
+    setError(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen, resetForm]);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   useEffect(() => {
     if (courseId) {
@@ -54,6 +84,7 @@ export function CreateClassModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || submittingRef.current) return;
     setError(null);
 
     if (!classCode.trim()) {
@@ -92,6 +123,7 @@ export function CreateClassModal({
     }
 
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       await onSubmit({
         classCode: classCode.trim().toUpperCase(),
@@ -107,10 +139,13 @@ export function CreateClassModal({
         midtermWeight: Number(midtermWeight),
         finalWeight: Number(finalWeight),
       });
+      resetForm();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Lỗi khi tạo lớp học phần');
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi tạo lớp học phần'));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -131,8 +166,9 @@ export function CreateClassModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X className="h-5 w-5" />
           </button>
@@ -340,18 +376,25 @@ export function CreateClassModal({
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isSubmitting}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Hủy bỏ
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 shadow-xs transition disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 shadow-xs transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Đang tạo...' : 'Tạo lớp học'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Đang tạo...</span>
+                </>
+              ) : (
+                <span>Tạo lớp học</span>
+              )}
             </button>
           </div>
         </form>

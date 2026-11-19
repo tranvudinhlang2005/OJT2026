@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, UserCheck, ShieldAlert } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { X, UserCheck, ShieldAlert, Loader2 } from 'lucide-react';
 import type { ClassOffering, InstructorSummary } from '../../../types/classOffering';
 
 interface AssignInstructorModalProps {
@@ -20,12 +20,30 @@ export function AssignInstructorModal({
   const [selectedInstructorId, setSelectedInstructorId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submittingRef = useRef(false);
+
+  const resetForm = useCallback(() => {
+    setSelectedInstructorId('');
+    setError(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, []);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   useEffect(() => {
-    if (classOffering) {
+    if (!isOpen || !classOffering) {
+      resetForm();
+    } else {
       setSelectedInstructorId(classOffering.instructorId || '');
+      setError(null);
+      setIsSubmitting(false);
+      submittingRef.current = false;
     }
-  }, [classOffering]);
+  }, [isOpen, classOffering, resetForm]);
 
   if (!isOpen || !classOffering) return null;
 
@@ -35,15 +53,20 @@ export function AssignInstructorModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || submittingRef.current) return;
     setError(null);
 
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       await onSubmit(classOffering.id, selectedInstructorId ? selectedInstructorId : null);
+      resetForm();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Lỗi khi phân công giảng viên');
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi phân công giảng viên'));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -65,8 +88,9 @@ export function AssignInstructorModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X className="h-5 w-5" />
           </button>
@@ -167,18 +191,25 @@ export function AssignInstructorModal({
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isSubmitting}
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition"
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Hủy bỏ
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 shadow-xs transition disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 shadow-xs transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Đang cập nhật...' : 'Xác nhận phân công'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Đang cập nhật...</span>
+                </>
+              ) : (
+                <span>Xác nhận phân công</span>
+              )}
             </button>
           </div>
         </form>

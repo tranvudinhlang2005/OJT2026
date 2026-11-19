@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, DoorOpen, AlertCircle } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { X, DoorOpen, AlertCircle, Loader2 } from 'lucide-react';
 import type { CreateRoomPayload } from '../../../types/room';
 
 interface CreateRoomModalProps {
@@ -14,23 +14,48 @@ export function CreateRoomModal({ isOpen, onClose, onSubmit }: CreateRoomModalPr
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+
+  const resetForm = useCallback(() => {
+    setCode('');
+    setCapacity(40);
+    setError(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen, resetForm]);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || submittingRef.current) return;
     setError(null);
 
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       await onSubmit({
         code: code.trim().toUpperCase(),
         capacity: Number(capacity),
       });
+      resetForm();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi tạo phòng học.');
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Có lỗi xảy ra khi tạo phòng học.'));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -47,7 +72,12 @@ export function CreateRoomModal({ isOpen, onClose, onSubmit }: CreateRoomModalPr
               <h3 className="text-base font-bold text-slate-900">Thêm Phòng học Mới</h3>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:bg-slate-200/60 rounded-lg">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="p-1.5 text-slate-400 hover:bg-slate-200/60 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -88,17 +118,25 @@ export function CreateRoomModal({ isOpen, onClose, onSubmit }: CreateRoomModalPr
           <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
             <button
               type="button"
-              onClick={onClose}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+              onClick={handleClose}
+              disabled={isSubmitting}
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition shadow-xs disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Đang tạo...' : 'Tạo phòng học'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Đang tạo...</span>
+                </>
+              ) : (
+                <span>Tạo phòng học</span>
+              )}
             </button>
           </div>
         </form>

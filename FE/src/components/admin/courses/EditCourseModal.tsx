@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, BookOpen, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { X, BookOpen, AlertCircle, Loader2 } from 'lucide-react';
 import type { CourseItem, UpdateCoursePayload } from '../../../types/course';
 
 interface EditCourseModalProps {
@@ -20,9 +20,30 @@ export function EditCourseModal({ isOpen, course, onClose, onSubmit }: EditCours
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+
+  const resetForm = useCallback(() => {
+    setName('');
+    setCredits(3);
+    setDurationHours(45);
+    setMinAttendancePct(80);
+    setPassScore(5.0);
+    setMidtermWeight(0.3);
+    setFinalWeight(0.7);
+    setError(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, []);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   useEffect(() => {
-    if (course) {
+    if (!isOpen || !course) {
+      resetForm();
+    } else {
       setName(course.name);
       setCredits(course.credits);
       setDurationHours(course.durationHours);
@@ -31,13 +52,16 @@ export function EditCourseModal({ isOpen, course, onClose, onSubmit }: EditCours
       setMidtermWeight(course.midtermWeight);
       setFinalWeight(course.finalWeight);
       setError(null);
+      setIsSubmitting(false);
+      submittingRef.current = false;
     }
-  }, [course]);
+  }, [isOpen, course, resetForm]);
 
   if (!isOpen || !course) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || submittingRef.current) return;
     setError(null);
 
     if (Math.abs(Number(midtermWeight) + Number(finalWeight) - 1.0) > 0.001) {
@@ -46,6 +70,7 @@ export function EditCourseModal({ isOpen, course, onClose, onSubmit }: EditCours
     }
 
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       await onSubmit(course.id, {
         code: course.code,
@@ -57,10 +82,13 @@ export function EditCourseModal({ isOpen, course, onClose, onSubmit }: EditCours
         midtermWeight: Number(midtermWeight),
         finalWeight: Number(finalWeight),
       });
+      resetForm();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Có lỗi xảy ra khi cập nhật.');
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Có lỗi xảy ra khi cập nhật.'));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -78,7 +106,12 @@ export function EditCourseModal({ isOpen, course, onClose, onSubmit }: EditCours
               <p className="text-xs text-slate-500">Mã môn: <strong className="text-indigo-600">{course.code}</strong></p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:bg-slate-200/60 rounded-lg">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="p-1.5 text-slate-400 hover:bg-slate-200/60 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -196,17 +229,25 @@ export function EditCourseModal({ isOpen, course, onClose, onSubmit }: EditCours
           <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
             <button
               type="button"
-              onClick={onClose}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+              onClick={handleClose}
+              disabled={isSubmitting}
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition shadow-xs disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Đang lưu...</span>
+                </>
+              ) : (
+                <span>Lưu thay đổi</span>
+              )}
             </button>
           </div>
         </form>

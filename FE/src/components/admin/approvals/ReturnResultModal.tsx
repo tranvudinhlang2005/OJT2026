@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, AlertTriangle, Send } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { X, AlertTriangle, Send, Loader2 } from 'lucide-react';
 
 interface ReturnResultModalProps {
   isOpen: boolean;
@@ -19,14 +19,25 @@ export function ReturnResultModal({
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const submittingRef = useRef(false);
+
+  const resetForm = useCallback(() => {
+    setReason('');
+    setErrorMessage(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, []);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   useEffect(() => {
-    if (isOpen) {
-      setReason('');
-      setErrorMessage(null);
-      setIsSubmitting(false);
+    if (!isOpen) {
+      resetForm();
     }
-  }, [isOpen]);
+  }, [isOpen, resetForm]);
 
   if (!isOpen) return null;
 
@@ -35,19 +46,24 @@ export function ReturnResultModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || submittingRef.current) return;
     if (!isReasonValid) {
       setErrorMessage('Vui lòng nhập lý do tối thiểu 10 ký tự.');
       return;
     }
 
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       setErrorMessage(null);
       await onSubmit(reason);
+      resetForm();
       onClose();
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'Có lỗi xảy ra khi trả kết quả');
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setErrorMessage(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Có lỗi xảy ra khi trả kết quả'));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -67,8 +83,9 @@ export function ReturnResultModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X className="h-5 w-5" />
           </button>
@@ -113,19 +130,28 @@ export function ReturnResultModal({
           <div className="flex items-center justify-end gap-2.5 pt-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isSubmitting}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Hủy bỏ
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !isReasonValid}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-rose-700 disabled:opacity-50 transition"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-rose-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
             >
-              <Send className="h-3.5 w-3.5" />
-              {isSubmitting ? 'Đang gửi...' : 'Xác nhận trả về'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>Đang gửi...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="h-3.5 w-3.5" />
+                  <span>Xác nhận trả về</span>
+                </>
+              )}
             </button>
           </div>
         </form>

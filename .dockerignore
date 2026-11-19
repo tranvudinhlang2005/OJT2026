@@ -1,0 +1,8 @@
+.git
+.gitignore
+.gitattributes
+README.md
+DOCKER_GUIDE.md
+FE/node_modules/
+FE/dist/
+BE/target/

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { X, Users, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { X, Users, AlertCircle, Loader2 } from 'lucide-react';
 import type { ClassOffering } from '../../../types/classOffering';
 
 interface ChangeCapacityModalProps {
@@ -18,18 +18,36 @@ export function ChangeCapacityModal({
   const [maxCapacity, setMaxCapacity] = useState(40);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+
+  const resetForm = useCallback(() => {
+    setMaxCapacity(40);
+    setError(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, []);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   useEffect(() => {
-    if (classOffering) {
+    if (!isOpen || !classOffering) {
+      resetForm();
+    } else {
       setMaxCapacity(classOffering.maxCapacity);
       setError(null);
+      setIsSubmitting(false);
+      submittingRef.current = false;
     }
-  }, [classOffering]);
+  }, [isOpen, classOffering, resetForm]);
 
   if (!isOpen || !classOffering) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || submittingRef.current) return;
     setError(null);
 
     const capNum = Number(maxCapacity);
@@ -45,12 +63,16 @@ export function ChangeCapacityModal({
     }
 
     try {
+      submittingRef.current = true;
       setIsSubmitting(true);
       await onSubmit(classOffering.id, capNum);
+      resetForm();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Lỗi khi điều chỉnh sĩ số.');
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      setError(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi điều chỉnh sĩ số.'));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -68,7 +90,12 @@ export function ChangeCapacityModal({
               <p className="text-xs text-slate-500">Mã lớp: <strong className="text-indigo-600">{classOffering.classCode}</strong></p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 text-slate-400 hover:bg-slate-200/60 rounded-lg">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="p-1.5 text-slate-400 hover:bg-slate-200/60 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -113,17 +140,25 @@ export function ChangeCapacityModal({
           <div className="flex justify-end gap-3 pt-3 border-t border-slate-200">
             <button
               type="button"
-              onClick={onClose}
-              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition"
+              onClick={handleClose}
+              disabled={isSubmitting}
+              className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition shadow-xs disabled:opacity-50"
+              className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition shadow-xs disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Đang lưu...' : 'Lưu sĩ số mới'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Đang lưu...</span>
+                </>
+              ) : (
+                <span>Lưu sĩ số mới</span>
+              )}
             </button>
           </div>
         </form>

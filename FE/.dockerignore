@@ -1,0 +1,11 @@
+node_modules
+dist
+.agents/
+graphify-out/
+test-results/
+e2e/
+playwright-report/
+.git
+.gitignore
+.env.local
+docs/

@@ -60,9 +60,10 @@ export default function UsersPage() {
       toast.success(`Đã tạo thành công tài khoản "${created.username}"`);
       loadData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi tạo tài khoản';
+      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg = axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi tạo tài khoản');
       toast.error(msg);
-      throw err;
+      throw new Error(msg);
     }
   };
 
