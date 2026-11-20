@@ -199,10 +199,7 @@ export const approvalService = {
     const sessions = await classService.getSessions(classId);
     for (const session of sessions) {
       if (!session.attendanceLocked) {
-        try {
-          await axiosClient.post(`/sessions/${session.id}/lock`);
-        } catch {
-        }
+        await axiosClient.post(`/sessions/${session.id}/lock`);
       }
     }
   },

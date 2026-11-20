@@ -102,8 +102,8 @@ export function SecurityAlertsCard({ alerts, isLoading }: SecurityAlertsCardProp
           </span>
         </div>
 
-        <div className="max-h-64 overflow-y-auto rounded-xl border border-slate-200">
-          <table className="w-full text-left text-xs">
+        <div className="max-h-64 overflow-y-auto overflow-x-auto rounded-xl border border-slate-200">
+          <table className="w-full min-w-[550px] text-left text-xs">
             <thead className="sticky top-0 bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-600 border-b border-slate-200">
               <tr>
                 <th className="px-4 py-2.5">Thời gian</th>

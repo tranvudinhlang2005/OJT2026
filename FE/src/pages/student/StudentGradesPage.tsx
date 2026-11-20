@@ -4,41 +4,43 @@ import {
   GraduationCap,
   BookCheck,
   TrendingUp,
-  Download,
   Filter,
 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { studentService, type StudentResult, type StudentProfile } from '../../services/studentService';
-
-function toLetterGrade(score: number | null): { letter: string; gpa: number } {
-  if (score === null) return { letter: '-', gpa: 0 };
-  if (score >= 8.5) return { letter: 'A', gpa: 4.0 };
-  if (score >= 7.0) return { letter: 'B', gpa: 3.0 };
-  if (score >= 5.5) return { letter: 'C', gpa: 2.0 };
-  if (score >= 4.0) return { letter: 'D', gpa: 1.0 };
-  return { letter: 'F', gpa: 0.0 };
-}
+import { courseService } from '../../services/courseService';
+import { toLetterGrade, calculateGpa4, getAcademicClassification } from '../../utils/gradeUtils';
 
 export default function StudentGradesPage() {
   const { toast } = useToast();
   const [selectedSemester, setSelectedSemester] = useState('ALL');
   const [results, setResults] = useState<StudentResult[]>([]);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [courseCreditsMap, setCourseCreditsMap] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
       try {
-        const [resList, prof] = await Promise.all([
+        const [resList, prof, courses] = await Promise.all([
           studentService.getMyResults(),
           studentService.getMyProfile().catch(() => null),
+          courseService.getCourses().catch(() => []),
         ]);
         if (isMounted) {
           setResults(resList);
           setProfile(prof);
+          const cMap: Record<string, number> = {};
+          courses.forEach((c) => {
+            cMap[c.code] = c.credits;
+          });
+          setCourseCreditsMap(cMap);
         }
       } catch {
+        if (isMounted) {
+          toast.error('Không thể tải dữ liệu điểm học tập. Vui lòng thử lại sau.');
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -61,27 +63,17 @@ export default function StudentGradesPage() {
   }, [results, selectedSemester]);
 
   const semesterGpa = useMemo(() => {
-    const valid = filteredGrades.filter((g) => g.totalScore !== null);
-    if (valid.length === 0) return '0.00';
-    const sumGpa = valid.reduce((acc, curr) => acc + toLetterGrade(curr.totalScore).gpa, 0);
-    return (sumGpa / valid.length).toFixed(2);
+    return calculateGpa4(filteredGrades).toFixed(2);
   }, [filteredGrades]);
 
   const accumulatedCredits = useMemo(() => {
     const passed = results.filter((r) => r.finalStatus === 'PASSED');
-    return passed.length * 3;
-  }, [results]);
+    return passed.reduce((acc, curr) => acc + (courseCreditsMap[curr.courseCode] || 3), 0);
+  }, [results, courseCreditsMap]);
 
   const totalGpa4 = useMemo(() => {
-    const valid = results.filter((g) => g.totalScore !== null);
-    if (valid.length === 0) return 0;
-    const sumGpa = valid.reduce((acc, curr) => acc + toLetterGrade(curr.totalScore).gpa, 0);
-    return sumGpa / valid.length;
+    return calculateGpa4(results);
   }, [results]);
-
-  const handleExportTranscript = () => {
-    toast.success('Đã tải xuống bảng điểm học tập cá nhân (PDF)');
-  };
 
   return (
     <div className="space-y-6">
@@ -91,23 +83,16 @@ export default function StudentGradesPage() {
             <span className="rounded-md bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
               Kết quả học tập cá nhân
             </span>
-            <span className="text-xs text-slate-500 font-mono">
-              MSSV: {profile?.studentCode || 'SEED-SV01'}
-            </span>
+            {profile?.studentCode && (
+              <span className="text-xs text-slate-500 font-mono">
+                MSSV: {profile.studentCode}
+              </span>
+            )}
           </div>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Bảng điểm & Kết quả học tập
           </h1>
         </div>
-
-        <button
-          type="button"
-          onClick={handleExportTranscript}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 hover:text-slate-900 transition self-start sm:self-center"
-        >
-          <Download className="h-4 w-4" />
-          <span>Xuất bảng điểm PDF</span>
-        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -157,7 +142,7 @@ export default function StudentGradesPage() {
           </div>
           <div className="mt-3">
             <span className="text-2xl font-bold text-purple-700">
-              {totalGpa4 >= 3.6 ? 'Xuất sắc' : totalGpa4 >= 3.2 ? 'Giỏi' : totalGpa4 >= 2.5 ? 'Khá' : 'Trung bình'}
+              {getAcademicClassification(totalGpa4)}
             </span>
           </div>
           <p className="mt-2 text-xs text-slate-500">Trạng thái: Đạt chuẩn tiến độ</p>

@@ -32,7 +32,9 @@ export type ScheduleAction =
   | { type: 'CLOSE_ATTENDANCE_MODAL' }
   | { type: 'SET_STUDENT_STATUS'; payload: { studentId: string; status: AttendanceStatus } }
   | { type: 'MARK_ALL_PRESENT' }
-  | { type: 'SAVE_ATTENDANCE'; payload: { sessionId: string } };
+  | { type: 'SAVE_ATTENDANCE'; payload: { sessionId: string } }
+  | { type: 'SET_STUDENTS'; payload: StudentAttendanceRecord[] }
+  | { type: 'SET_SESSIONS'; payload: TeachingSession[] };
 
 export const initialScheduleState: ScheduleState = {
   sessions: [
@@ -129,6 +131,18 @@ export function scheduleReducer(state: ScheduleState, action: ScheduleAction): S
             : session
         ),
         isModalOpen: false,
+      };
+
+    case 'SET_STUDENTS':
+      return {
+        ...state,
+        students: action.payload,
+      };
+
+    case 'SET_SESSIONS':
+      return {
+        ...state,
+        sessions: action.payload,
       };
 
     default:

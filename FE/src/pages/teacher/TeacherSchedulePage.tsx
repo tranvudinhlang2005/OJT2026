@@ -1,4 +1,4 @@
-import { useReducer } from 'react';
+import { useReducer, useState, useEffect } from 'react';
 import {
   CalendarDays,
   Clock,
@@ -8,8 +8,11 @@ import {
   ChevronRight,
   UserCheck,
   Check,
+  Lock,
 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
+import { attendanceService } from '../../services/attendanceService';
+import { scheduleService } from '../../services/scheduleService';
 import {
   scheduleReducer,
   initialScheduleState,
@@ -19,11 +22,61 @@ import {
 
 export default function TeacherSchedulePage() {
   const { toast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
+  const [sessionVersion, setSessionVersion] = useState<number>(0);
   const [state, dispatch] = useReducer(scheduleReducer, initialScheduleState);
   const { sessions, selectedSession, students, isModalOpen } = state;
 
-  const handleOpenAttendance = (session: TeachingSession) => {
+  useEffect(() => {
+    scheduleService
+      .getMySchedule()
+      .then((items) => {
+        if (items) {
+          const mapped: TeachingSession[] = items.map((it, idx) => ({
+            id: it.id,
+            className: it.classCode,
+            subject: it.courseName,
+            room: it.roomCode,
+            date: it.sessionDate,
+            time: `${it.startTime} - ${it.endTime}`,
+            sessionIndex: idx + 1,
+            totalSessions: items.length,
+            attendanceStatus: 'in_progress',
+            studentsCount: 40,
+          }));
+          dispatch({ type: 'SET_SESSIONS', payload: mapped });
+        }
+      })
+      .catch(() => {
+        toast.error('Không thể tải lịch giảng dạy từ hệ thống.');
+      });
+  }, [toast]);
+
+  const handleOpenAttendance = async (session: TeachingSession) => {
     dispatch({ type: 'OPEN_ATTENDANCE_MODAL', payload: session });
+    const sessionIdParam = session.id.startsWith('s-')
+      ? session.id.replace('s-', '')
+      : session.id;
+
+    try {
+      const sheet = await attendanceService.getAttendance(sessionIdParam);
+      if (sheet) {
+        setSessionVersion(sheet.version ?? 0);
+        if (sheet.items && sheet.items.length > 0) {
+          dispatch({
+            type: 'SET_STUDENTS',
+            payload: sheet.items.map((it) => ({
+              id: it.studentId,
+              name: it.fullName,
+              code: it.studentCode,
+              status: (it.status ? it.status.toLowerCase() : 'present') as AttendanceStatus,
+            })),
+          });
+        }
+      }
+    } catch {
+      // Giữ nguyên dữ liệu mặc định nếu ca học chưa có trên hệ thống hoặc chạy môi trường mock
+    }
   };
 
   const handleCloseAttendance = () => {
@@ -42,21 +95,72 @@ export default function TeacherSchedulePage() {
     toast.info('Đã đánh dấu tất cả học viên có mặt');
   };
 
-  const handleSaveAttendance = () => {
+  const handleSaveAttendance = async () => {
     if (!selectedSession) return;
 
     const presentCount = students.filter((s) => s.status === 'present').length;
     const lateCount = students.filter((s) => s.status === 'late').length;
     const absentCount = students.filter((s) => s.status === 'absent').length;
 
-    dispatch({
-      type: 'SAVE_ATTENDANCE',
-      payload: { sessionId: selectedSession.id },
-    });
+    const sessionIdParam = selectedSession.id.startsWith('s-')
+      ? selectedSession.id.replace('s-', '')
+      : selectedSession.id;
 
-    toast.success(
-      `Đã lưu dữ liệu điểm danh thành công! (${presentCount} có mặt, ${lateCount} muộn, ${absentCount} vắng)`
-    );
+    const payloadItems = students.map((s, idx) => ({
+      studentId: Number(s.id.replace(/\D/g, '')) || idx + 1,
+      status: (s.status === 'present' ? 'PRESENT' : s.status === 'late' ? 'LATE' : 'ABSENT') as 'PRESENT' | 'ABSENT' | 'LATE',
+    }));
+
+    try {
+      setIsSaving(true);
+      const res = await attendanceService.updateAttendance(sessionIdParam, sessionVersion, payloadItems);
+      if (res && typeof res.version === 'number') {
+        setSessionVersion(res.version);
+      } else {
+        setSessionVersion((v) => v + 1);
+      }
+      dispatch({
+        type: 'SAVE_ATTENDANCE',
+        payload: { sessionId: selectedSession.id },
+      });
+      toast.success(
+        `Đã lưu dữ liệu điểm danh thành công! (${presentCount} có mặt, ${lateCount} muộn, ${absentCount} vắng)`
+      );
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosErr.response?.data?.message || 'Có lỗi khi lưu dữ liệu điểm danh về hệ thống.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleLockAttendance = async () => {
+    if (!selectedSession) return;
+    const sessionIdParam = selectedSession.id.startsWith('s-')
+      ? selectedSession.id.replace('s-', '')
+      : selectedSession.id;
+
+    const payloadItems = students.map((s, idx) => ({
+      studentId: Number(s.id.replace(/\D/g, '')) || idx + 1,
+      status: (s.status === 'present' ? 'PRESENT' : s.status === 'late' ? 'LATE' : 'ABSENT') as 'PRESENT' | 'ABSENT' | 'LATE',
+    }));
+
+    try {
+      setIsSaving(true);
+      await attendanceService.updateAttendance(sessionIdParam, sessionVersion, payloadItems);
+      await attendanceService.lockAttendance(sessionIdParam);
+      dispatch({
+        type: 'SAVE_ATTENDANCE',
+        payload: { sessionId: selectedSession.id },
+      });
+      toast.success('Đã lưu và khóa điểm danh buổi học thành công!');
+      handleCloseAttendance();
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosErr.response?.data?.message || 'Có lỗi khi khóa điểm danh buổi học.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const pendingCount = sessions.filter((s) => s.attendanceStatus === 'in_progress').length;
@@ -82,7 +186,7 @@ export default function TeacherSchedulePage() {
           <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
             Ca dạy hôm nay
           </span>
-          <p className="mt-2 text-2xl font-bold text-slate-900">2 ca học</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{sessions.length} ca học</p>
           {pendingCount > 0 ? (
             <p className="mt-1 text-xs text-amber-600 font-medium">
               {pendingCount} ca đang chờ điểm danh
@@ -97,15 +201,15 @@ export default function TeacherSchedulePage() {
           <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
             Tổng số buổi tuần này
           </span>
-          <p className="mt-2 text-2xl font-bold text-slate-900">6 buổi dạy</p>
-          <p className="mt-1 text-xs text-slate-500">24 tiết giảng dạy</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{sessions.length} buổi dạy</p>
+          <p className="mt-1 text-xs text-slate-500">{sessions.length * 4} tiết giảng dạy</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
           <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
             Tỉ lệ hoàn thành điểm danh
           </span>
           <p className="mt-2 text-2xl font-bold text-emerald-600">
-            {pendingCount === 0 ? '100%' : '98.5%'}
+            {sessions.length === 0 ? '100%' : `${Math.round(((sessions.length - pendingCount) / sessions.length) * 100)}%`}
           </p>
           <p className="mt-1 text-xs text-emerald-600 font-medium">Đạt chuẩn quy định học vụ</p>
         </div>
@@ -210,7 +314,7 @@ export default function TeacherSchedulePage() {
 
       {isModalOpen && selectedSession && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl animate-in fade-in zoom-in-95">
+          <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl animate-in fade-in zoom-in-95">
             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div>
                 <h3 className="text-lg font-bold text-slate-900">
@@ -297,7 +401,7 @@ export default function TeacherSchedulePage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
+            <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-4">
               <button
                 type="button"
                 onClick={handleCloseAttendance}
@@ -307,11 +411,21 @@ export default function TeacherSchedulePage() {
               </button>
               <button
                 type="button"
+                disabled={isSaving}
                 onClick={handleSaveAttendance}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 shadow-xs"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-600 bg-white px-3.5 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 shadow-xs disabled:opacity-50"
               >
                 <CheckCircle2 className="h-4 w-4" />
-                Lưu điểm danh buổi học
+                {isSaving ? 'Đang lưu...' : 'Lưu điểm danh buổi học'}
+              </button>
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={handleLockAttendance}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 shadow-xs disabled:opacity-50"
+              >
+                <Lock className="h-4 w-4" />
+                Khóa & Chốt ca học
               </button>
             </div>
           </div>

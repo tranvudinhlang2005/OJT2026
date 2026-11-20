@@ -33,7 +33,7 @@ test.describe('Authentication & Authorization Suite', () => {
     await page.getByRole('button', { name: 'Đăng nhập vào hệ thống' }).click();
 
     await expect(page).toHaveURL(/\/admin/);
-    await expect(page.getByRole('heading', { name: 'Tổng quan hệ thống (Admin Dashboard)' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Tổng quan hệ thống/i })).toBeVisible();
   });
 
   test('Đăng nhập thành công với vai trò Giảng viên (Instructor)', async ({ page }) => {

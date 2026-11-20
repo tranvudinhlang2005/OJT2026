@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router';
 import { ROUTES } from '../../routes/paths';
+import { useToast } from '../../contexts/ToastContext';
 import { scheduleService, type ScheduleItem } from '../../services/scheduleService';
 import { formatDate } from '../../utils/dateFormat';
 
@@ -24,6 +25,7 @@ const DAYS = [
 ];
 
 export default function StudentSchedulePage() {
+  const { toast } = useToast();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +37,7 @@ export default function StudentSchedulePage() {
         const items = await scheduleService.getMySchedule();
         if (isMounted) setScheduleItems(items);
       } catch {
+        toast.error('Không thể tải dữ liệu thời khóa biểu từ hệ thống.');
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -44,7 +47,7 @@ export default function StudentSchedulePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [toast]);
 
   const sortedItems = useMemo(() => {
     return [...scheduleItems].sort((a, b) => {
@@ -142,7 +145,7 @@ export default function StudentSchedulePage() {
                     </span>
                   </div>
 
-                  <h3 className="font-bold text-slate-900 text-sm">{item.courseName}</h3>
+                  <h3 className="font-bold text-slate-900 text-sm line-clamp-2" title={item.courseName}>{item.courseName}</h3>
                   <p className="text-xs font-mono text-blue-700 mt-0.5">Lớp: {item.classCode}</p>
                   {item.topic && (
                     <p className="text-xs text-slate-600 mt-2 line-clamp-2 italic">

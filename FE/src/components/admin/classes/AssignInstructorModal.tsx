@@ -48,7 +48,9 @@ export function AssignInstructorModal({
   if (!isOpen || !classOffering) return null;
 
   const qualifiedInstructors = instructors.filter(
-    (inst) => inst.teachableCourses.includes(classOffering.courseId)
+    (inst) =>
+      inst.teachableCourses.includes(classOffering.courseId) ||
+      inst.teachableCourses.includes(classOffering.course.code)
   );
 
   const handleSubmit = async (e: React.FormEvent) => {

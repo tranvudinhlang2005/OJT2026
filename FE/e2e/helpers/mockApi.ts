@@ -747,6 +747,15 @@ export async function setupDefaultMocks(page: Page, user: MockUserSession = ADMI
       contentType: 'application/json',
       body: JSON.stringify([
         {
+          sessionDate: '2026-11-09',
+          startTime: '07:30:00',
+          endTime: '11:30:00',
+          roomCode: 'B2-304 (Lab)',
+          classCode: 'SE101.O21 - KTPM 01',
+          courseName: 'Lập trình Web Tiên tiến (React & TypeScript)',
+          topic: 'Buổi 8: Advanced React & State Management',
+        },
+        {
           sessionDate: '2026-03-01',
           startTime: '08:00:00',
           endTime: '11:30:00',

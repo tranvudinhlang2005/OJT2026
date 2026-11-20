@@ -81,7 +81,7 @@ export function ClassDetailModal({
   }, [classOffering]);
 
   const loadStudents = useCallback(async () => {
-    if (!classOffering) return;
+    if (!classOffering || !canManage) return;
     try {
       setIsLoadingStudents(true);
       const data = await classService.getClassStudents(classOffering.id);
@@ -91,15 +91,17 @@ export function ClassDetailModal({
     } finally {
       setIsLoadingStudents(false);
     }
-  }, [classOffering]);
+  }, [classOffering, canManage]);
 
   useEffect(() => {
     if (classOffering && isOpen) {
       loadSessions();
-      loadStudents();
+      if (canManage) {
+        loadStudents();
+      }
       setActionError(null);
     }
-  }, [classOffering, isOpen, loadSessions, loadStudents]);
+  }, [classOffering, isOpen, canManage, loadSessions, loadStudents]);
 
   if (!isOpen || !classOffering) return null;
 
@@ -139,7 +141,7 @@ export function ClassDetailModal({
     }
   };
 
-  const canEditSessions = canManage && ['DRAFT', 'OPEN'].includes(classOffering.status);
+  const canEditSessions = canManage && classOffering.status === 'DRAFT';
 
   return (
     <>
@@ -207,20 +209,22 @@ export function ClassDetailModal({
               <span>Thông tin chung & Trọng số</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('roster')}
-              className={`flex items-center gap-2 py-3.5 border-b-2 font-medium transition ${
-                activeTab === 'roster'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              <Users className="h-4 w-4" />
-              <span>
-                Học viên đăng ký ({classOffering.enrolledCount} / {classOffering.maxCapacity})
-              </span>
-            </button>
+            {canManage && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('roster')}
+                className={`flex items-center gap-2 py-3.5 border-b-2 font-medium transition ${
+                  activeTab === 'roster'
+                    ? 'border-indigo-600 text-indigo-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <Users className="h-4 w-4" />
+                <span>
+                  Học viên đăng ký ({classOffering.enrolledCount} / {classOffering.maxCapacity})
+                </span>
+              </button>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
@@ -485,8 +489,8 @@ export function ClassDetailModal({
                     </p>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-xs">
-                    <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
+                  <div className="rounded-xl border border-slate-200 bg-white overflow-x-auto shadow-xs">
+                    <table className="w-full min-w-[650px] divide-y divide-slate-200 text-left text-xs">
                       <thead className="bg-slate-50 text-slate-500 uppercase font-semibold">
                         <tr>
                           <th className="px-4 py-3">STT</th>

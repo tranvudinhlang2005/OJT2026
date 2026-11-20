@@ -30,7 +30,6 @@ export function ApprovalDetailModal({
   onConfirm,
   onOpenReturnModal,
   onOpenCompleteModal,
-  onQuickLockSessions,
 }: ApprovalDetailModalProps) {
   const [isConfirming, setIsConfirming] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
@@ -163,19 +162,10 @@ export function ApprovalDetailModal({
                       Chưa đủ điều kiện phê duyệt
                     </h4>
                     <p className="mt-1 text-xs text-amber-800">
-                      Còn <strong>{resultDetail.unlockedSessionsCount}</strong> buổi học chưa chốt điểm danh. Cần chốt toàn bộ điểm danh để tính tỷ lệ chuyên cần chính xác trước khi duyệt điểm.
+                      Còn <strong>{resultDetail.unlockedSessionsCount}</strong> buổi học chưa chốt điểm danh. Cần giảng viên phụ trách chốt toàn bộ điểm danh để tính tỷ lệ chuyên cần chính xác trước khi duyệt điểm.
                     </p>
                   </div>
                 </div>
-                {onQuickLockSessions && (
-                  <button
-                    type="button"
-                    onClick={onQuickLockSessions}
-                    className="shrink-0 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100/70 transition shadow-xs"
-                  >
-                    Chốt nhanh buổi học
-                  </button>
-                )}
               </div>
             </div>
           )}
@@ -235,8 +225,8 @@ export function ApprovalDetailModal({
           </div>
 
           <div className="overflow-hidden rounded-xl border border-slate-200">
-            <div className="max-h-96 overflow-y-auto">
-              <table className="w-full text-left text-xs">
+            <div className="max-h-96 overflow-y-auto overflow-x-auto">
+              <table className="w-full min-w-[700px] text-left text-xs">
                 <thead className="sticky top-0 bg-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-600 border-b border-slate-200">
                   <tr>
                     <th className="px-4 py-3">STT</th>

@@ -183,8 +183,11 @@ export default function ApprovalsPage() {
       setSelectedDetail(refreshed);
       toast.success('Đã chốt điểm danh tất cả các buổi học của lớp.');
       await loadData();
-    } catch {
-      toast.error('Không thể chốt điểm danh buổi học.');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      toast.error(
+        axiosErr.response?.data?.message || 'Không thể chốt điểm danh. Thao tác này chỉ dành cho Giảng viên phụ trách lớp.'
+      );
     }
   };
 

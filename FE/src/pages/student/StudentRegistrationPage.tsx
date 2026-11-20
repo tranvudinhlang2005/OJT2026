@@ -14,8 +14,7 @@ import type { OpenClass } from '../../types/student';
 import { useToast } from '../../contexts/ToastContext';
 import { studentService, type StudentEnrollment } from '../../services/studentService';
 import { classService } from '../../services/classService';
-
-const MAX_CREDITS = 24;
+import { formatDate } from '../../utils/dateFormat';
 
 export default function StudentRegistrationPage() {
   const { toast } = useToast();
@@ -35,22 +34,70 @@ export default function StudentRegistrationPage() {
         studentService.getMyEnrollments().catch(() => []),
       ]);
 
-      const openClasses: OpenClass[] = allClasses.map((cls, idx) => ({
-        id: cls.id,
-        courseCode: cls.course.code,
-        courseName: cls.course.name,
-        credits: cls.course.credits || 3,
-        teacherName: cls.instructor?.fullName || 'Chưa phân công',
-        room: `Phòng ${cls.id}`,
-        dayOfWeek: (idx % 6) + 2,
-        startPeriod: 1,
-        endPeriod: 3,
-        timeSlot: '07:30 - 10:00 (Tiết 1-3)',
-        maxSeats: cls.maxCapacity,
-        enrolledSeats: cls.enrolledCount,
-        semester: cls.semester,
-        department: cls.course.department || 'Khoa CNTT',
-      }));
+      // Tải danh sách buổi học thực tế cho từng lớp để lấy đúng thứ, giờ và phòng học thay vì tự dựng
+      const sessionMap: Record<string, { room: string; dayOfWeek: number; timeSlot: string }> = {};
+      await Promise.all(
+        allClasses.map(async (cls) => {
+          try {
+            const sessions = await classService.getSessions(cls.id);
+            if (sessions && sessions.length > 0) {
+              const first = sessions[0];
+              const d = new Date(first.sessionDate);
+              const dayNum = d.getDay();
+              sessionMap[cls.id] = {
+                room: first.roomCode || 'Phòng học vụ',
+                dayOfWeek: dayNum === 0 ? 8 : dayNum + 1,
+                timeSlot: `${first.startTime.slice(0, 5)} - ${first.endTime.slice(0, 5)}`,
+              };
+            }
+          } catch {
+            // fallback
+          }
+        })
+      );
+
+      const openClasses: OpenClass[] = allClasses.map((cls) => {
+        const sessionInfo = sessionMap[cls.id];
+        return {
+          id: cls.id,
+          courseCode: cls.course.code,
+          courseName: cls.course.name,
+          credits: cls.course.credits || 3,
+          teacherName: cls.instructor?.fullName || 'Chưa phân công',
+          room: sessionInfo?.room || (cls.startDate ? `Học kỳ ${cls.semester}` : 'Chưa xếp phòng'),
+          dayOfWeek: sessionInfo?.dayOfWeek || 2,
+          startPeriod: 1,
+          endPeriod: 3,
+          timeSlot: sessionInfo?.timeSlot || (cls.startDate && cls.endDate ? `${formatDate(cls.startDate)} - ${formatDate(cls.endDate)}` : 'Chưa xếp lịch'),
+          maxSeats: cls.maxCapacity,
+          enrolledSeats: cls.enrolledCount,
+          semester: cls.semester,
+          department: cls.course.department || 'Khoa CNTT',
+        };
+      });
+
+      // Bổ sung các lớp mà học viên đã đăng ký (kể cả lớp đang học IN_PROGRESS không còn trong danh sách mở)
+      const enrolledItems = myEnrollments.filter((e) => e.status === 'ENROLLED');
+      for (const enr of enrolledItems) {
+        if (!openClasses.some((c) => c.id === enr.classId)) {
+          openClasses.push({
+            id: enr.classId,
+            courseCode: enr.courseCode,
+            courseName: enr.courseName,
+            credits: 3,
+            teacherName: 'Giảng viên phụ trách',
+            room: 'Phòng học vụ',
+            dayOfWeek: 2,
+            startPeriod: 1,
+            endPeriod: 3,
+            timeSlot: `${enr.startDate} - ${enr.endDate}`,
+            maxSeats: 50,
+            enrolledSeats: 50,
+            semester: enr.semester,
+            department: 'Khoa CNTT',
+          });
+        }
+      }
 
       setClassesList(openClasses);
       setEnrollments(myEnrollments);
@@ -78,11 +125,6 @@ export default function StudentRegistrationPage() {
   }, [registeredClasses]);
 
   const handleRegister = async (cls: OpenClass) => {
-    if (totalCredits + cls.credits > MAX_CREDITS) {
-      toast.error(`Vượt quá số tín chỉ tối đa cho phép trong một kỳ (${MAX_CREDITS} TC)`);
-      return;
-    }
-
     try {
       await studentService.enrollClass(cls.id);
       toast.success(`Đăng ký thành công lớp [${cls.courseCode}] ${cls.courseName}`);
@@ -153,21 +195,15 @@ export default function StudentRegistrationPage() {
 
           <div className="rounded-xl bg-white/10 p-4 backdrop-blur-md border border-white/15 min-w-[240px]">
             <div className="flex items-center justify-between text-xs text-blue-200 mb-1.5">
-              <span>Tín chỉ đã chọn</span>
+              <span>Tín chỉ đã đăng ký</span>
               <span className="font-semibold text-white">
-                {totalCredits} / {MAX_CREDITS} TC
+                {totalCredits} TC
               </span>
             </div>
             <div className="h-2 w-full rounded-full bg-white/20 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-300 ${
-                  totalCredits >= MAX_CREDITS
-                    ? 'bg-rose-400'
-                    : totalCredits >= 18
-                    ? 'bg-amber-400'
-                    : 'bg-emerald-400'
-                }`}
-                style={{ width: `${Math.min(100, (totalCredits / MAX_CREDITS) * 100)}%` }}
+                className="h-full rounded-full transition-all duration-300 bg-emerald-400"
+                style={{ width: `${Math.min(100, (totalCredits / 24) * 100)}%` }}
               />
             </div>
             <div className="mt-3 flex items-center justify-between text-xs">

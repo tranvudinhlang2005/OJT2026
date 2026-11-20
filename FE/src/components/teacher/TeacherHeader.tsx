@@ -120,8 +120,8 @@ export function TeacherHeader() {
               GV
             </div>
             <div className="text-left text-xs">
-              <p className="font-semibold text-slate-800">{user?.name || 'ThS. Trần Văn Hùng'}</p>
-              <p className="text-slate-400">{user?.email || 'hungtv@edu.vn'}</p>
+              <p className="font-semibold text-slate-800">{user?.name || 'Giảng viên'}</p>
+              {user?.email && <p className="text-slate-400">{user.email}</p>}
             </div>
           </div>
 
@@ -151,8 +151,8 @@ export function TeacherHeader() {
               GV
             </div>
             <div className="text-xs">
-              <p className="font-semibold text-slate-800">{user?.name || 'ThS. Trần Văn Hùng'}</p>
-              <p className="text-slate-400">{user?.email || 'hungtv@edu.vn'} • Giảng viên</p>
+              <p className="font-semibold text-slate-800">{user?.name || 'Giảng viên'}</p>
+              <p className="text-slate-400">{user?.email ? `${user.email} • ` : ''}Giảng viên</p>
             </div>
           </div>
 

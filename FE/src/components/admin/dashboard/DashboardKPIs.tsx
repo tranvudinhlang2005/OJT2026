@@ -159,7 +159,7 @@ export function DashboardKPIs({ summary, classes = [] }: DashboardKPIsProps) {
               <p className="mt-2 text-3xl font-extrabold tracking-tight text-blue-600">
                 {totalCapacity > 0
                   ? totalCapacity.toLocaleString('vi-VN')
-                  : summary.totalClasses * 30}{' '}
+                  : '0'}{' '}
                 <span className="text-sm font-semibold text-slate-500">chỗ</span>
               </p>
             </div>

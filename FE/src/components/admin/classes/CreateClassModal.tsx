@@ -78,8 +78,13 @@ export function CreateClassModal({
     }
   }, [courseId, courses, classCode]);
 
+  const selectedCourse = courses.find((c) => c.id === courseId);
   const qualifiedInstructors = instructors.filter(
-    (inst) => inst.teachingActive && (!courseId || inst.teachableCourses.includes(courseId))
+    (inst) =>
+      inst.teachingActive &&
+      (!courseId ||
+        inst.teachableCourses.includes(courseId) ||
+        (selectedCourse && inst.teachableCourses.includes(selectedCourse.code)))
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -343,31 +348,27 @@ export function CreateClassModal({
 
               <div>
                 <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  Trọng số giữa kỳ (0 - 1)
+                  Trọng số giữa kỳ (Quy định theo môn)
                 </label>
                 <input
                   type="number"
-                  min="0"
-                  max="1"
-                  step="0.05"
+                  disabled
                   value={midtermWeight}
-                  onChange={(e) => setMidtermWeight(Number(e.target.value))}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm"
+                  title="Trọng số được quy định theo môn học và không thể sửa tại lớp học"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed px-2.5 py-1.5 text-sm"
                 />
               </div>
 
               <div>
                 <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  Trọng số cuối kỳ (0 - 1)
+                  Trọng số cuối kỳ (Quy định theo môn)
                 </label>
                 <input
                   type="number"
-                  min="0"
-                  max="1"
-                  step="0.05"
+                  disabled
                   value={finalWeight}
-                  onChange={(e) => setFinalWeight(Number(e.target.value))}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm"
+                  title="Trọng số được quy định theo môn học và không thể sửa tại lớp học"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed px-2.5 py-1.5 text-sm"
                 />
               </div>
             </div>

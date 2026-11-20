@@ -1,69 +1,95 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   User,
-  Mail,
   Calendar,
+  Mail,
   GraduationCap,
   Building2,
   BookOpen,
   CheckCircle2,
   Clock,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { studentService, type StudentProfile } from '../../services/studentService';
+import { courseService } from '../../services/courseService';
+import { calculateGpa4 } from '../../utils/gradeUtils';
 
 export default function StudentProfilePage() {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [accumulatedCredits, setAccumulatedCredits] = useState(0);
   const [gpa4, setGpa4] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [prof, results, courses] = await Promise.all([
+        studentService.getMyProfile(),
+        studentService.getMyResults().catch(() => []),
+        courseService.getCourses().catch(() => []),
+      ]);
+
+      setProfile(prof);
+
+      const cMap: Record<string, number> = {};
+      courses.forEach((c) => {
+        cMap[c.code] = c.credits;
+      });
+
+      const passed = results.filter((r) => r.finalStatus === 'PASSED');
+      const totalCredits = passed.reduce(
+        (acc, curr) => acc + (cMap[curr.courseCode] || 3),
+        0
+      );
+      setAccumulatedCredits(totalCredits);
+
+      const validWithScore = results.filter((r) => r.totalScore !== null);
+      if (validWithScore.length > 0) {
+        setGpa4(calculateGpa4(results));
+      } else {
+        setGpa4(null);
+      }
+    } catch {
+      setError('Không thể tải thông tin hồ sơ sinh viên từ hệ thống.');
+      setProfile(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let isMounted = true;
-    const load = async () => {
-      try {
-        const [prof, results] = await Promise.all([
-          studentService.getMyProfile(),
-          studentService.getMyResults().catch(() => []),
-        ]);
-
-        if (!isMounted) return;
-        setProfile(prof);
-
-        const passed = results.filter((r) => r.finalStatus === 'PASSED');
-        setAccumulatedCredits(passed.length * 3);
-
-        const withScore = results.filter((r) => r.totalScore !== null);
-        if (withScore.length > 0) {
-          const avg10 = withScore.reduce((acc, cur) => acc + (cur.totalScore || 0), 0) / withScore.length;
-          setGpa4((avg10 / 10) * 4);
-        }
-      } catch {
-        if (isMounted) {
-          setProfile({
-            id: '1',
-            studentCode: 'SEED-SV01',
-            fullName: 'Nguyễn Hoàng Anh',
-            email: 'seed.sv01@example.com',
-            dateOfBirth: '2003-05-15',
-            homeroomClass: 'D21CQCN01-B',
-            status: 'ACTIVE',
-          });
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    load();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    loadData();
+  }, [loadData]);
 
   if (loading && !profile) {
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-8 text-center space-y-4">
+        <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+          <AlertCircle className="h-6 w-6" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">Lỗi tải dữ liệu hồ sơ</h2>
+          <p className="mt-1 text-sm text-slate-600">{error || 'Không tìm thấy hồ sơ sinh viên tương ứng.'}</p>
+        </div>
+        <button
+          type="button"
+          onClick={loadData}
+          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 transition"
+        >
+          <RefreshCw className="h-4 w-4" />
+          <span>Thử lại</span>
+        </button>
       </div>
     );
   }

@@ -29,6 +29,7 @@ interface BackendDashboardClassResponse {
   classId: number;
   classCode: string;
   courseName: string;
+  semester?: string;
   status: ClassStatus;
   enrolledCount: number;
   maxCapacity: number;
@@ -96,6 +97,8 @@ export const dashboardService = {
     };
     if (filter.semester && filter.semester !== 'ALL') params.semester = filter.semester;
     if (filter.courseId && filter.courseId !== 'ALL') params.courseId = Number(filter.courseId);
+    if (filter.from) params.from = filter.from;
+    if (filter.to) params.to = filter.to;
 
     const res = await axiosClient.get<PageResponse<BackendDashboardClassResponse>>('/dashboard/classes', { params });
     const items = res.data?.items || [];
@@ -104,7 +107,7 @@ export const dashboardService = {
       classId: String(c.classId),
       classCode: c.classCode,
       courseName: c.courseName,
-      semester: filter.semester && filter.semester !== 'ALL' ? filter.semester : 'HK2 2026-2027',
+      semester: c.semester || (filter.semester && filter.semester !== 'ALL' ? filter.semester : 'Chưa phân kỳ'),
       status: c.status,
       enrolledCount: c.enrolledCount,
       maxCapacity: c.maxCapacity,

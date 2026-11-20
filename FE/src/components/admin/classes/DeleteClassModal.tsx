@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Trash2, AlertTriangle, ShieldAlert, Loader2 } from 'lucide-react';
 import type { ClassOffering } from '../../../types/classOffering';
 
@@ -19,13 +19,22 @@ export function DeleteClassModal({
   const [error, setError] = useState<string | null>(null);
   const submittingRef = useRef(false);
 
+  const resetForm = useCallback(() => {
+    setError(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, []);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   useEffect(() => {
     if (!isOpen || !classOffering) {
-      setError(null);
-      setIsSubmitting(false);
-      submittingRef.current = false;
+      resetForm();
     }
-  }, [isOpen, classOffering]);
+  }, [isOpen, classOffering, resetForm]);
 
   if (!isOpen || !classOffering) return null;
 
@@ -36,6 +45,7 @@ export function DeleteClassModal({
       submittingRef.current = true;
       setIsSubmitting(true);
       await onSubmit(classOffering.id);
+      resetForm();
       onClose();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
@@ -61,7 +71,7 @@ export function DeleteClassModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={isSubmitting}
             className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
@@ -98,7 +108,7 @@ export function DeleteClassModal({
         <div className="mt-5 flex items-center justify-end gap-2 border-t border-slate-100 pt-3">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={isSubmitting}
             className="rounded-lg border border-slate-300 px-3.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >

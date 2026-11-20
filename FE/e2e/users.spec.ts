@@ -69,6 +69,11 @@ test.describe('Users Management Suite', () => {
       await codeInput.fill('SV2026999');
     }
 
+    const passInput = page.locator('input[placeholder*="Password"]');
+    if (await passInput.isVisible()) {
+      await passInput.fill('Admin@123456');
+    }
+
     await page.getByRole('button', { name: 'Tạo tài khoản' }).click();
     await expect(page.getByText('Thêm tài khoản người dùng mới')).not.toBeVisible();
     expect(postRequestSent).toBeTruthy();

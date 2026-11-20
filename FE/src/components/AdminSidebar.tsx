@@ -84,7 +84,7 @@ export function AdminSidebar() {
                             <p className="text-sm font-medium text-slate-200 truncate">
                                 {user?.name || (isManager ? 'Cán bộ Đào tạo' : 'Quản trị viên')}
                             </p>
-                            <p className="text-xs text-slate-500 truncate">{user?.email || 'admin@edu.vn'}</p>
+                            <p className="text-xs text-slate-500 truncate">{user?.email || (isManager ? 'Quản lý đào tạo' : 'Quản trị viên')}</p>
                         </div>
                     </div>
 

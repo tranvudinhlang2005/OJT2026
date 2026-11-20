@@ -24,7 +24,7 @@ export default function TeacherGradesPage() {
   const [resultSheet, setResultSheet] = useState<ClassResultSheet | null>(null);
   const [loadingSheet, setLoadingSheet] = useState(false);
   const [scoresDraft, setScoresDraft] = useState<
-    Record<string, { midtermScore?: number | null; finalScore?: number | null }>
+    Record<string, { midtermScore?: number | null; finalScore?: number | null; reason?: string }>
   >({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -50,11 +50,12 @@ export default function TeacherGradesPage() {
     try {
       const sheet = await instructorService.getClassResults(cls.id);
       setResultSheet(sheet);
-      const draft: Record<string, { midtermScore?: number | null; finalScore?: number | null }> = {};
+      const draft: Record<string, { midtermScore?: number | null; finalScore?: number | null; reason?: string }> = {};
       sheet.items.forEach((it) => {
         draft[it.studentId] = {
           midtermScore: it.midtermScore,
           finalScore: it.finalScore,
+          reason: '',
         };
       });
       setScoresDraft(draft);
@@ -81,14 +82,41 @@ export default function TeacherGradesPage() {
     }));
   };
 
+  const handleReasonChange = (studentId: string, reason: string) => {
+    setScoresDraft((prev) => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        reason,
+      },
+    }));
+  };
+
   const handleSaveDraft = async () => {
     if (!activeClass || !resultSheet) return;
+
+    // Kiểm tra các dòng sửa điểm cũ có lý do hay không
+    const missingReasonItem = Object.entries(scoresDraft).find(([studentId, scores]) => {
+      const orig = resultSheet.items.find((it) => String(it.studentId) === String(studentId));
+      if (!orig) return false;
+      const midtermChanged = scores.midtermScore !== undefined && scores.midtermScore !== orig.midtermScore && orig.midtermScore !== null;
+      const finalChanged = scores.finalScore !== undefined && scores.finalScore !== orig.finalScore && orig.finalScore !== null;
+      return (midtermChanged || finalChanged) && (!scores.reason || !scores.reason.trim());
+    });
+
+    if (missingReasonItem) {
+      const orig = resultSheet.items.find((it) => String(it.studentId) === String(missingReasonItem[0]));
+      toast.error(`Vui lòng nhập lý do sửa điểm cho học viên ${orig?.fullName || orig?.studentCode || ''}.`);
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payloadItems = Object.entries(scoresDraft).map(([studentId, scores]) => ({
         studentId,
         midtermScore: scores.midtermScore,
         finalScore: scores.finalScore,
+        reason: scores.reason?.trim() || undefined,
       }));
 
       await instructorService.updateResults(activeClass.id, resultSheet.version, payloadItems);
@@ -301,24 +329,30 @@ export default function TeacherGradesPage() {
               ) : !resultSheet || resultSheet.items.length === 0 ? (
                 <p className="text-center text-slate-400 py-8">Chưa có sinh viên nào đăng ký vào lớp này.</p>
               ) : (
-                <table className="w-full text-left text-xs border border-slate-200 rounded-lg overflow-hidden">
-                  <thead className="bg-slate-100 font-semibold text-slate-700 border-b border-slate-200 sticky top-0">
-                    <tr>
-                      <th className="p-2.5">MSSV</th>
-                      <th className="p-2.5">Họ và tên</th>
-                      <th className="p-2.5 text-center">Tỷ lệ CC</th>
-                      <th className="p-2.5 text-center w-24">Giữa kỳ</th>
-                      <th className="p-2.5 text-center w-24">Cuối kỳ</th>
-                      <th className="p-2.5 text-center">Tổng kết</th>
-                      <th className="p-2.5 text-center">Trạng thái</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
+                <div className="overflow-x-auto rounded-lg border border-slate-200">
+                  <table className="w-full min-w-[750px] text-left text-xs">
+                    <thead className="bg-slate-100 font-semibold text-slate-700 border-b border-slate-200 sticky top-0">
+                      <tr>
+                        <th className="p-2.5">MSSV</th>
+                        <th className="p-2.5">Họ và tên</th>
+                        <th className="p-2.5 text-center">Tỷ lệ CC</th>
+                        <th className="p-2.5 text-center w-24">Giữa kỳ</th>
+                        <th className="p-2.5 text-center w-24">Cuối kỳ</th>
+                        <th className="p-2.5 text-center">Tổng kết</th>
+                        <th className="p-2.5 text-center">Trạng thái</th>
+                        <th className="p-2.5 text-center w-40">Lý do sửa điểm</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
                     {resultSheet.items.map((item: ClassResultEntryItem) => {
                       const isLocked = activeClass.gradingStatus === 'CONFIRMED';
                       const draft = scoresDraft[item.studentId] || {};
                       const midtermVal = draft.midtermScore !== undefined ? draft.midtermScore : item.midtermScore;
                       const finalVal = draft.finalScore !== undefined ? draft.finalScore : item.finalScore;
+                      const hasOldScore = item.midtermScore !== null || item.finalScore !== null;
+                      const isScoreChanged =
+                        (draft.midtermScore !== undefined && draft.midtermScore !== item.midtermScore) ||
+                        (draft.finalScore !== undefined && draft.finalScore !== item.finalScore);
 
                       return (
                         <tr key={item.studentId} className="hover:bg-slate-50">
@@ -362,20 +396,35 @@ export default function TeacherGradesPage() {
                             <span
                               className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
                                 item.finalStatus === 'PASSED'
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : item.finalStatus === 'FAILED'
-                                  ? 'bg-rose-100 text-rose-800'
-                                  : 'bg-slate-100 text-slate-600'
+                                   ? 'bg-emerald-100 text-emerald-800'
+                                   : item.finalStatus === 'FAILED'
+                                   ? 'bg-rose-100 text-rose-800'
+                                   : 'bg-slate-100 text-slate-600'
                               }`}
                             >
                               {item.finalStatus}
                             </span>
+                          </td>
+                          <td className="p-2 text-center">
+                            <input
+                              type="text"
+                              disabled={isLocked}
+                              value={draft.reason ?? ''}
+                              onChange={(e) => handleReasonChange(item.studentId, e.target.value)}
+                              placeholder={hasOldScore && isScoreChanged ? 'Bắt buộc khi sửa...' : 'Lý do nếu có'}
+                              className={`w-36 rounded border p-1 text-xs focus:outline-none ${
+                                hasOldScore && isScoreChanged && !draft.reason?.trim()
+                                  ? 'border-rose-400 bg-rose-50/50'
+                                  : 'border-slate-200'
+                              } disabled:bg-slate-100`}
+                            />
                           </td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
 

@@ -29,6 +29,49 @@ test.describe('Classes & Sessions Management Suite', () => {
 
   test('Gán giảng viên cho lớp học (PUT /classes/{id}/instructor)', async ({ page }) => {
     let putInstructorCalled = false;
+    await page.route('**/api/v1/classes**', async (route) => {
+      if (route.request().method() === 'GET' && !route.request().url().includes('/sessions')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            items: [
+              {
+                id: 101,
+                classCode: 'INT3110.O21',
+                courseId: 1,
+                courseCode: 'INT3110',
+                courseName: 'Cơ sở dữ liệu nâng cao',
+                semester: 'Học kỳ II (2026 - 2027)',
+                startDate: '2026-02-01',
+                endDate: '2026-06-01',
+                instructorId: null,
+                instructorName: null,
+                maxCapacity: 40,
+                enrolledCount: 0,
+                availableSeats: 40,
+                isFull: false,
+                status: 'DRAFT',
+                cancelDeadline: '2026-02-15T23:59:59Z',
+                cancelReason: null,
+                minAttendancePct: 80.0,
+                passScore: 5.0,
+                midtermWeight: 0.3,
+                finalWeight: 0.7,
+                gradingStatus: 'DRAFT',
+              },
+            ],
+            page: 0,
+            size: 10,
+            totalElements: 1,
+            totalPages: 1,
+          }),
+        });
+      } else {
+        await route.fallback();
+      }
+    });
+
     await page.route('**/api/v1/classes/**/instructor', async (route) => {
       if (route.request().method() === 'PUT') {
         putInstructorCalled = true;
@@ -57,6 +100,8 @@ test.describe('Classes & Sessions Management Suite', () => {
     await assignBtn.click();
 
     await expect(page.getByRole('heading', { name: 'Phân công Giảng viên' })).toBeVisible();
+
+    await page.getByText('Nguyễn Văn Giảng').click();
 
     await page.getByRole('button', { name: 'Xác nhận phân công' }).click();
     await expect(page.getByRole('heading', { name: 'Phân công Giảng viên' })).not.toBeVisible();

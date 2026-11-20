@@ -54,6 +54,7 @@ export default function DashboardPage() {
 
   const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [semesters, setSemesters] = useState<string[]>([]);
+  const [classDatesMap, setClassDatesMap] = useState<Map<string, { startDate: string; endDate: string }>>(new Map());
 
   const [filter, setFilter] = useState<DashboardFilter>({
     semester: 'ALL',
@@ -75,6 +76,11 @@ export default function DashboardPage() {
         setCourses(cList);
         const distinctSems = Array.from(new Set(allClasses.map((c) => c.semester)));
         setSemesters(distinctSems);
+        const datesMap = new Map<string, { startDate: string; endDate: string }>();
+        allClasses.forEach((c) => {
+          datesMap.set(String(c.id), { startDate: c.startDate, endDate: c.endDate });
+        });
+        setClassDatesMap(datesMap);
       } catch {
         toast.error('Không thể tải danh mục bổ trợ cho Dashboard.');
       }
@@ -97,8 +103,19 @@ export default function DashboardPage() {
         isAdmin ? dashboardService.getGradeAuditLogs() : Promise.resolve([]),
       ]);
 
+      let finalClasses = classesData;
+      if (filter.from || filter.to) {
+        finalClasses = classesData.filter((c) => {
+          const dates = classDatesMap.get(c.classId);
+          if (!dates) return true;
+          if (filter.from && dates.startDate < filter.from) return false;
+          if (filter.to && dates.endDate > filter.to) return false;
+          return true;
+        });
+      }
+
       setSummary(summaryData);
-      setDashboardClasses(classesData);
+      setDashboardClasses(finalClasses);
       setSecurityAlerts(alertsData);
       setGradeLogs(logsData);
 

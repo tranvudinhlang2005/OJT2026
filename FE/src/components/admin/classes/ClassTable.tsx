@@ -201,8 +201,8 @@ export function ClassTable({
                     {getStatusBadge(cls.status, cls.cancelReason)}
                   </td>
 
-                  <td className="px-5 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
+                  <td className="px-5 py-4 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1 shrink-0">
                       <button
                         type="button"
                         onClick={() => onViewDetails(cls)}
@@ -225,7 +225,7 @@ export function ClassTable({
                             </button>
                           )}
 
-                          {['DRAFT', 'OPEN'].includes(cls.status) && (
+                          {cls.status === 'DRAFT' && (
                             <button
                               type="button"
                               onClick={() => onAssignInstructor(cls)}
@@ -236,7 +236,7 @@ export function ClassTable({
                             </button>
                           )}
 
-                          {['DRAFT', 'OPEN'].includes(cls.status) && (
+                          {cls.status === 'DRAFT' && (
                             <button
                               type="button"
                               onClick={() => onEdit(cls)}

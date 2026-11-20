@@ -132,7 +132,7 @@ export default function TeacherClassesPage() {
                     <span className="font-mono text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
                       {item.classCode}
                     </span>
-                    <h3 className="mt-2 text-base font-bold text-slate-900 leading-snug">
+                    <h3 className="mt-2 text-base font-bold text-slate-900 leading-snug line-clamp-2" title={item.course.name}>
                       {item.course.name}
                     </h3>
                   </div>
@@ -169,10 +169,7 @@ export default function TeacherClassesPage() {
                 </div>
               </div>
 
-              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-xs text-slate-500">
-                  Trạng thái điểm: <strong className="text-slate-800">{item.gradingStatus}</strong>
-                </span>
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-end">
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">
                   <span>Chi tiết lớp</span>
                   <ExternalLink className="h-3.5 w-3.5" />

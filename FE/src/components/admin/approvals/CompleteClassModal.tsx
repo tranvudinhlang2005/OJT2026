@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, CheckCircle2, Lock, Loader2 } from 'lucide-react';
 
 interface CompleteClassModalProps {
@@ -22,13 +22,22 @@ export function CompleteClassModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const submittingRef = useRef(false);
 
+  const resetForm = useCallback(() => {
+    setErrorMessage(null);
+    setIsSubmitting(false);
+    submittingRef.current = false;
+  }, []);
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   useEffect(() => {
     if (!isOpen) {
-      setErrorMessage(null);
-      setIsSubmitting(false);
-      submittingRef.current = false;
+      resetForm();
     }
-  }, [isOpen]);
+  }, [isOpen, resetForm]);
 
   if (!isOpen) return null;
 
@@ -39,6 +48,7 @@ export function CompleteClassModal({
       setIsSubmitting(true);
       setErrorMessage(null);
       await onConfirm();
+      resetForm();
       onClose();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
@@ -64,7 +74,7 @@ export function CompleteClassModal({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={isSubmitting}
             className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
@@ -103,7 +113,7 @@ export function CompleteClassModal({
           <div className="flex items-center justify-end gap-2.5 pt-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isSubmitting}
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >

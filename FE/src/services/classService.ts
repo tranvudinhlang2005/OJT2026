@@ -68,6 +68,7 @@ interface BackendInstructorResponse {
   phone?: string;
   department?: string;
   isActive: boolean;
+  courses?: Array<{ id: number; code: string; name: string }>;
   teachableCourses?: Array<{ id: number; code: string; name: string }>;
 }
 
@@ -348,16 +349,19 @@ export const classService = {
       params: { size: 100, isActive: true },
     });
     const items = res.data?.items || [];
-    return items.map((i) => ({
-      id: String(i.id),
-      instructorCode: i.instructorCode,
-      fullName: i.fullName,
-      email: i.email,
-      phone: i.phone,
-      department: i.department || 'Khoa CNTT',
-      teachingActive: i.isActive,
-      teachableCourses: (i.teachableCourses || []).map((c) => c.code),
-    }));
+    return items.map((i) => {
+      const courseList = i.courses || i.teachableCourses || [];
+      return {
+        id: String(i.id),
+        instructorCode: i.instructorCode,
+        fullName: i.fullName,
+        email: i.email,
+        phone: i.phone,
+        department: i.department || 'Khoa CNTT',
+        teachingActive: i.isActive,
+        teachableCourses: courseList.map((c) => c.code),
+      };
+    });
   },
 
   async getRooms(): Promise<RoomSummary[]> {

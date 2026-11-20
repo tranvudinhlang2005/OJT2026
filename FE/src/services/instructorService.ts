@@ -66,7 +66,17 @@ export const instructorService = {
   },
 
   async getMyClasses(): Promise<ClassOffering[]> {
-    return classService.getClasses();
+    const [classes, profile] = await Promise.all([
+      classService.getClasses(),
+      this.getMyProfile().catch(() => null),
+    ]);
+    if (!profile) return [];
+    const assigned = classes.filter(
+      (c) =>
+        (c.instructor && String(c.instructor.id) === String(profile.id)) ||
+        (c.instructor && c.instructor.instructorCode === profile.instructorCode)
+    );
+    return assigned;
   },
 
   async getClassResults(classId: string | number): Promise<ClassResultSheet> {
