@@ -5,6 +5,7 @@ export interface StudentAttendanceRecord {
   name: string;
   code: string;
   status: AttendanceStatus;
+  remarks?: string;
 }
 
 export interface TeachingSession {
@@ -31,6 +32,7 @@ export type ScheduleAction =
   | { type: 'OPEN_ATTENDANCE_MODAL'; payload: TeachingSession }
   | { type: 'CLOSE_ATTENDANCE_MODAL' }
   | { type: 'SET_STUDENT_STATUS'; payload: { studentId: string; status: AttendanceStatus } }
+  | { type: 'SET_STUDENT_REMARKS'; payload: { studentId: string; remarks: string } }
   | { type: 'MARK_ALL_PRESENT' }
   | { type: 'SAVE_ATTENDANCE'; payload: { sessionId: string } }
   | { type: 'SET_STUDENTS'; payload: StudentAttendanceRecord[] }
@@ -109,6 +111,16 @@ export function scheduleReducer(state: ScheduleState, action: ScheduleAction): S
         students: state.students.map((student) =>
           student.id === action.payload.studentId
             ? { ...student, status: action.payload.status }
+            : student
+        ),
+      };
+
+    case 'SET_STUDENT_REMARKS':
+      return {
+        ...state,
+        students: state.students.map((student) =>
+          student.id === action.payload.studentId
+            ? { ...student, remarks: action.payload.remarks }
             : student
         ),
       };

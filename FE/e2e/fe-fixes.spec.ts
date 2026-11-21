@@ -645,4 +645,98 @@ test.describe('FE Bugfixes Verification Suite', () => {
     expect(unpublishCalled).toBeTruthy();
     await expect(page.getByText(/Đã rút lớp.*về trạng thái nháp thành công/i)).toBeVisible();
   });
+
+  test('Lỗi 11 (Ticket 03): Giảng viên xem danh sách học viên (Roster) và điều hướng điểm danh trên TeacherClassesPage', async ({ page }) => {
+    await injectSession(page, INSTRUCTOR_USER);
+    await setupDefaultMocks(page, INSTRUCTOR_USER);
+
+    await page.goto('/teacher/classes');
+    await expect(page.getByText('INT3110.O21')).toBeVisible();
+
+    // Nút "Xem danh sách học viên"
+    const rosterBtn = page.getByRole('button', { name: /danh sách học viên/i }).first();
+    await expect(rosterBtn).toBeVisible();
+    await rosterBtn.click();
+
+    // Modal danh sách học viên hiển thị
+    await expect(page.getByRole('heading', { name: /danh sách học viên/i })).toBeVisible();
+    await expect(page.getByText('SV2026001')).toBeVisible();
+    await expect(page.getByText('Trần Văn Sinh')).toBeVisible();
+
+    // Nút đóng modal
+    await page.getByRole('button', { name: 'Đóng' }).first().click();
+
+    // Nút điều hướng "Quản lý điểm danh"
+    const scheduleLink = page.getByRole('link', { name: /điểm danh/i }).first();
+    await expect(scheduleLink).toBeVisible();
+  });
+
+  test('Lỗi 12 (Ticket 04): Giảng viên điểm danh có ô remarks và có dialog xác nhận trước khi khóa buổi học', async ({ page }) => {
+    await injectSession(page, INSTRUCTOR_USER);
+    await setupDefaultMocks(page, INSTRUCTOR_USER);
+
+    let sentPayload: any = null;
+    let lockCalled = false;
+
+    await page.route('**/api/v1/sessions/**/attendance', async (route) => {
+      if (route.request().method() === 'PUT') {
+        sentPayload = route.request().postDataJSON();
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            sessionId: 1,
+            classId: 101,
+            classCode: 'SE101.O21',
+            sessionDate: '2026-11-09',
+            startTime: '07:30',
+            endTime: '11:30',
+            attendanceLocked: false,
+            version: 1,
+            items: [],
+          }),
+        });
+      } else {
+        await route.fallback();
+      }
+    });
+
+    await page.route('**/api/v1/sessions/**/lock', async (route) => {
+      lockCalled = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
+      });
+    });
+
+    let dialogConfirmed = false;
+    page.on('dialog', async (dialog) => {
+      expect(dialog.message()).toContain('Sau khi khóa');
+      dialogConfirmed = true;
+      await dialog.accept();
+    });
+
+    await page.goto('/teacher/schedule');
+    await page.getByRole('button', { name: 'Điểm danh ca này' }).first().click();
+
+    // Kiểm tra ô nhập ghi chú (remarks)
+    const remarksInput = page.getByPlaceholder(/ghi chú/i).first();
+    await expect(remarksInput).toBeVisible();
+    await remarksInput.fill('Có phép');
+
+    // Lưu điểm danh và xác nhận gửi kèm remarks
+    await page.getByRole('button', { name: 'Lưu điểm danh' }).click();
+    await expect(page.getByText(/Đã lưu.*điểm danh/i)).toBeVisible();
+    expect(sentPayload).toBeTruthy();
+    expect(sentPayload.items[0]?.remarks).toBe('Có phép');
+
+    // Mở lại ca học để khóa
+    await page.getByRole('button', { name: 'Xem / Sửa điểm danh' }).first().click();
+
+    // Bấm khóa và chốt ca học -> xuất hiện dialog xác nhận
+    await page.getByRole('button', { name: 'Khóa & Chốt ca học' }).click();
+    expect(dialogConfirmed).toBeTruthy();
+    await expect.poll(() => lockCalled).toBeTruthy();
+  });
 });

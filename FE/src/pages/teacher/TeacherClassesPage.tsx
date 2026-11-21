@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router';
 import {
   Users,
   Calendar,
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
 import { instructorService } from '../../services/instructorService';
+import { classService } from '../../services/classService';
 import type { ClassOffering } from '../../types/classOffering';
 import { formatDate } from '../../utils/dateFormat';
 
@@ -17,6 +19,24 @@ export default function TeacherClassesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all');
+  const [selectedClassForRoster, setSelectedClassForRoster] = useState<ClassOffering | null>(null);
+  const [rosterStudents, setRosterStudents] = useState<
+    Array<{ id: string; studentCode: string; fullName: string; enrollmentStatus: string; enrolledAt?: string }>
+  >([]);
+  const [loadingRoster, setLoadingRoster] = useState(false);
+
+  const handleOpenRoster = async (cls: ClassOffering) => {
+    setSelectedClassForRoster(cls);
+    setLoadingRoster(true);
+    try {
+      const students = await classService.getClassStudents(cls.id);
+      setRosterStudents(students);
+    } catch {
+      toast.error('Không thể tải danh sách sinh viên của lớp.');
+    } finally {
+      setLoadingRoster(false);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -169,14 +189,104 @@ export default function TeacherClassesPage() {
                 </div>
               </div>
 
-              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-end">
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">
-                  <span>Chi tiết lớp</span>
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleOpenRoster(item)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                >
+                  <Users className="h-3.5 w-3.5 text-indigo-600" />
+                  <span>Xem danh sách học viên</span>
+                </button>
+
+                <Link
+                  to="/teacher/schedule"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition"
+                >
+                  <span>Quản lý điểm danh</span>
                   <ExternalLink className="h-3.5 w-3.5" />
-                </span>
+                </Link>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {selectedClassForRoster && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl max-h-[85vh] flex flex-col">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+              <div>
+                <span className="rounded-md bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">
+                  {selectedClassForRoster.classCode}
+                </span>
+                <h3 className="text-lg font-bold text-slate-900 mt-1">
+                  Danh sách học viên: {selectedClassForRoster.course.name}
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {selectedClassForRoster.semester} • Sĩ số: {selectedClassForRoster.enrolledCount} sinh viên
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedClassForRoster(null)}
+                className="text-slate-400 hover:text-slate-600 text-sm font-medium"
+              >
+                Đóng
+              </button>
+            </div>
+
+            <div className="py-4 overflow-y-auto flex-1">
+              {loadingRoster ? (
+                <div className="flex h-36 items-center justify-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-t-transparent" />
+                </div>
+              ) : rosterStudents.length === 0 ? (
+                <p className="text-center text-slate-400 py-8">Chưa có sinh viên nào đăng ký vào lớp này.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border border-slate-200">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-100 font-semibold text-slate-700 border-b border-slate-200">
+                      <tr>
+                        <th className="p-2.5 text-center w-12">STT</th>
+                        <th className="p-2.5">Mã sinh viên</th>
+                        <th className="p-2.5">Họ và tên</th>
+                        <th className="p-2.5 text-center">Trạng thái</th>
+                        <th className="p-2.5 text-right">Ngày đăng ký</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {rosterStudents.map((st, idx) => (
+                        <tr key={st.id || idx} className="hover:bg-slate-50">
+                          <td className="p-2.5 text-center text-slate-500">{idx + 1}</td>
+                          <td className="p-2.5 font-mono font-medium text-slate-700">{st.studentCode}</td>
+                          <td className="p-2.5 font-semibold text-slate-900">{st.fullName}</td>
+                          <td className="p-2.5 text-center">
+                            <span className="inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                              {st.enrollmentStatus || 'ENROLLED'}
+                            </span>
+                          </td>
+                          <td className="p-2.5 text-right text-slate-500">
+                            {st.enrolledAt ? formatDate(st.enrolledAt) : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end border-t border-slate-100 pt-4">
+              <button
+                type="button"
+                onClick={() => setSelectedClassForRoster(null)}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

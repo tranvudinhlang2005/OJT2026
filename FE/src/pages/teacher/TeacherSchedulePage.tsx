@@ -70,12 +70,12 @@ export default function TeacherSchedulePage() {
               name: it.fullName,
               code: it.studentCode,
               status: (it.status ? it.status.toLowerCase() : 'present') as AttendanceStatus,
+              remarks: it.remarks || '',
             })),
           });
         }
       }
     } catch {
-      // Giữ nguyên dữ liệu mặc định nếu ca học chưa có trên hệ thống hoặc chạy môi trường mock
     }
   };
 
@@ -109,6 +109,7 @@ export default function TeacherSchedulePage() {
     const payloadItems = students.map((s, idx) => ({
       studentId: Number(s.id.replace(/\D/g, '')) || idx + 1,
       status: (s.status === 'present' ? 'PRESENT' : s.status === 'late' ? 'LATE' : 'ABSENT') as 'PRESENT' | 'ABSENT' | 'LATE',
+      remarks: s.remarks?.trim() || undefined,
     }));
 
     try {
@@ -136,6 +137,7 @@ export default function TeacherSchedulePage() {
 
   const handleLockAttendance = async () => {
     if (!selectedSession) return;
+    if (!confirm('Sau khi khóa, bạn sẽ không thể tự chỉnh sửa điểm danh của buổi học này nữa. Bạn có chắc chắn muốn khóa?')) return;
     const sessionIdParam = selectedSession.id.startsWith('s-')
       ? selectedSession.id.replace('s-', '')
       : selectedSession.id;
@@ -143,6 +145,7 @@ export default function TeacherSchedulePage() {
     const payloadItems = students.map((s, idx) => ({
       studentId: Number(s.id.replace(/\D/g, '')) || idx + 1,
       status: (s.status === 'present' ? 'PRESENT' : s.status === 'late' ? 'LATE' : 'ABSENT') as 'PRESENT' | 'ABSENT' | 'LATE',
+      remarks: s.remarks?.trim() || undefined,
     }));
 
     try {
@@ -395,6 +398,20 @@ export default function TeacherSchedulePage() {
                       >
                         Vắng
                       </button>
+
+                      <input
+                        type="text"
+                        placeholder="Ghi chú..."
+                        value={student.remarks || ''}
+                        onChange={(e) =>
+                          dispatch({
+                            type: 'SET_STUDENT_REMARKS',
+                            payload: { studentId: student.id, remarks: e.target.value },
+                          })
+                        }
+                        className="w-32 rounded border border-slate-200 px-2 py-1 text-xs focus:border-indigo-600 focus:outline-none ml-1"
+                        maxLength={255}
+                      />
                     </div>
                   </div>
                 ))}
