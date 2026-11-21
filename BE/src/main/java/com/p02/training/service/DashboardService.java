@@ -140,14 +140,16 @@ public class DashboardService {
     }
 
     /**
-     * {@code GET /dashboard/classes?semester=&courseId=&page=&size=}, sorted by class code. Completion
-     * per class comes from one grouped query for the whole page. A Manager gets null for a class with
+     * {@code GET /dashboard/classes?semester=&courseId=&from=&to=&page=&size=}, sorted by class code.
+     * The filters match {@code /dashboard/summary}: from and to apply to the class's start_date, both
+     * inclusive; from after to is 422. Completion per class comes from one grouped query for the whole page. A Manager gets null for a class with
      * fewer than 5 confirmed results (D21); an Admin sees every value.
      */
     @Transactional(readOnly = true)
-    public PageResponse<DashboardClassResponse> classes(String semester, Long courseId, int page, int size,
-            AuthenticatedUser viewer) {
+    public PageResponse<DashboardClassResponse> classes(String semester, Long courseId, LocalDate from, LocalDate to,
+            int page, int size, AuthenticatedUser viewer) {
         requirePaging(page, size);
+        requireOrderedDates(from, to);
         String semesterFilter = blankToNull(semester);
         Specification<ClassOffering> specification = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -157,6 +159,12 @@ public class DashboardService {
             }
             if (courseId != null) {
                 predicates.add(cb.equal(root.get("course").get("id"), courseId));
+            }
+            if (from != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("startDate"), from));
+            }
+            if (to != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("startDate"), to));
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };
@@ -181,6 +189,12 @@ public class DashboardService {
                     classOffering.getCourse().getName(), classOffering.getSemester(), classOffering.getStatus(), classOffering.getEnrolledCount(),
                     classOffering.getMaxCapacity(), completionRate);
         });
+    }
+
+    /** {@code GET /dashboard/semesters}: the distinct semesters of classes that are not soft-deleted, newest first. */
+    @Transactional(readOnly = true)
+    public List<String> semesters() {
+        return classOfferingRepository.findDistinctSemestersForDashboard();
     }
 
     /**

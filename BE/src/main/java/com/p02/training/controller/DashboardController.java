@@ -9,6 +9,7 @@ import com.p02.training.dto.response.SecurityAlertsResponse;
 import com.p02.training.security.AuthenticatedUser;
 import com.p02.training.service.DashboardService;
 import java.time.LocalDate;
+import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,10 +44,17 @@ public class DashboardController {
     public PageResponse<DashboardClassResponse> classes(
             @RequestParam(required = false) String semester,
             @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @AuthenticationPrincipal AuthenticatedUser currentUser) {
-        return dashboardService.classes(semester, courseId, page, size, currentUser);
+        return dashboardService.classes(semester, courseId, from, to, page, size, currentUser);
+    }
+
+    @GetMapping(ApiPaths.DASHBOARD + "/semesters")
+    public List<String> semesters() {
+        return dashboardService.semesters();
     }
 
     @GetMapping(ApiPaths.DASHBOARD + "/security-alerts")

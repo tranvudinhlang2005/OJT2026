@@ -19,7 +19,7 @@ import java.time.LocalTime;
 import java.time.ZoneOffset;
 
 /** Builds rows inside a test's transaction, which rolls back. Values satisfy the V1 constraints. */
-final class TestData {
+public final class TestData {
 
     static final LocalDate START = LocalDate.of(2030, 1, 10);
     static final Instant NOW = Instant.parse("2030-01-01T00:00:00Z");
@@ -27,7 +27,7 @@ final class TestData {
     private final EntityManager entityManager;
     private int sequence;
 
-    TestData(EntityManager entityManager) {
+    public TestData(EntityManager entityManager) {
         this.entityManager = entityManager;
     }
 
@@ -54,7 +54,7 @@ final class TestData {
         return persist(new Student(user(UserRole.STUDENT), unique("ST")));
     }
 
-    Instructor instructor() {
+    public Instructor instructor() {
         return persist(new Instructor(user(UserRole.INSTRUCTOR), unique("IN")));
     }
 

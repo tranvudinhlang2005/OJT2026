@@ -77,4 +77,8 @@ public interface ClassOfferingRepository
     CapacityTotals sumCapacityForDashboard(@Param("statuses") Collection<ClassStatus> statuses,
             @Param("semester") String semester, @Param("courseId") Long courseId,
             @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    /** TR18 semester filter options: distinct semesters of classes that are not soft-deleted, newest first. */
+    @Query("select distinct c.semester from ClassOffering c where c.deletedAt is null order by c.semester desc")
+    List<String> findDistinctSemestersForDashboard();
 }

@@ -216,7 +216,7 @@ public class ClassQueryService {
     private static ClassView toView(ClassOffering classOffering, AuthenticatedUser viewer) {
         return viewer != null && viewer.role() == UserRole.TRAINING_ADMIN
                 ? ClassResponse.from(classOffering)
-                : ClassSummaryResponse.from(classOffering);
+                : ClassSummaryResponse.from(classOffering, viewer);
     }
 
     private static ApiException invalidParameters(String field, String detail) {

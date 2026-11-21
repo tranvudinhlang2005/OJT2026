@@ -8,6 +8,7 @@ import com.p02.training.dto.request.CreateUserRequest;
 import com.p02.training.dto.request.UpdateStudentRequest;
 import com.p02.training.dto.response.AttendanceSheetResponse;
 import com.p02.training.dto.response.ClassResultsResponse;
+import com.p02.training.dto.response.ClassSummaryResponse;
 import com.p02.training.dto.response.ClassView;
 import com.p02.training.dto.response.SecurityAlertsResponse;
 import com.p02.training.dto.response.UserResponse;
@@ -140,6 +141,19 @@ class OpenApiSchemaTest {
         assertThat(((Schema) event.getProperties().get("username")).getNullable()).isTrue();
         assertThat(((Schema) event.getProperties().get("ipAddress")).getNullable()).isTrue();
         assertThat(((Schema) event.getProperties().get("createdAt")).getNullable()).isNull();
+    }
+
+    @Test
+    @SuppressWarnings("rawtypes")
+    void classSummaryGradingStatusIsOptionalAndNullable() {
+        Schema summary = schemasOf(ClassSummaryResponse.class).get("ClassSummaryResponse");
+
+        // gradingStatus is omitted unless the viewer is the assigned Instructor (@JsonInclude NON_NULL)
+        assertThat(summary.getProperties()).containsKey("gradingStatus");
+        assertThat(summary.getRequired()).doesNotContain("gradingStatus").contains("classCode", "status");
+        assertThat(((Schema) summary.getProperties().get("gradingStatus")).getNullable()).isTrue();
+        assertThat(summary.getProperties()).doesNotContainKeys("cancelReason", "createdBy", "midtermWeight",
+                "finalWeight");
     }
 
     @Test
