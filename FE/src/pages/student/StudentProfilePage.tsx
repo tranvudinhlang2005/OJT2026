@@ -10,7 +10,10 @@ import {
   Clock,
   AlertCircle,
   RefreshCw,
+  Lock,
 } from 'lucide-react';
+import { useToast } from '../../contexts/ToastContext';
+import { authService } from '../../services/authService';
 import { studentService, type StudentProfile } from '../../services/studentService';
 import { courseService } from '../../services/courseService';
 import { calculateGpa4 } from '../../utils/gradeUtils';
@@ -21,6 +24,42 @@ export default function StudentProfilePage() {
   const [gpa4, setGpa4] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const { toast } = useToast();
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!oldPassword.trim()) {
+      toast.error('Vui lòng nhập mật khẩu hiện tại.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('Mật khẩu mới phải có tối thiểu 6 ký tự.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Xác nhận mật khẩu mới không khớp.');
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+      await authService.changePassword(oldPassword, newPassword);
+      toast.success('Đổi mật khẩu thành công!');
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosErr.response?.data?.message || 'Đổi mật khẩu thất bại.');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     try {
@@ -211,6 +250,59 @@ export default function StudentProfilePage() {
             </div>
           </dl>
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-2xs space-y-4">
+        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+          <Lock className="h-5 w-5 text-blue-600" />
+          <h2 className="text-base font-bold text-slate-900">Đổi mật khẩu</h2>
+        </div>
+
+        <form onSubmit={handleChangePassword} className="max-w-md space-y-4 text-xs">
+          <div>
+            <label className="block font-medium text-slate-700">Mật khẩu hiện tại</label>
+            <input
+              type="password"
+              placeholder="Nhập mật khẩu hiện tại"
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700">Mật khẩu mới</label>
+            <input
+              type="password"
+              placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block font-medium text-slate-700">Xác nhận mật khẩu mới</label>
+            <input
+              type="password"
+              placeholder="Xác nhận mật khẩu mới"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={changingPassword}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-50 transition"
+          >
+            {changingPassword ? 'Đang cập nhật...' : 'Cập nhật mật khẩu'}
+          </button>
+        </form>
       </div>
     </div>
   );

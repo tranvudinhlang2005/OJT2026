@@ -844,4 +844,38 @@ test.describe('FE Bugfixes Verification Suite', () => {
     expect(dialogMessages.some((msg) => msg.includes('Bạn có chắc chắn muốn hủy đăng ký'))).toBeTruthy();
     expect(cancelCalled).toBeTruthy();
   });
+
+  test('Lỗi 14 (Ticket 06): Học viên đổi mật khẩu cá nhân thành công tại trang Profile', async ({ page }) => {
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    let changePasswordPayload: any = null;
+
+    await page.route('**/api/v1/auth/password', async (route) => {
+      if (route.request().method() === 'PATCH') {
+        changePasswordPayload = route.request().postDataJSON();
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true, message: 'Đổi mật khẩu thành công!' }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/student/profile');
+    await expect(page.getByRole('heading', { name: /đổi mật khẩu/i })).toBeVisible();
+
+    await page.getByPlaceholder(/mật khẩu hiện tại/i).fill('oldPass123');
+    await page.getByPlaceholder(/mật khẩu mới/i).first().fill('newPass123');
+    await page.getByPlaceholder(/xác nhận mật khẩu/i).fill('newPass123');
+
+    await page.getByRole('button', { name: /cập nhật mật khẩu/i }).click();
+
+    await expect(page.getByText(/Đổi mật khẩu thành công/i)).toBeVisible();
+    expect(changePasswordPayload).toBeTruthy();
+    expect(changePasswordPayload.oldPassword).toBe('oldPass123');
+    expect(changePasswordPayload.newPassword).toBe('newPass123');
+  });
 });
