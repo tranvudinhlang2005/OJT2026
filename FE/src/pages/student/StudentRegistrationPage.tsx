@@ -25,6 +25,7 @@ export default function StudentRegistrationPage() {
   const [selectedDepartment, setSelectedDepartment] = useState('ALL');
   const [selectedDay, setSelectedDay] = useState<number | 'ALL'>('ALL');
   const [activeTab, setActiveTab] = useState<'open' | 'registered'>('open');
+  const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState<'ALL' | 'ENROLLED' | 'CANCELLED' | 'COMPLETED'>('ALL');
 
   const loadData = useCallback(async () => {
     try {
@@ -34,7 +35,6 @@ export default function StudentRegistrationPage() {
         studentService.getMyEnrollments().catch(() => []),
       ]);
 
-      // Tải danh sách buổi học thực tế cho từng lớp để lấy đúng thứ, giờ và phòng học thay vì tự dựng
       const sessionMap: Record<string, { room: string; dayOfWeek: number; timeSlot: string }> = {};
       await Promise.all(
         allClasses.map(async (cls) => {
@@ -51,7 +51,6 @@ export default function StudentRegistrationPage() {
               };
             }
           } catch {
-            // fallback
           }
         })
       );
@@ -76,7 +75,6 @@ export default function StudentRegistrationPage() {
         };
       });
 
-      // Bổ sung các lớp mà học viên đã đăng ký (kể cả lớp đang học IN_PROGRESS không còn trong danh sách mở)
       const enrolledItems = myEnrollments.filter((e) => e.status === 'ENROLLED');
       for (const enr of enrolledItems) {
         if (!openClasses.some((c) => c.id === enr.classId)) {
@@ -90,7 +88,7 @@ export default function StudentRegistrationPage() {
             dayOfWeek: 2,
             startPeriod: 1,
             endPeriod: 3,
-            timeSlot: `${enr.startDate} - ${enr.endDate}`,
+            timeSlot: enr.startDate && enr.endDate ? `${formatDate(enr.startDate)} - ${formatDate(enr.endDate)}` : 'Đang diễn ra',
             maxSeats: 50,
             enrolledSeats: 50,
             semester: enr.semester,
@@ -125,6 +123,7 @@ export default function StudentRegistrationPage() {
   }, [registeredClasses]);
 
   const handleRegister = async (cls: OpenClass) => {
+    if (!confirm(`Xác nhận đăng ký học phần [${cls.courseCode}] ${cls.courseName}?`)) return;
     try {
       await studentService.enrollClass(cls.id);
       toast.success(`Đăng ký thành công lớp [${cls.courseCode}] ${cls.courseName}`);
@@ -135,16 +134,29 @@ export default function StudentRegistrationPage() {
     }
   };
 
-  const handleUnregister = async (cls: OpenClass) => {
-    const enrollment = enrollments.find((e) => e.classId === cls.id && e.status === 'ENROLLED');
-    if (!enrollment) {
-      toast.error('Không tìm thấy thông tin đăng ký của lớp này.');
-      return;
+  const handleUnregister = async (target: OpenClass | string) => {
+    let enrollmentId: string | undefined;
+    let label = '';
+
+    if (typeof target === 'string') {
+      enrollmentId = target;
+      const enr = enrollments.find((e) => e.enrollmentId === target);
+      label = enr ? `[${enr.courseCode}] ${enr.courseName}` : '';
+    } else {
+      const enrollment = enrollments.find((e) => e.classId === target.id && e.status === 'ENROLLED');
+      if (!enrollment) {
+        toast.error('Không tìm thấy thông tin đăng ký của lớp này.');
+        return;
+      }
+      enrollmentId = enrollment.enrollmentId;
+      label = `[${target.courseCode}] ${target.courseName}`;
     }
 
+    if (!confirm('Bạn có chắc chắn muốn hủy đăng ký lớp này không? Chỗ ngồi của bạn sẽ được giải phóng.')) return;
+
     try {
-      await studentService.cancelEnrollment(enrollment.enrollmentId);
-      toast.info(`Đã hủy đăng ký lớp [${cls.courseCode}] ${cls.courseName}`);
+      await studentService.cancelEnrollment(enrollmentId);
+      toast.info(`Đã hủy đăng ký lớp ${label}`);
       await loadData();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
@@ -423,64 +435,129 @@ export default function StudentRegistrationPage() {
         </div>
       ) : (
         <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setEnrollmentStatusFilter('ALL')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                enrollmentStatusFilter === 'ALL'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              Tất cả ({enrollments.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setEnrollmentStatusFilter('ENROLLED')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                enrollmentStatusFilter === 'ENROLLED'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              Đang học ({enrollments.filter((e) => e.status === 'ENROLLED').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setEnrollmentStatusFilter('CANCELLED')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                enrollmentStatusFilter === 'CANCELLED'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              Đã hủy ({enrollments.filter((e) => e.status === 'CANCELLED').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setEnrollmentStatusFilter('COMPLETED')}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                enrollmentStatusFilter === 'COMPLETED'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              Đã hoàn thành ({enrollments.filter((e) => e.status === 'COMPLETED').length})
+            </button>
+          </div>
+
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-slate-600">
                 <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-500">
                   <tr>
-                    <th className="px-4 py-3.5">Học phần</th>
-                    <th className="px-3 py-3.5 text-center">Tín chỉ</th>
-                    <th className="px-4 py-3.5">Lịch học</th>
-                    <th className="px-4 py-3.5">Giảng viên</th>
+                    <th className="px-4 py-3.5">Học phần & Lớp</th>
+                    <th className="px-4 py-3.5">Ngày đăng ký</th>
+                    <th className="px-4 py-3.5">Hạn chót hủy</th>
                     <th className="px-4 py-3.5 text-center">Trạng thái</th>
                     <th className="px-4 py-3.5 text-center">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {registeredClasses.length === 0 ? (
+                  {enrollments.filter((e) => enrollmentStatusFilter === 'ALL' || e.status === enrollmentStatusFilter).length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400">
-                        Bạn chưa đăng ký học phần nào trong học kỳ này.
+                      <td colSpan={5} className="py-8 text-center text-slate-400">
+                        Không có lớp học nào trong danh sách.
                       </td>
                     </tr>
                   ) : (
-                    registeredClasses.map((cls) => (
-                      <tr key={cls.id} className="hover:bg-slate-50/70 transition">
-                        <td className="px-4 py-4">
-                          <div className="font-semibold text-slate-900">{cls.courseName}</div>
-                          <div className="font-mono text-xs text-slate-500">
-                            Mã HP: {cls.courseCode} • Mã lớp: {cls.id}
-                          </div>
-                        </td>
-                        <td className="px-3 py-4 text-center font-bold text-slate-700">
-                          {cls.credits} TC
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="text-xs font-medium text-slate-800">
-                            {getDayName(cls.dayOfWeek)} ({cls.timeSlot})
-                          </div>
-                          <div className="text-xs text-slate-500">{cls.room}</div>
-                        </td>
-                        <td className="px-4 py-4 text-xs font-medium text-slate-700">
-                          {cls.teacherName}
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Đã ghi danh
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleUnregister(cls)}
-                            className="rounded-lg border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition"
-                          >
-                            Hủy đăng ký
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    enrollments
+                      .filter((e) => enrollmentStatusFilter === 'ALL' || e.status === enrollmentStatusFilter)
+                      .map((enr) => {
+                        const isPastDeadline = enr.cancelDeadline && new Date() > new Date(enr.cancelDeadline);
+                        return (
+                          <tr key={enr.enrollmentId} className="hover:bg-slate-50/70 transition">
+                            <td className="px-4 py-4">
+                              <div className="font-semibold text-slate-900">{enr.courseName}</div>
+                              <div className="font-mono text-xs text-slate-500">
+                                Mã HP: {enr.courseCode} • Mã lớp: {enr.classCode || enr.classId}
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 text-xs text-slate-600">
+                              {enr.enrolledAt ? formatDate(enr.enrolledAt) : '-'}
+                            </td>
+                            <td className="px-4 py-4 text-xs text-slate-600">
+                              {enr.cancelDeadline ? formatDate(enr.cancelDeadline) : '-'}
+                            </td>
+                            <td className="px-4 py-4 text-center">
+                              {enr.status === 'ENROLLED' && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Đang học
+                                </span>
+                              )}
+                              {enr.status === 'CANCELLED' && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700">
+                                  Đã hủy
+                                </span>
+                              )}
+                              {enr.status === 'COMPLETED' && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                                  Hoàn thành
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-4 text-center">
+                              {enr.status === 'ENROLLED' ? (
+                                isPastDeadline ? (
+                                  <span className="text-xs text-slate-400">Đã quá hạn hủy</span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUnregister(enr.enrollmentId)}
+                                    className="rounded-lg border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition"
+                                  >
+                                    Hủy đăng ký
+                                  </button>
+                                )
+                              ) : (
+                                <span className="text-xs text-slate-400">-</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
                   )}
                 </tbody>
               </table>

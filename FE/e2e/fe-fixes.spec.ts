@@ -739,4 +739,109 @@ test.describe('FE Bugfixes Verification Suite', () => {
     expect(dialogConfirmed).toBeTruthy();
     await expect.poll(() => lockCalled).toBeTruthy();
   });
+
+  test('Lỗi 13 (Ticket 05): Đăng ký và hủy môn học có dialog xác nhận, tab Lớp đã đăng ký có lọc trạng thái', async ({ page }) => {
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    let enrollCalled = false;
+    let cancelCalled = false;
+    const dialogMessages: string[] = [];
+
+    page.on('dialog', async (dialog) => {
+      dialogMessages.push(dialog.message());
+      await dialog.accept();
+    });
+
+    let currentEnrollments: any[] = [];
+
+    await page.route('**/api/v1/students/me/enrollments**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: currentEnrollments,
+          page: 0,
+          size: 10,
+          totalElements: currentEnrollments.length,
+          totalPages: 1,
+        }),
+      });
+    });
+
+    await page.route('**/api/v1/enrollments', async (route) => {
+      if (route.request().method() === 'POST') {
+        enrollCalled = true;
+        currentEnrollments = [
+          {
+            enrollmentId: 99,
+            classId: 101,
+            classCode: 'INT3110.O21',
+            courseCode: 'INT3110',
+            courseName: 'Cơ sở dữ liệu nâng cao',
+            semester: 'SUM2026',
+            status: 'ENROLLED',
+            enrolledAt: '2026-02-01T08:00:00Z',
+            cancelDeadline: '2026-12-31T23:59:59Z',
+          },
+        ];
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            enrollmentId: 99,
+            classId: 101,
+            enrolledAt: '2026-02-01T08:00:00Z',
+          }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.route('**/api/v1/enrollments/**/cancel', async (route) => {
+      cancelCalled = true;
+      currentEnrollments = [
+        {
+          enrollmentId: 99,
+          classId: 101,
+          classCode: 'INT3110.O21',
+          courseCode: 'INT3110',
+          courseName: 'Cơ sở dữ liệu nâng cao',
+          semester: 'SUM2026',
+          status: 'CANCELLED',
+          enrolledAt: '2026-02-01T08:00:00Z',
+          cancelDeadline: '2026-12-31T23:59:59Z',
+        },
+      ];
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
+      });
+    });
+
+    await page.goto('/student/registration');
+    await expect(page.getByText('Cơ sở dữ liệu nâng cao').first()).toBeVisible();
+
+    // 1. Bấm đăng ký lớp học -> có dialog xác nhận
+    const registerBtn = page.getByRole('button', { name: 'Đăng ký', exact: true }).first();
+    await registerBtn.click();
+    expect(dialogMessages.some((msg) => msg.includes('Xác nhận đăng ký'))).toBeTruthy();
+    expect(enrollCalled).toBeTruthy();
+
+    // 2. Chuyển sang tab "Lớp đã đăng ký"
+    await page.getByRole('button', { name: /lớp đã đăng ký/i }).click();
+
+    // Kiểm tra các nút lọc trạng thái
+    await expect(page.getByRole('button', { name: /tất cả/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /đang học/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /đã hủy/i })).toBeVisible();
+
+    // 3. Bấm hủy đăng ký -> có dialog xác nhận
+    const unregisterBtn = page.getByRole('button', { name: 'Hủy đăng ký' }).first();
+    await unregisterBtn.click();
+    expect(dialogMessages.some((msg) => msg.includes('Bạn có chắc chắn muốn hủy đăng ký'))).toBeTruthy();
+    expect(cancelCalled).toBeTruthy();
+  });
 });

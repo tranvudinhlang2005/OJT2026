@@ -77,6 +77,8 @@ test.describe('Student Portal Suite', () => {
       }
     });
 
+    page.on('dialog', (dialog) => dialog.accept());
+
     await page.goto('/student/registration');
 
     await expect(page.getByRole('heading', { name: 'Đăng ký lớp học phần trực tuyến' })).toBeVisible();
