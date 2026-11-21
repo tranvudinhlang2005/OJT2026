@@ -97,6 +97,14 @@ export async function setupDefaultMocks(page: Page, user: MockUserSession = ADMI
     });
   });
 
+  await page.route('**/api/v1/dashboard/semesters', async (route: Route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(['Học kỳ II (2026 - 2027)', 'Học kỳ I (2026 - 2027)']),
+    });
+  });
+
   await page.route('**/api/v1/dashboard/classes**', async (route: Route) => {
     await route.fulfill({
       status: 200,

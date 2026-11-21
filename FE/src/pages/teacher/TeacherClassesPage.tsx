@@ -27,18 +27,19 @@ export default function TeacherClassesPage() {
         item.classCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.course.name.toLowerCase().includes(searchTerm.toLowerCase());
 
+      const isActive = item.status === 'OPEN' || item.status === 'IN_PROGRESS';
       const isCompleted = item.status === 'CLOSED';
       const matchStatus =
         statusFilter === 'all' ||
         (statusFilter === 'completed' && isCompleted) ||
-        (statusFilter === 'active' && !isCompleted);
+        (statusFilter === 'active' && isActive);
 
       return matchSearch && matchStatus;
     });
   }, [classes, searchTerm, statusFilter]);
 
   const activeCount = useMemo(
-    () => classes.filter((c) => c.status !== 'CLOSED').length,
+    () => classes.filter((c) => c.status === 'OPEN' || c.status === 'IN_PROGRESS').length,
     [classes]
   );
   const completedCount = useMemo(

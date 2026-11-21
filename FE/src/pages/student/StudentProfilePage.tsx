@@ -49,10 +49,17 @@ export default function StudentProfilePage() {
     try {
       setChangingPassword(true);
       await authService.changePassword(oldPassword, newPassword);
-      toast.success('Đổi mật khẩu thành công!');
+      toast.success('Đổi mật khẩu thành công! Vui lòng đăng nhập lại với mật khẩu mới.');
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      setTimeout(async () => {
+        try {
+          await authService.logout();
+        } finally {
+          window.location.href = '/login';
+        }
+      }, 1500);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       toast.error(axiosErr.response?.data?.message || 'Đổi mật khẩu thất bại.');

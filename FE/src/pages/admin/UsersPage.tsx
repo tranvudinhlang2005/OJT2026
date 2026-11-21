@@ -34,15 +34,24 @@ export default function UsersPage() {
   const [selectedUserForResetPass, setSelectedUserForResetPass] = useState<ManagedUser | null>(null);
   const [selectedUserForAssignCourses, setSelectedUserForAssignCourses] = useState<ManagedUser | null>(null);
 
+  const loadStats = useCallback(async () => {
+    try {
+      const fullData = await userService.getUsers();
+      setAllUsersCount(fullData);
+    } catch (err) {
+      console.warn('Không thể tải dữ liệu thống kê tài khoản:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [filteredData, fullData] = await Promise.all([
-        userService.getUsers(filter),
-        userService.getUsers(),
-      ]);
+      const filteredData = await userService.getUsers(filter);
       setUsers(filteredData);
-      setAllUsersCount(fullData);
     } catch {
       toast.error('Không thể tải danh sách tài khoản');
     } finally {
@@ -59,6 +68,7 @@ export default function UsersPage() {
       const created = await userService.createUser(payload);
       toast.success(`Đã tạo thành công tài khoản "${created.username}"`);
       loadData();
+      loadStats();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
       const msg = axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi tạo tài khoản');
@@ -89,6 +99,7 @@ export default function UsersPage() {
         toast.warning(`Đã vô hiệu hóa tài khoản "${user.username}"`);
       }
       loadData();
+      loadStats();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Không thể thay đổi trạng thái');
     }
@@ -99,6 +110,7 @@ export default function UsersPage() {
       await userService.unlockUser(user.id);
       toast.success(`Đã mở khóa tài khoản "${user.username}" thành công`);
       loadData();
+      loadStats();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Không thể mở khóa tài khoản');
     }
@@ -113,6 +125,7 @@ export default function UsersPage() {
         toast.success('Đã chuyển vai trò về Quản lý đào tạo thành công');
       }
       loadData();
+      loadStats();
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
       const msg = axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi chuyển đổi vai trò');

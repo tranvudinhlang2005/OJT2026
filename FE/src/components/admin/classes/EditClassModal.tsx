@@ -89,7 +89,7 @@ export function EditClassModal({
       return;
     }
 
-    if (Number(midtermWeight) + Number(finalWeight) !== 1.0) {
+    if (Math.abs(Number(midtermWeight) + Number(finalWeight) - 1.0) > 0.001) {
       setError('Tổng trọng số điểm giữa kỳ và cuối kỳ phải bằng 1.0.');
       return;
     }

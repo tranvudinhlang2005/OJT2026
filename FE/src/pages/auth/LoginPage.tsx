@@ -67,11 +67,11 @@ export default function LoginPage() {
       const errorCode = axiosErr.response?.data?.code;
 
       let msg = 'Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.';
-      if (errorCode === 'BAD_CREDENTIALS') {
+      if (errorCode === 'INVALID_CREDENTIALS' || errorCode === 'BAD_CREDENTIALS') {
         msg = 'Sai tên đăng nhập hoặc mật khẩu.';
-      } else if (errorCode === 'USER_LOCKED') {
+      } else if (errorCode === 'USER_LOCKED' || errorCode === 'ACCOUNT_LOCKED') {
         msg = 'Tài khoản đang bị tạm khóa 15 phút do nhập sai quá số lần quy định.';
-      } else if (errorCode === 'USER_INACTIVE') {
+      } else if (errorCode === 'USER_INACTIVE' || errorCode === 'ACCOUNT_INACTIVE') {
         msg = 'Tài khoản đã bị vô hiệu hóa bởi Quản trị viên.';
       } else if (serverMessage) {
         msg = serverMessage;

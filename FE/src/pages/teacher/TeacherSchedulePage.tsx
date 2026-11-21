@@ -13,6 +13,7 @@ import {
 import { useToast } from '../../contexts/ToastContext';
 import { attendanceService } from '../../services/attendanceService';
 import { scheduleService } from '../../services/scheduleService';
+import { classService } from '../../services/classService';
 import {
   scheduleReducer,
   initialScheduleState,
@@ -54,12 +55,32 @@ export default function TeacherSchedulePage() {
 
   const handleOpenAttendance = async (session: TeachingSession) => {
     dispatch({ type: 'OPEN_ATTENDANCE_MODAL', payload: session });
-    const sessionIdParam = session.id.startsWith('s-')
+    let activeSessionId = session.id.startsWith('s-')
       ? session.id.replace('s-', '')
       : session.id;
 
     try {
-      const sheet = await attendanceService.getAttendance(sessionIdParam);
+      const cleanClassCode = session.className.split(' - ')[0].trim();
+      const classes = await classService.getClasses({ keyword: cleanClassCode });
+      const matchedClass = classes.find(
+        (c) => c.classCode.toLowerCase() === cleanClassCode.toLowerCase()
+      );
+      if (matchedClass) {
+        const classSessions = await classService.getSessions(matchedClass.id);
+        const matchedSession = classSessions.find(
+          (s) => s.sessionDate === session.date && session.time.startsWith(s.startTime.substring(0, 5))
+        );
+        if (matchedSession) {
+          activeSessionId = matchedSession.id;
+          dispatch({ type: 'OPEN_ATTENDANCE_MODAL', payload: { ...session, id: activeSessionId } });
+        }
+      }
+    } catch {
+      // Keep activeSessionId as fallback
+    }
+
+    try {
+      const sheet = await attendanceService.getAttendance(activeSessionId);
       if (sheet) {
         setSessionVersion(sheet.version ?? 0);
         if (sheet.items && sheet.items.length > 0) {
@@ -76,6 +97,7 @@ export default function TeacherSchedulePage() {
         }
       }
     } catch {
+      // Keep default students state
     }
   };
 
@@ -107,7 +129,7 @@ export default function TeacherSchedulePage() {
       : selectedSession.id;
 
     const payloadItems = students.map((s, idx) => ({
-      studentId: Number(s.id.replace(/\D/g, '')) || idx + 1,
+      studentId: Number(s.id) || idx + 1,
       status: (s.status === 'present' ? 'PRESENT' : s.status === 'late' ? 'LATE' : 'ABSENT') as 'PRESENT' | 'ABSENT' | 'LATE',
       remarks: s.remarks?.trim() || undefined,
     }));
@@ -143,7 +165,7 @@ export default function TeacherSchedulePage() {
       : selectedSession.id;
 
     const payloadItems = students.map((s, idx) => ({
-      studentId: Number(s.id.replace(/\D/g, '')) || idx + 1,
+      studentId: Number(s.id) || idx + 1,
       status: (s.status === 'present' ? 'PRESENT' : s.status === 'late' ? 'LATE' : 'ABSENT') as 'PRESENT' | 'ABSENT' | 'LATE',
       remarks: s.remarks?.trim() || undefined,
     }));

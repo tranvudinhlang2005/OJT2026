@@ -6,6 +6,7 @@ import { ApprovalDetailModal } from '../../components/admin/approvals/ApprovalDe
 import { ReturnResultModal } from '../../components/admin/approvals/ReturnResultModal';
 import { CompleteClassModal } from '../../components/admin/approvals/CompleteClassModal';
 import { approvalService } from '../../services/approvalService';
+import { dashboardService } from '../../services/dashboardService';
 import type {
   ApprovalFilter,
   ApprovalStats,
@@ -38,6 +39,16 @@ export default function ApprovalsPage() {
 
   const [selectedDetail, setSelectedDetail] = useState<ClassResultDetail | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [availableSemesters, setAvailableSemesters] = useState<string[]>([]);
+
+  useEffect(() => {
+    dashboardService
+      .getSemesters()
+      .then((sems) => {
+        if (sems && sems.length > 0) setAvailableSemesters(sems);
+      })
+      .catch(() => {});
+  }, []);
 
   const [returnModal, setReturnModal] = useState<{
     isOpen: boolean;
@@ -95,7 +106,9 @@ export default function ApprovalsPage() {
     loadData();
   }, [loadData]);
 
-  const distinctSemesters = Array.from(new Set(items.map((i) => i.semester)));
+  const distinctSemesters = Array.from(
+    new Set([...availableSemesters, ...items.map((i) => i.semester)].filter(Boolean))
+  );
 
   const handleOpenReview = async (classId: string) => {
     try {

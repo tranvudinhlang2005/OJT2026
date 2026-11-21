@@ -81,7 +81,18 @@ export function getApiErrorMessage(error: unknown, fallback = 'Đã có lỗi x�
     const data = error.response?.data;
     if (typeof data === 'string' && data.trim()) return data;
     if (data && typeof data === 'object') {
-      const errObj = data as { message?: string; error?: string; detail?: string };
+      const errObj = data as {
+        message?: string;
+        error?: string;
+        detail?: string;
+        details?: Record<string, string | string[]>;
+      };
+      if (errObj.details && typeof errObj.details === 'object' && Object.keys(errObj.details).length > 0) {
+        const detailMsgs = Object.entries(errObj.details)
+          .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join('; ');
+        return `${errObj.message || fallback} (${detailMsgs})`;
+      }
       return errObj.message || errObj.detail || errObj.error || fallback;
     }
   }

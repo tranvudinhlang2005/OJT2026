@@ -95,41 +95,11 @@ export const approvalService = {
       finalStatus: it.finalStatus,
     }));
 
-    let computedRates: Record<string, number> = {};
-    if (sessions.length > 0 && rawItems.some((it) => it.attendanceRate === null)) {
-      try {
-        const sheets = await Promise.all(
-          sessions.map((s) =>
-            axiosClient.get<{ items: Array<{ studentId: number; status: string | null }> }>(
-              `/sessions/${s.id}/attendance`
-            )
-          )
-        );
-
-        const attendedCounts: Record<string, number> = {};
-        for (const sheet of sheets) {
-          for (const att of sheet.data.items || []) {
-            if (att.status === 'PRESENT' || att.status === 'LATE') {
-              const sid = String(att.studentId);
-              attendedCounts[sid] = (attendedCounts[sid] || 0) + 1;
-            }
-          }
-        }
-
-        for (const it of rawItems) {
-          const attended = attendedCounts[it.studentId] || 0;
-          computedRates[it.studentId] = Math.round((attended / sessions.length) * 100 * 100) / 100;
-        }
-      } catch {
-        computedRates = {};
-      }
-    }
-
     const mWeight = Number(res.midtermWeight ?? classInfo.midtermWeight);
     const fWeight = Number(res.finalWeight ?? classInfo.finalWeight);
 
     const items: ClassResultItem[] = rawItems.map((it) => {
-      const rate = it.attendanceRate !== null ? it.attendanceRate : computedRates[it.studentId] ?? null;
+      const rate = it.attendanceRate !== null ? it.attendanceRate : null;
       const total =
         it.totalScore !== null
           ? it.totalScore

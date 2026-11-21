@@ -66,11 +66,9 @@ export const instructorService = {
   },
 
   async getMyClasses(): Promise<ClassOffering[]> {
-    const [classes, profile] = await Promise.all([
-      classService.getClasses(),
-      this.getMyProfile().catch(() => null),
-    ]);
+    const profile = await this.getMyProfile().catch(() => null);
     if (!profile) return [];
+    const classes = await classService.getClasses({ instructorId: profile.id });
     const assigned = classes.filter(
       (c) =>
         (c.instructor && String(c.instructor.id) === String(profile.id)) ||

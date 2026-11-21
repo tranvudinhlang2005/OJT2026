@@ -115,6 +115,11 @@ export const dashboardService = {
     }));
   },
 
+  async getSemesters(): Promise<string[]> {
+    const res = await axiosClient.get<string[]>('/dashboard/semesters');
+    return res.data || [];
+  },
+
   async getSecurityAlerts(from?: string, to?: string): Promise<SecurityAlerts> {
     const params: Record<string, string> = {};
     if (from) params.from = from;
