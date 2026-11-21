@@ -166,17 +166,6 @@ export default function ClassesPage() {
     }
   };
 
-  const handleCloseClass = async (cls: ClassOffering) => {
-    if (!confirm(`Xác nhận hoàn thành và đóng lớp học phần "${cls.classCode}"?`)) return;
-    try {
-      await classService.closeClass(cls.id);
-      toast.success(`Đã đóng lớp "${cls.classCode}" thành công`);
-      await loadClassesData();
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Lỗi khi đóng lớp');
-    }
-  };
-
   const handleCancelClass = async (id: string, reason: string) => {
     try {
       await classService.cancelClass(id, reason);
@@ -232,7 +221,6 @@ export default function ClassesPage() {
         onChangeCapacity={(cls) => setSelectedClassForCapacity(cls)}
         onPublish={handlePublishClass}
         onStart={handleStartClass}
-        onClose={handleCloseClass}
         onCancel={(cls) => setSelectedClassForCancel(cls)}
         onDelete={(cls) => setSelectedClassForDelete(cls)}
       />

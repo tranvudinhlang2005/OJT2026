@@ -95,7 +95,6 @@ export default function TeacherGradesPage() {
   const handleSaveDraft = async () => {
     if (!activeClass || !resultSheet) return;
 
-    // Kiểm tra các dòng sửa điểm cũ có lý do hay không
     const missingReasonItem = Object.entries(scoresDraft).find(([studentId, scores]) => {
       const orig = resultSheet.items.find((it) => String(it.studentId) === String(studentId));
       if (!orig) return false;
@@ -268,7 +267,7 @@ export default function TeacherGradesPage() {
                           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
                         >
                           <Edit3 className="h-3.5 w-3.5 text-indigo-600" />
-                          {cls.gradingStatus === 'CONFIRMED' ? 'Xem điểm' : 'Nhập điểm'}
+                          {cls.gradingStatus === 'DRAFT' ? 'Nhập điểm' : 'Xem điểm'}
                         </button>
 
                         {cls.gradingStatus === 'DRAFT' && (
@@ -311,6 +310,18 @@ export default function TeacherGradesPage() {
                     <span>Lý do trả về từ Admin: {resultSheet.returnReason}</span>
                   </div>
                 )}
+                {activeClass.gradingStatus === 'SUBMITTED' && (
+                  <div className="mt-2 flex items-center gap-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-700 border border-amber-200">
+                    <Clock className="h-4 w-4 shrink-0 text-amber-600" />
+                    <span>Bảng điểm đang chờ Ban Đào tạo xét duyệt (chế độ chỉ đọc).</span>
+                  </div>
+                )}
+                {activeClass.gradingStatus === 'CONFIRMED' && (
+                  <div className="mt-2 flex items-center gap-2 rounded-lg bg-emerald-50 p-2 text-xs text-emerald-700 border border-emerald-200">
+                    <CheckCircle className="h-4 w-4 shrink-0 text-emerald-600" />
+                    <span>Bảng điểm đã được phê duyệt chính thức (chế độ chỉ đọc).</span>
+                  </div>
+                )}
               </div>
               <button
                 type="button"
@@ -345,7 +356,7 @@ export default function TeacherGradesPage() {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                     {resultSheet.items.map((item: ClassResultEntryItem) => {
-                      const isLocked = activeClass.gradingStatus === 'CONFIRMED';
+                      const isLocked = activeClass.gradingStatus !== 'DRAFT';
                       const draft = scoresDraft[item.studentId] || {};
                       const midtermVal = draft.midtermScore !== undefined ? draft.midtermScore : item.midtermScore;
                       const finalVal = draft.finalScore !== undefined ? draft.finalScore : item.finalScore;
@@ -440,7 +451,7 @@ export default function TeacherGradesPage() {
                 >
                   Đóng
                 </button>
-                {activeClass.gradingStatus !== 'CONFIRMED' && (
+                {activeClass.gradingStatus === 'DRAFT' && (
                   <button
                     type="button"
                     disabled={submitting}

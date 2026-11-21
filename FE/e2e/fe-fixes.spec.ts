@@ -436,4 +436,136 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await expect(page.getByText('INT3110.O21')).not.toBeVisible();
     await expect(page.getByText('Không tìm thấy lớp học nào phù hợp.')).toBeVisible();
   });
+
+  test('Lỗi 8: Lớp ở trạng thái SUBMITTED ở chế độ Read-only (không cho sửa điểm hoặc lưu nháp)', async ({ page }) => {
+    await injectSession(page, INSTRUCTOR_USER);
+    await setupDefaultMocks(page, INSTRUCTOR_USER);
+
+    await page.route('**/api/v1/classes**', async (route) => {
+      const url = route.request().url();
+      if (route.request().method() === 'GET') {
+        if (url.includes('/results')) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              classId: 101,
+              classCode: 'INT3110.O21',
+              gradingStatus: 'SUBMITTED',
+              version: 1,
+              midtermWeight: 0.3,
+              finalWeight: 0.7,
+              submittedAt: '2026-03-01T10:00:00Z',
+              confirmedAt: null,
+              returnReason: null,
+              items: [
+                {
+                  studentId: 3,
+                  studentCode: 'SV2026001',
+                  fullName: 'Trần Văn Sinh',
+                  enrollmentStatus: 'ENROLLED',
+                  midtermScore: 8.0,
+                  finalScore: 8.5,
+                  totalScore: 8.35,
+                  attendanceRate: 100,
+                  finalStatus: 'PASSED',
+                },
+              ],
+            }),
+          });
+          return;
+        }
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            items: [
+              {
+                id: 101,
+                classCode: 'INT3110.O21',
+                courseId: 1,
+                courseCode: 'INT3110',
+                courseName: 'Cơ sở dữ liệu nâng cao',
+                semester: 'SUM2026',
+                instructorId: 1,
+                instructorName: 'Nguyễn Văn Giảng',
+                status: 'IN_PROGRESS',
+                enrolledCount: 1,
+                maxCapacity: 30,
+                gradingStatus: 'SUBMITTED',
+                midtermWeight: 0.3,
+                finalWeight: 0.7,
+                passScore: 5.0,
+              },
+            ],
+            page: 0,
+            size: 10,
+            totalElements: 1,
+            totalPages: 1,
+          }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/teacher/grades');
+
+    const viewButton = page.getByRole('button', { name: 'Xem điểm' });
+    await expect(viewButton).toBeVisible();
+
+    await viewButton.click();
+    await expect(page.getByText('Sổ điểm: Cơ sở dữ liệu nâng cao')).toBeVisible();
+
+    const midtermInput = page.locator('tbody tr input[type="number"]').first();
+    await expect(midtermInput).toBeDisabled();
+
+    const saveDraftBtn = page.getByRole('button', { name: 'Lưu bảng điểm' });
+    await expect(saveDraftBtn).not.toBeVisible();
+  });
+
+  test('Lỗi 9: Lớp IN_PROGRESS trong ClassTable không có nút Đóng lớp tùy tiện (phải đóng qua luồng Approvals)', async ({ page }) => {
+    await injectSession(page, ADMIN_USER);
+    await setupDefaultMocks(page, ADMIN_USER);
+
+    // Mock lớp ở trạng thái IN_PROGRESS
+    await page.route('**/api/v1/classes**', async (route) => {
+      if (route.request().method() === 'GET' && !route.request().url().includes('/sessions')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            items: [
+              {
+                id: 101,
+                classCode: 'INT3110.O21',
+                courseId: 1,
+                courseCode: 'INT3110',
+                courseName: 'Cơ sở dữ liệu nâng cao',
+                semester: 'SUM2026',
+                status: 'IN_PROGRESS',
+                enrolledCount: 15,
+                maxCapacity: 30,
+                gradingStatus: 'DRAFT',
+              },
+            ],
+            page: 0,
+            size: 10,
+            totalElements: 1,
+            totalPages: 1,
+          }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    await page.goto('/admin/classes');
+    await expect(page.getByText('INT3110.O21')).toBeVisible();
+
+    // Không được có nút "Đóng lớp" trên bảng lớp học của Admin
+    const closeBtn = page.getByRole('button', { name: 'Đóng lớp' });
+    await expect(closeBtn).not.toBeVisible();
+  });
 });

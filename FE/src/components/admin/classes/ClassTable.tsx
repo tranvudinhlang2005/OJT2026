@@ -24,7 +24,7 @@ interface ClassTableProps {
   onChangeCapacity?: (cls: ClassOffering) => void;
   onPublish: (cls: ClassOffering) => void;
   onStart: (cls: ClassOffering) => void;
-  onClose: (cls: ClassOffering) => void;
+  onClose?: (cls: ClassOffering) => void;
   onCancel: (cls: ClassOffering) => void;
   onDelete: (cls: ClassOffering) => void;
 }
@@ -268,18 +268,6 @@ export function ClassTable({
                             >
                               <Play className="h-3 w-3" />
                               <span>Bắt đầu</span>
-                            </button>
-                          )}
-
-                          {cls.status === 'IN_PROGRESS' && (
-                            <button
-                              type="button"
-                              onClick={() => onClose(cls)}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition border border-slate-300 ml-1"
-                              title="Hoàn tất & Đóng lớp học"
-                            >
-                              <CheckCircle2 className="h-3 w-3" />
-                              <span>Đóng lớp</span>
                             </button>
                           )}
 
