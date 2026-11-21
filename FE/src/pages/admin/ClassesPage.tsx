@@ -166,6 +166,17 @@ export default function ClassesPage() {
     }
   };
 
+  const handleUnpublishClass = async (cls: ClassOffering) => {
+    if (!confirm(`Xác nhận rút lớp học phần "${cls.classCode}" về trạng thái nháp (DRAFT)?`)) return;
+    try {
+      await classService.unpublishClass(cls.id);
+      toast.success(`Đã rút lớp "${cls.classCode}" về trạng thái nháp thành công`);
+      await loadClassesData();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Lỗi khi rút lớp về nháp');
+    }
+  };
+
   const handleCancelClass = async (id: string, reason: string) => {
     try {
       await classService.cancelClass(id, reason);
@@ -220,6 +231,7 @@ export default function ClassesPage() {
         onAssignInstructor={(cls) => setSelectedClassForAssign(cls)}
         onChangeCapacity={(cls) => setSelectedClassForCapacity(cls)}
         onPublish={handlePublishClass}
+        onUnpublish={handleUnpublishClass}
         onStart={handleStartClass}
         onCancel={(cls) => setSelectedClassForCancel(cls)}
         onDelete={(cls) => setSelectedClassForDelete(cls)}

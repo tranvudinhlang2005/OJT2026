@@ -10,6 +10,7 @@ import {
   Eye,
   AlertCircle,
   Users,
+  RotateCcw,
 } from 'lucide-react';
 import type { ClassOffering, ClassStatus } from '../../../types/classOffering';
 import { formatDate } from '../../../utils/dateFormat';
@@ -23,6 +24,7 @@ interface ClassTableProps {
   onAssignInstructor: (cls: ClassOffering) => void;
   onChangeCapacity?: (cls: ClassOffering) => void;
   onPublish: (cls: ClassOffering) => void;
+  onUnpublish?: (cls: ClassOffering) => void;
   onStart: (cls: ClassOffering) => void;
   onClose?: (cls: ClassOffering) => void;
   onCancel: (cls: ClassOffering) => void;
@@ -38,6 +40,7 @@ export function ClassTable({
   onAssignInstructor,
   onChangeCapacity,
   onPublish,
+  onUnpublish,
   onStart,
   onClose,
   onCancel,
@@ -268,6 +271,18 @@ export function ClassTable({
                             >
                               <Play className="h-3 w-3" />
                               <span>Bắt đầu</span>
+                            </button>
+                          )}
+
+                          {cls.status === 'OPEN' && cls.enrolledCount === 0 && onUnpublish && (
+                            <button
+                              type="button"
+                              onClick={() => onUnpublish(cls)}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition border border-amber-200 ml-1"
+                              title="Rút lớp về trạng thái bản nháp"
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                              <span>Rút về nháp</span>
                             </button>
                           )}
 

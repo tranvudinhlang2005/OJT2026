@@ -568,4 +568,81 @@ test.describe('FE Bugfixes Verification Suite', () => {
     const closeBtn = page.getByRole('button', { name: 'Đóng lớp' });
     await expect(closeBtn).not.toBeVisible();
   });
+
+  test('Lỗi 10 (Ticket 02): Lớp OPEN chưa có học viên có nút Rút về nháp (Unpublish), lớp có học viên thì không', async ({ page }) => {
+    await injectSession(page, ADMIN_USER);
+    await setupDefaultMocks(page, ADMIN_USER);
+
+    let unpublishCalled = false;
+    await page.route('**/api/v1/classes/**/unpublish', async (route) => {
+      unpublishCalled = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 101,
+          classCode: 'INT3110.O21',
+          status: 'DRAFT',
+          enrolledCount: 0,
+        }),
+      });
+    });
+
+    await page.route('**/api/v1/classes**', async (route) => {
+      if (route.request().method() === 'GET' && !route.request().url().includes('/sessions')) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            items: [
+              {
+                id: 101,
+                classCode: 'INT3110.O21',
+                courseId: 1,
+                courseCode: 'INT3110',
+                courseName: 'Cơ sở dữ liệu nâng cao',
+                semester: 'SUM2026',
+                status: 'OPEN',
+                enrolledCount: 0,
+                maxCapacity: 30,
+                gradingStatus: 'DRAFT',
+              },
+              {
+                id: 102,
+                classCode: 'INT3110.O22',
+                courseId: 1,
+                courseCode: 'INT3110',
+                courseName: 'Cơ sở dữ liệu nâng cao',
+                semester: 'SUM2026',
+                status: 'OPEN',
+                enrolledCount: 5,
+                maxCapacity: 30,
+                gradingStatus: 'DRAFT',
+              },
+            ],
+            page: 0,
+            size: 10,
+            totalElements: 2,
+            totalPages: 1,
+          }),
+        });
+        return;
+      }
+      await route.fallback();
+    });
+
+    page.on('dialog', (dialog) => dialog.accept());
+
+    await page.goto('/admin/classes');
+    await expect(page.getByText('INT3110.O21')).toBeVisible();
+
+    // Lớp INT3110.O21 (enrolledCount: 0) có nút "Rút về nháp"
+    const unpublishBtn = page.getByRole('button', { name: /rút về nháp/i });
+    await expect(unpublishBtn).toBeVisible();
+
+    // Bấm nút rút về nháp
+    await unpublishBtn.click();
+    expect(unpublishCalled).toBeTruthy();
+    await expect(page.getByText(/Đã rút lớp.*về trạng thái nháp thành công/i)).toBeVisible();
+  });
 });
