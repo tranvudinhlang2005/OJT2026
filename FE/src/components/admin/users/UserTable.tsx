@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Edit3,
   KeyRound,
@@ -37,7 +37,7 @@ export const UserTable: React.FC<UserTableProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
 
-  const nowIso = useMemo(() => new Date().toISOString(), []);
+  const [nowIso] = useState(() => new Date().toISOString());
 
   const totalPages = Math.ceil(users.length / pageSize) || 1;
   const startIndex = (currentPage - 1) * pageSize;

@@ -48,6 +48,7 @@ axiosClient.interceptors.response.use(
         localStorage.removeItem('token');
         localStorage.removeItem('role');
         localStorage.removeItem('user');
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'));
         window.location.href = '/login';
       }
     }
@@ -71,5 +72,21 @@ axiosClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/**
+ * Standardized helper to extract a friendly error message from Axios errors or backend responses.
+ */
+export function getApiErrorMessage(error: unknown, fallback = 'Đã có lỗi xảy ra. Vui lòng thử lại.'): string {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data;
+    if (typeof data === 'string' && data.trim()) return data;
+    if (data && typeof data === 'object') {
+      const errObj = data as { message?: string; error?: string; detail?: string };
+      return errObj.message || errObj.detail || errObj.error || fallback;
+    }
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
 
 export default axiosClient;

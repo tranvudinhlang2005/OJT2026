@@ -39,53 +39,9 @@ export type ScheduleAction =
   | { type: 'SET_SESSIONS'; payload: TeachingSession[] };
 
 export const initialScheduleState: ScheduleState = {
-  sessions: [
-    {
-      id: 's-1',
-      className: 'SE101.O21 - KTPM 01',
-      subject: 'Lập trình Web Tiên tiến (React & TypeScript)',
-      room: 'Phòng B2-304 (Lab)',
-      date: 'Hôm nay, 09/11/2026',
-      time: '07:30 - 11:30 (Ca 1 - Sáng)',
-      sessionIndex: 8,
-      totalSessions: 15,
-      attendanceStatus: 'in_progress',
-      studentsCount: 38,
-    },
-    {
-      id: 's-2',
-      className: 'CS202.N12 - KHMT 02',
-      subject: 'Cơ sở dữ liệu nâng cao & Tối ưu hóa truy vấn',
-      room: 'Phòng C1-102',
-      date: 'Hôm nay, 09/11/2026',
-      time: '13:30 - 17:00 (Ca 2 - Chiều)',
-      sessionIndex: 6,
-      totalSessions: 12,
-      attendanceStatus: 'pending',
-      studentsCount: 42,
-    },
-    {
-      id: 's-3',
-      className: 'SE101.O22 - KTPM 02',
-      subject: 'Lập trình Web Tiên tiến (React & TypeScript)',
-      room: 'Phòng B2-305 (Lab)',
-      date: 'Thứ Năm, 12/11/2026',
-      time: '07:30 - 11:30 (Ca 1 - Sáng)',
-      sessionIndex: 8,
-      totalSessions: 15,
-      attendanceStatus: 'pending',
-      studentsCount: 36,
-    },
-  ],
+  sessions: [],
   selectedSession: null,
-  students: [
-    { id: 'sv-1', name: 'Nguyễn Văn An', code: 'SV01', status: 'present' },
-    { id: 'sv-2', name: 'Trần Thị Bình', code: 'SV02', status: 'present' },
-    { id: 'sv-3', name: 'Lê Hoàng Cường', code: 'SV03', status: 'present' },
-    { id: 'sv-4', name: 'Phạm Minh Đức', code: 'SV04', status: 'present' },
-    { id: 'sv-5', name: 'Hoàng Thị Mai', code: 'SV05', status: 'present' },
-    { id: 'sv-6', name: 'Đỗ Quốc Bảo', code: 'SV06', status: 'present' },
-  ],
+  students: [],
   isModalOpen: false,
 };
 

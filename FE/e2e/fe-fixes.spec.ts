@@ -666,9 +666,9 @@ test.describe('FE Bugfixes Verification Suite', () => {
     // Nút đóng modal
     await page.getByRole('button', { name: 'Đóng' }).first().click();
 
-    // Nút điều hướng "Quản lý điểm danh"
-    const scheduleLink = page.getByRole('link', { name: /điểm danh/i }).first();
-    await expect(scheduleLink).toBeVisible();
+    // Nút "Quản lý điểm danh"
+    const attendanceBtn = page.getByRole('button', { name: /điểm danh/i }).first();
+    await expect(attendanceBtn).toBeVisible();
   });
 
   test('Lỗi 12 (Ticket 04): Giảng viên điểm danh có ô remarks và có dialog xác nhận trước khi khóa buổi học', async ({ page }) => {
@@ -877,5 +877,174 @@ test.describe('FE Bugfixes Verification Suite', () => {
     expect(changePasswordPayload).toBeTruthy();
     expect(changePasswordPayload.oldPassword).toBe('oldPass123');
     expect(changePasswordPayload.newPassword).toBe('newPass123');
+  });
+
+  test('Lỗi 15: Kiểm tra tính ổn định Purity hạn hủy môn học (Student Registration)', async ({ page }) => {
+    // 1. Kiểm tra Purity & Logic hạn hủy môn học của học viên
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    await page.route('**/api/v1/students/me/enrollments*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: [
+            {
+              enrollmentId: '101',
+              classId: '1',
+              classCode: 'INT3110.O21',
+              courseCode: 'INT3110',
+              courseName: 'Cơ sở dữ liệu nâng cao',
+              status: 'ENROLLED',
+              enrolledAt: '2026-01-01T08:00:00Z',
+              cancelDeadline: '2020-01-01T23:59:59Z', // Đã quá hạn
+            },
+            {
+              enrollmentId: '102',
+              classId: '2',
+              classCode: 'INT3111.O21',
+              courseCode: 'INT3111',
+              courseName: 'Lập trình Web hiện đại',
+              status: 'ENROLLED',
+              enrolledAt: '2026-01-01T08:00:00Z',
+              cancelDeadline: '2099-01-01T23:59:59Z', // Còn hạn hủy
+            },
+          ],
+          totalElements: 2,
+          totalPages: 1,
+        }),
+      });
+    });
+
+    await page.goto('/student/registration');
+    await page.getByRole('button', { name: /lớp đã đăng ký/i }).click();
+
+    // Hàng 1 (hết hạn) hiển thị chữ 'Đã quá hạn hủy', không có nút Hủy đăng ký
+    const pastRow = page.locator('tr', { hasText: 'INT3110.O21' });
+    await expect(pastRow.getByText('Đã quá hạn hủy')).toBeVisible();
+    await expect(pastRow.getByRole('button', { name: 'Hủy đăng ký' })).toHaveCount(0);
+
+    // Hàng 2 (còn hạn) hiển thị nút 'Hủy đăng ký'
+    const futureRow = page.locator('tr', { hasText: 'INT3111.O21' });
+    await expect(futureRow.getByRole('button', { name: 'Hủy đăng ký' })).toBeVisible();
+  });
+
+  test('Lỗi 16: Kiểm tra đồng bộ Dependencies và tải bộ lọc trên Admin Dashboard', async ({ page }) => {
+    await injectSession(page, ADMIN_USER);
+    await setupDefaultMocks(page, ADMIN_USER);
+
+    await page.goto('/admin');
+    await expect(page.getByRole('heading', { name: /tổng quan hệ thống/i })).toBeVisible();
+    await expect(page.getByText('Tổng ghi danh')).toBeVisible();
+    await expect(page.getByText('Tỷ lệ lấp đầy').first()).toBeVisible();
+
+    // Thay đổi bộ lọc để kích hoạt callback & effect
+    const semesterSelect = page.locator('select').first();
+    await semesterSelect.selectOption({ index: 0 });
+    await expect(page.getByRole('heading', { name: /tổng quan hệ thống/i })).toBeVisible();
+  });
+
+  test('Lỗi 17 (TDD): Giảng viên quản lý điểm danh lớp học phụ trách với Session ID số nguyên thực tế', async ({ page }) => {
+    await injectSession(page, INSTRUCTOR_USER);
+    await setupDefaultMocks(page, INSTRUCTOR_USER);
+
+    let sessionsApiCalled = false;
+    let attendanceGetUrl: string | null = null;
+    let attendancePutUrl: string | null = null;
+
+    // Mock danh sách buổi học của lớp với ID số nguyên thực tế 201
+    await page.route('**/api/v1/classes/**/sessions', async (route) => {
+      sessionsApiCalled = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 201,
+            classId: 1,
+            sessionDate: '2026-03-01',
+            startTime: '08:00:00',
+            endTime: '11:30:00',
+            roomId: 10,
+            roomCode: 'A1-201',
+            topic: 'Giới thiệu CSDL nâng cao',
+            attendanceLocked: false,
+          },
+        ]),
+      });
+    });
+
+    // Intercept bắt request attendance để kiểm tra URL có chứa đúng ID số 201
+    await page.route('**/api/v1/sessions/**/attendance', async (route) => {
+      const url = route.request().url();
+      if (route.request().method() === 'GET') {
+        attendanceGetUrl = url;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            sessionId: 201,
+            classId: 1,
+            classCode: 'INT3110.O21',
+            sessionDate: '2026-03-01',
+            startTime: '08:00:00',
+            endTime: '11:30:00',
+            attendanceLocked: false,
+            version: 1,
+            items: [
+              {
+                studentId: 3,
+                studentCode: 'SV2026001',
+                fullName: 'Trần Văn Sinh',
+                status: 'PRESENT',
+                remarks: '',
+              },
+            ],
+          }),
+        });
+      } else if (route.request().method() === 'PUT') {
+        attendancePutUrl = url;
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: true }),
+        });
+      } else {
+        await route.fallback();
+      }
+    });
+
+    await page.goto('/teacher/classes');
+    await expect(page.getByRole('heading', { name: 'Lớp học phụ trách' })).toBeVisible();
+
+    // Bấm nút 'Quản lý điểm danh'
+    const attendanceManageBtn = page.getByRole('button', { name: /quản lý điểm danh/i }).first();
+    await expect(attendanceManageBtn).toBeVisible();
+    await attendanceManageBtn.click();
+
+    // 1. Phải gọi API lấy danh sách buổi học của lớp
+    await expect.poll(() => sessionsApiCalled).toBeTruthy();
+
+    // 2. Phải hiển thị modal chọn buổi học kèm ngày và phòng học
+    await expect(page.getByText('Danh sách buổi học: INT3110.O21')).toBeVisible();
+    await expect(page.getByText('Giới thiệu CSDL nâng cao')).toBeVisible();
+
+    // 3. Bấm chọn buổi học để mở bảng điểm danh
+    const sessionItemBtn = page.getByRole('button', { name: /điểm danh buổi này/i }).first();
+    await sessionItemBtn.click();
+
+    // 4. Kiểm tra URL gọi API điểm danh: Phải là số nguyên /201/attendance, KHÔNG được chứa sched-
+    await expect.poll(() => attendanceGetUrl).toBeTruthy();
+    expect(attendanceGetUrl).toContain('/api/v1/sessions/201/attendance');
+    expect(attendanceGetUrl).not.toContain('sched-');
+
+    // 5. Thao tác lưu điểm danh và kiểm tra PUT URL
+    await expect(page.getByText('Trần Văn Sinh')).toBeVisible();
+    await page.getByRole('button', { name: /lưu điểm danh/i }).click();
+
+    await expect.poll(() => attendancePutUrl).toBeTruthy();
+    expect(attendancePutUrl).toContain('/api/v1/sessions/201/attendance');
+    expect(attendancePutUrl).not.toContain('sched-');
   });
 });

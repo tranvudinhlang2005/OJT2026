@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ApprovalStatsCards } from '../../components/admin/approvals/ApprovalStatsCards';
 import { ApprovalFilters } from '../../components/admin/approvals/ApprovalFilters';
 import { ApprovalTable } from '../../components/admin/approvals/ApprovalTable';
@@ -65,6 +65,11 @@ export default function ApprovalsPage() {
     studentsCount: 0,
   });
 
+  const selectedDetailRef = useRef(selectedDetail);
+  useEffect(() => {
+    selectedDetailRef.current = selectedDetail;
+  }, [selectedDetail]);
+
   const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -75,8 +80,8 @@ export default function ApprovalsPage() {
       setItems(listData);
       setStats(statsData);
 
-      if (selectedDetail) {
-        const refreshed = await approvalService.getClassResults(selectedDetail.classId);
+      if (selectedDetailRef.current) {
+        const refreshed = await approvalService.getClassResults(selectedDetailRef.current.classId);
         setSelectedDetail(refreshed);
       }
     } catch {
@@ -84,11 +89,11 @@ export default function ApprovalsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [filter, selectedDetail, toast]);
+  }, [filter, toast]);
 
   useEffect(() => {
     loadData();
-  }, [filter]);
+  }, [loadData]);
 
   const distinctSemesters = Array.from(new Set(items.map((i) => i.semester)));
 

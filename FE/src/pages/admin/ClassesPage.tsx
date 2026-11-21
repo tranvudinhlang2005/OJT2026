@@ -1,15 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ClassStatsCards } from '../../components/admin/classes/ClassStatsCards';
-import { ClassFilters } from '../../components/admin/classes/ClassFilters';
-import { ClassTable } from '../../components/admin/classes/ClassTable';
-import { CreateClassModal } from '../../components/admin/classes/CreateClassModal';
-import { EditClassModal } from '../../components/admin/classes/EditClassModal';
-import { AssignInstructorModal } from '../../components/admin/classes/AssignInstructorModal';
-import { ClassDetailModal } from '../../components/admin/classes/ClassDetailModal';
-import { CancelClassModal } from '../../components/admin/classes/CancelClassModal';
-import { DeleteClassModal } from '../../components/admin/classes/DeleteClassModal';
-import { ChangeCapacityModal } from '../../components/admin/classes/ChangeCapacityModal';
-import { classService } from '../../services/classService';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { ClassStatsCards } from '@/components/admin/classes/ClassStatsCards';
+import { ClassFilters } from '@/components/admin/classes/ClassFilters';
+import { ClassTable } from '@/components/admin/classes/ClassTable';
+import { CreateClassModal } from '@/components/admin/classes/CreateClassModal';
+import { EditClassModal } from '@/components/admin/classes/EditClassModal';
+import { AssignInstructorModal } from '@/components/admin/classes/AssignInstructorModal';
+import { ClassDetailModal } from '@/components/admin/classes/ClassDetailModal';
+import { CancelClassModal } from '@/components/admin/classes/CancelClassModal';
+import { DeleteClassModal } from '@/components/admin/classes/DeleteClassModal';
+import { ChangeCapacityModal } from '@/components/admin/classes/ChangeCapacityModal';
+import { classService } from '@/services/classService';
 import type {
   ClassOffering,
   ClassFilter,
@@ -18,9 +18,10 @@ import type {
   RoomSummary,
   CreateClassPayload,
   UpdateClassPayload,
-} from '../../types/classOffering';
-import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../../contexts/ToastContext';
+} from '@/types/classOffering';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/contexts/ToastContext';
+import { useModal } from '@/hooks/useModal';
 
 export default function ClassesPage() {
   const { user } = useAuth();
@@ -43,13 +44,14 @@ export default function ClassesPage() {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedClassForEdit, setSelectedClassForEdit] = useState<ClassOffering | null>(null);
-  const [selectedClassForAssign, setSelectedClassForAssign] = useState<ClassOffering | null>(null);
-  const [selectedClassForCapacity, setSelectedClassForCapacity] = useState<ClassOffering | null>(null);
-  const [selectedClassForDetail, setSelectedClassForDetail] = useState<ClassOffering | null>(null);
-  const [selectedClassForCancel, setSelectedClassForCancel] = useState<ClassOffering | null>(null);
-  const [selectedClassForDelete, setSelectedClassForDelete] = useState<ClassOffering | null>(null);
+  // Consolidated modal states via useModal
+  const createModal = useModal();
+  const editModal = useModal<ClassOffering>();
+  const assignModal = useModal<ClassOffering>();
+  const capacityModal = useModal<ClassOffering>();
+  const detailModal = useModal<ClassOffering>();
+  const cancelModal = useModal<ClassOffering>();
+  const deleteModal = useModal<ClassOffering>();
 
   useEffect(() => {
     async function loadMetadata() {
@@ -69,6 +71,13 @@ export default function ClassesPage() {
     loadMetadata();
   }, [canManage, toast]);
 
+  const detailClassRef = useRef(detailModal.data);
+  useEffect(() => {
+    detailClassRef.current = detailModal.data;
+  }, [detailModal.data]);
+
+  const setDetailModalData = detailModal.setData;
+
   const loadClassesData = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -79,10 +88,10 @@ export default function ClassesPage() {
       setClasses(filteredData);
       setAllClasses(fullData);
 
-      if (selectedClassForDetail) {
-        const updatedDetail = fullData.find((c) => c.id === selectedClassForDetail.id);
+      if (detailClassRef.current) {
+        const updatedDetail = fullData.find((c) => c.id === detailClassRef.current?.id);
         if (updatedDetail) {
-          setSelectedClassForDetail(updatedDetail);
+          setDetailModalData(updatedDetail);
         }
       }
     } catch {
@@ -90,13 +99,16 @@ export default function ClassesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [filter, selectedClassForDetail, toast]);
+  }, [filter, toast, setDetailModalData]);
 
   useEffect(() => {
     loadClassesData();
-  }, [filter]);
+  }, [loadClassesData]);
 
-  const distinctSemesters = Array.from(new Set(allClasses.map((c) => c.semester)));
+  const distinctSemesters = useMemo(
+    () => Array.from(new Set(allClasses.map((c) => c.semester))),
+    [allClasses]
+  );
 
   const handleCreateClass = async (payload: CreateClassPayload) => {
     try {
@@ -217,7 +229,7 @@ export default function ClassesPage() {
         semesters={distinctSemesters}
         canManage={canManage}
         onFilterChange={setFilter}
-        onCreateClick={() => setIsCreateModalOpen(true)}
+        onCreateClick={() => createModal.open()}
         onRefreshClick={loadClassesData}
         isLoading={isLoading}
       />
@@ -226,66 +238,66 @@ export default function ClassesPage() {
         classes={classes}
         isLoading={isLoading}
         canManage={canManage}
-        onViewDetails={(cls) => setSelectedClassForDetail(cls)}
-        onEdit={(cls) => setSelectedClassForEdit(cls)}
-        onAssignInstructor={(cls) => setSelectedClassForAssign(cls)}
-        onChangeCapacity={(cls) => setSelectedClassForCapacity(cls)}
+        onViewDetails={(cls) => detailModal.open(cls)}
+        onEdit={(cls) => editModal.open(cls)}
+        onAssignInstructor={(cls) => assignModal.open(cls)}
+        onChangeCapacity={(cls) => capacityModal.open(cls)}
         onPublish={handlePublishClass}
         onUnpublish={handleUnpublishClass}
         onStart={handleStartClass}
-        onCancel={(cls) => setSelectedClassForCancel(cls)}
-        onDelete={(cls) => setSelectedClassForDelete(cls)}
+        onCancel={(cls) => cancelModal.open(cls)}
+        onDelete={(cls) => deleteModal.open(cls)}
       />
 
       <CreateClassModal
-        isOpen={isCreateModalOpen}
+        isOpen={createModal.isOpen}
         courses={courses}
         instructors={instructors}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={createModal.close}
         onSubmit={handleCreateClass}
       />
 
       <EditClassModal
-        isOpen={!!selectedClassForEdit}
-        classOffering={selectedClassForEdit}
-        onClose={() => setSelectedClassForEdit(null)}
+        isOpen={editModal.isOpen}
+        classOffering={editModal.data}
+        onClose={editModal.close}
         onSubmit={handleUpdateClass}
       />
 
       <ChangeCapacityModal
-        isOpen={!!selectedClassForCapacity}
-        classOffering={selectedClassForCapacity}
-        onClose={() => setSelectedClassForCapacity(null)}
+        isOpen={capacityModal.isOpen}
+        classOffering={capacityModal.data}
+        onClose={capacityModal.close}
         onSubmit={handleChangeCapacity}
       />
 
       <AssignInstructorModal
-        isOpen={!!selectedClassForAssign}
-        classOffering={selectedClassForAssign}
+        isOpen={assignModal.isOpen}
+        classOffering={assignModal.data}
         instructors={instructors}
-        onClose={() => setSelectedClassForAssign(null)}
+        onClose={assignModal.close}
         onSubmit={handleAssignInstructor}
       />
 
       <ClassDetailModal
-        isOpen={!!selectedClassForDetail}
-        classOffering={selectedClassForDetail}
+        isOpen={detailModal.isOpen}
+        classOffering={detailModal.data}
         rooms={rooms}
-        onClose={() => setSelectedClassForDetail(null)}
+        onClose={detailModal.close}
         onClassUpdated={loadClassesData}
       />
 
       <CancelClassModal
-        isOpen={!!selectedClassForCancel}
-        classOffering={selectedClassForCancel}
-        onClose={() => setSelectedClassForCancel(null)}
+        isOpen={cancelModal.isOpen}
+        classOffering={cancelModal.data}
+        onClose={cancelModal.close}
         onSubmit={handleCancelClass}
       />
 
       <DeleteClassModal
-        isOpen={!!selectedClassForDelete}
-        classOffering={selectedClassForDelete}
-        onClose={() => setSelectedClassForDelete(null)}
+        isOpen={deleteModal.isOpen}
+        classOffering={deleteModal.data}
+        onClose={deleteModal.close}
         onSubmit={handleDeleteClass}
       />
     </div>

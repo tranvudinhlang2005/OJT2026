@@ -50,7 +50,7 @@ export default function StudentGradesPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [toast]);
 
   const semesters = useMemo(() => {
     const set = new Set(results.map((g) => g.semester));

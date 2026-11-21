@@ -128,11 +128,11 @@ export default function DashboardPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [filter, toast]);
+  }, [classDatesMap, filter, isAdmin, toast]);
 
   useEffect(() => {
     loadDashboardData();
-  }, [filter]);
+  }, [loadDashboardData]);
 
   return (
     <div className="space-y-6">

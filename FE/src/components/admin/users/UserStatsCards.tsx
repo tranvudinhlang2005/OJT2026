@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Users, Shield, GraduationCap, UserCheck, AlertTriangle } from 'lucide-react';
 import type { ManagedUser } from '../../../types/user';
 
@@ -7,8 +7,8 @@ interface UserStatsCardsProps {
 }
 
 export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ users }) => {
+  const [nowIso] = useState(() => new Date().toISOString());
   const stats = useMemo(() => {
-    const nowIso = new Date().toISOString();
     const totalUsers = users.length;
     const adminManagers = users.filter(u => u.role === 'TRAINING_ADMIN' || u.role === 'TRAINING_MANAGER').length;
     const instructors = users.filter(u => u.role === 'INSTRUCTOR').length;
@@ -16,7 +16,7 @@ export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ users }) => {
     const lockedOrInactive = users.filter(u => !u.isActive || (u.lockedUntil ? u.lockedUntil > nowIso : false)).length;
 
     return { totalUsers, adminManagers, instructors, students, lockedOrInactive };
-  }, [users]);
+  }, [users, nowIso]);
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">

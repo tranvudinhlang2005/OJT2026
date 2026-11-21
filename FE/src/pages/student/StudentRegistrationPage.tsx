@@ -26,6 +26,7 @@ export default function StudentRegistrationPage() {
   const [selectedDay, setSelectedDay] = useState<number | 'ALL'>('ALL');
   const [activeTab, setActiveTab] = useState<'open' | 'registered'>('open');
   const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState<'ALL' | 'ENROLLED' | 'CANCELLED' | 'COMPLETED'>('ALL');
+  const [nowTimestamp] = useState(() => Date.now());
 
   const loadData = useCallback(async () => {
     try {
@@ -35,39 +36,25 @@ export default function StudentRegistrationPage() {
         studentService.getMyEnrollments().catch(() => []),
       ]);
 
-      const sessionMap: Record<string, { room: string; dayOfWeek: number; timeSlot: string }> = {};
-      await Promise.all(
-        allClasses.map(async (cls) => {
-          try {
-            const sessions = await classService.getSessions(cls.id);
-            if (sessions && sessions.length > 0) {
-              const first = sessions[0];
-              const d = new Date(first.sessionDate);
-              const dayNum = d.getDay();
-              sessionMap[cls.id] = {
-                room: first.roomCode || 'Phòng học vụ',
-                dayOfWeek: dayNum === 0 ? 8 : dayNum + 1,
-                timeSlot: `${first.startTime.slice(0, 5)} - ${first.endTime.slice(0, 5)}`,
-              };
-            }
-          } catch {
-          }
-        })
-      );
-
       const openClasses: OpenClass[] = allClasses.map((cls) => {
-        const sessionInfo = sessionMap[cls.id];
+        let dayOfWeek = 2;
+        if (cls.startDate) {
+          const d = new Date(cls.startDate);
+          const dayNum = d.getDay();
+          dayOfWeek = dayNum === 0 ? 8 : dayNum + 1;
+        }
+
         return {
           id: cls.id,
           courseCode: cls.course.code,
           courseName: cls.course.name,
           credits: cls.course.credits || 3,
           teacherName: cls.instructor?.fullName || 'Chưa phân công',
-          room: sessionInfo?.room || (cls.startDate ? `Học kỳ ${cls.semester}` : 'Chưa xếp phòng'),
-          dayOfWeek: sessionInfo?.dayOfWeek || 2,
+          room: cls.startDate ? `Học kỳ ${cls.semester}` : 'Chưa xếp phòng',
+          dayOfWeek,
           startPeriod: 1,
           endPeriod: 3,
-          timeSlot: sessionInfo?.timeSlot || (cls.startDate && cls.endDate ? `${formatDate(cls.startDate)} - ${formatDate(cls.endDate)}` : 'Chưa xếp lịch'),
+          timeSlot: cls.startDate && cls.endDate ? `${formatDate(cls.startDate)} - ${formatDate(cls.endDate)}` : 'Chưa xếp lịch',
           maxSeats: cls.maxCapacity,
           enrolledSeats: cls.enrolledCount,
           semester: cls.semester,
@@ -505,7 +492,7 @@ export default function StudentRegistrationPage() {
                     enrollments
                       .filter((e) => enrollmentStatusFilter === 'ALL' || e.status === enrollmentStatusFilter)
                       .map((enr) => {
-                        const isPastDeadline = enr.cancelDeadline && new Date() > new Date(enr.cancelDeadline);
+                        const isPastDeadline = Boolean(enr.cancelDeadline && nowTimestamp > new Date(enr.cancelDeadline).getTime());
                         return (
                           <tr key={enr.enrollmentId} className="hover:bg-slate-50/70 transition">
                             <td className="px-4 py-4">
