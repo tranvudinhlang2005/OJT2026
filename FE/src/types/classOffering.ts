@@ -67,6 +67,8 @@ export interface ClassOffering {
   midtermWeight: number;
   finalWeight: number;
   gradingStatus: GradingStatus;
+  submittedAt?: string | null;
+  returnReason?: string | null;
   sessionsCount?: number;
   createdAt: string;
   updatedAt: string;

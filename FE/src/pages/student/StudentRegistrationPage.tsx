@@ -26,11 +26,12 @@ export default function StudentRegistrationPage() {
   const [selectedDay, setSelectedDay] = useState<number | 'ALL'>('ALL');
   const [activeTab, setActiveTab] = useState<'open' | 'registered'>('open');
   const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState<'ALL' | 'ENROLLED' | 'CANCELLED' | 'COMPLETED'>('ALL');
-  const [nowTimestamp] = useState(() => Date.now());
+  const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
+      setCurrentTimestamp(Date.now());
       const [allClasses, myEnrollments] = await Promise.all([
         classService.getClasses(),
         studentService.getMyEnrollments().catch(() => []),
@@ -492,7 +493,7 @@ export default function StudentRegistrationPage() {
                     enrollments
                       .filter((e) => enrollmentStatusFilter === 'ALL' || e.status === enrollmentStatusFilter)
                       .map((enr) => {
-                        const isPastDeadline = Boolean(enr.cancelDeadline && nowTimestamp > new Date(enr.cancelDeadline).getTime());
+                        const isPastDeadline = Boolean(enr.cancelDeadline && currentTimestamp > new Date(enr.cancelDeadline).getTime());
                         return (
                           <tr key={enr.enrollmentId} className="hover:bg-slate-50/70 transition">
                             <td className="px-4 py-4">

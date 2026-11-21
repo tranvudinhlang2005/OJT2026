@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import {
   User,
   Calendar,
@@ -30,6 +30,16 @@ export default function StudentProfilePage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +63,8 @@ export default function StudentProfilePage() {
       setOldPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      setTimeout(async () => {
+      setIsRedirecting(true);
+      redirectTimerRef.current = setTimeout(async () => {
         try {
           await authService.logout();
         } finally {
@@ -94,7 +105,11 @@ export default function StudentProfilePage() {
 
       const validWithScore = results.filter((r) => r.totalScore !== null);
       if (validWithScore.length > 0) {
-        setGpa4(calculateGpa4(results));
+        const withCredits = results.map((r) => ({
+          totalScore: r.totalScore,
+          credits: cMap[r.courseCode] || 3,
+        }));
+        setGpa4(calculateGpa4(withCredits));
       } else {
         setGpa4(null);
       }
@@ -265,6 +280,13 @@ export default function StudentProfilePage() {
           <h2 className="text-base font-bold text-slate-900">Đổi mật khẩu</h2>
         </div>
 
+        {isRedirecting && (
+          <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">
+            <RefreshCw className="h-4 w-4 animate-spin text-emerald-600" />
+            <span>Đổi mật khẩu thành công! Hệ thống đang chuyển hướng về trang đăng nhập...</span>
+          </div>
+        )}
+
         <form onSubmit={handleChangePassword} className="max-w-md space-y-4 text-xs">
           <div>
             <label className="block font-medium text-slate-700">Mật khẩu hiện tại</label>
@@ -273,7 +295,8 @@ export default function StudentProfilePage() {
               placeholder="Nhập mật khẩu hiện tại"
               value={oldPassword}
               onChange={(e) => setOldPassword(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+              disabled={changingPassword || isRedirecting}
+              className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 disabled:bg-slate-100 disabled:opacity-60"
               required
             />
           </div>
@@ -285,7 +308,8 @@ export default function StudentProfilePage() {
               placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+              disabled={changingPassword || isRedirecting}
+              className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 disabled:bg-slate-100 disabled:opacity-60"
               required
             />
           </div>
@@ -297,17 +321,22 @@ export default function StudentProfilePage() {
               placeholder="Xác nhận mật khẩu mới"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+              disabled={changingPassword || isRedirecting}
+              className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 disabled:bg-slate-100 disabled:opacity-60"
               required
             />
           </div>
 
           <button
             type="submit"
-            disabled={changingPassword}
+            disabled={changingPassword || isRedirecting}
             className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 disabled:opacity-50 transition"
           >
-            {changingPassword ? 'Đang cập nhật...' : 'Cập nhật mật khẩu'}
+            {isRedirecting
+              ? 'Đang chuyển hướng...'
+              : changingPassword
+                ? 'Đang cập nhật...'
+                : 'Cập nhật mật khẩu'}
           </button>
         </form>
       </div>

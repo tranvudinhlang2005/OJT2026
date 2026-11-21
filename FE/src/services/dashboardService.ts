@@ -59,6 +59,10 @@ interface BackendGradeAuditLogResponse {
   reason: string;
 }
 
+let cachedSemesters: { data: string[]; timestamp: number } | null = null;
+let semestersInflightPromise: Promise<string[]> | null = null;
+const SEMESTERS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 export const dashboardService = {
   async getSummary(filter: DashboardFilter = {}): Promise<DashboardSummary> {
     const params: Record<string, string | number> = {};
@@ -115,9 +119,31 @@ export const dashboardService = {
     }));
   },
 
-  async getSemesters(): Promise<string[]> {
-    const res = await axiosClient.get<string[]>('/dashboard/semesters');
-    return res.data || [];
+  async getSemesters(forceRefresh = false): Promise<string[]> {
+    const now = Date.now();
+    if (!forceRefresh && cachedSemesters && now - cachedSemesters.timestamp < SEMESTERS_CACHE_TTL_MS) {
+      return cachedSemesters.data;
+    }
+    if (!forceRefresh && semestersInflightPromise) {
+      return semestersInflightPromise;
+    }
+
+    semestersInflightPromise = axiosClient
+      .get<string[]>('/dashboard/semesters')
+      .then((res) => {
+        const data = Array.isArray(res.data) ? res.data : [];
+        cachedSemesters = { data, timestamp: Date.now() };
+        return data;
+      })
+      .finally(() => {
+        semestersInflightPromise = null;
+      });
+
+    return semestersInflightPromise;
+  },
+
+  clearSemestersCache(): void {
+    cachedSemesters = null;
   },
 
   async getSecurityAlerts(from?: string, to?: string): Promise<SecurityAlerts> {

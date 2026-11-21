@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Edit, ShieldAlert, Loader2 } from 'lucide-react';
 import type { ClassOffering, UpdateClassPayload } from '../../../types/classOffering';
+import { getApiErrorDetails } from '../../../services/axiosClient';
 
 interface EditClassModalProps {
   isOpen: boolean;
@@ -28,7 +29,18 @@ export function EditClassModal({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const submittingRef = useRef(false);
+
+  const clearFieldError = (field: string) => {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
 
   const resetForm = useCallback(() => {
     setClassCode('');
@@ -42,6 +54,7 @@ export function EditClassModal({
     setMidtermWeight(0.3);
     setFinalWeight(0.7);
     setError(null);
+    setFieldErrors({});
     setIsSubmitting(false);
     submittingRef.current = false;
   }, []);
@@ -102,6 +115,7 @@ export function EditClassModal({
     try {
       submittingRef.current = true;
       setIsSubmitting(true);
+      setFieldErrors({});
       await onSubmit(classOffering.id, {
         classCode: classCode.trim().toUpperCase(),
         semester,
@@ -117,8 +131,9 @@ export function EditClassModal({
       resetForm();
       onClose();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
-      setError(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi cập nhật lớp học'));
+      const errDetail = getApiErrorDetails(err, 'Lỗi khi cập nhật lớp học');
+      setError(errDetail.message);
+      setFieldErrors(errDetail.fieldErrors);
     } finally {
       submittingRef.current = false;
       setIsSubmitting(false);
@@ -169,9 +184,19 @@ export function EditClassModal({
                 type="text"
                 required
                 value={classCode}
-                onChange={(e) => setClassCode(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm uppercase focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                onChange={(e) => {
+                  setClassCode(e.target.value);
+                  clearFieldError('classCode');
+                }}
+                className={`w-full rounded-lg border px-3 py-2 text-sm uppercase focus:outline-none focus:ring-1 ${
+                  fieldErrors.classCode
+                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
+                }`}
               />
+              {fieldErrors.classCode && (
+                <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.classCode}</p>
+              )}
             </div>
 
             <div>
@@ -182,9 +207,19 @@ export function EditClassModal({
                 type="text"
                 required
                 value={semester}
-                onChange={(e) => setSemester(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                onChange={(e) => {
+                  setSemester(e.target.value);
+                  clearFieldError('semester');
+                }}
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                  fieldErrors.semester
+                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
+                }`}
               />
+              {fieldErrors.semester && (
+                <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.semester}</p>
+              )}
             </div>
           </div>
 
@@ -199,9 +234,19 @@ export function EditClassModal({
                 max="500"
                 required
                 value={maxCapacity}
-                onChange={(e) => setMaxCapacity(Number(e.target.value))}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                onChange={(e) => {
+                  setMaxCapacity(Number(e.target.value));
+                  clearFieldError('maxCapacity');
+                }}
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                  fieldErrors.maxCapacity
+                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
+                }`}
               />
+              {fieldErrors.maxCapacity && (
+                <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.maxCapacity}</p>
+              )}
               <p className="mt-1 text-[11px] text-slate-400">
                 Đã có {classOffering.enrolledCount} học viên đăng ký
               </p>
@@ -215,9 +260,19 @@ export function EditClassModal({
                 type="date"
                 required
                 value={cancelDeadline}
-                onChange={(e) => setCancelDeadline(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                onChange={(e) => {
+                  setCancelDeadline(e.target.value);
+                  clearFieldError('cancelDeadline');
+                }}
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                  fieldErrors.cancelDeadline
+                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
+                }`}
               />
+              {fieldErrors.cancelDeadline && (
+                <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.cancelDeadline}</p>
+              )}
             </div>
           </div>
 
@@ -230,9 +285,19 @@ export function EditClassModal({
                 type="date"
                 required
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  clearFieldError('startDate');
+                }}
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                  fieldErrors.startDate
+                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
+                }`}
               />
+              {fieldErrors.startDate && (
+                <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.startDate}</p>
+              )}
             </div>
 
             <div>
@@ -243,9 +308,19 @@ export function EditClassModal({
                 type="date"
                 required
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  clearFieldError('endDate');
+                }}
+                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+                  fieldErrors.endDate
+                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
+                }`}
               />
+              {fieldErrors.endDate && (
+                <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.endDate}</p>
+              )}
             </div>
           </div>
 

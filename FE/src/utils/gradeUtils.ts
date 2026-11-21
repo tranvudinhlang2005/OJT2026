@@ -12,11 +12,27 @@ export function toLetterGrade(score: number | null): GradeScale {
   return { letter: 'F', gpa: 0.0 };
 }
 
-export function calculateGpa4(items: Array<{ totalScore: number | null }>): number {
+export interface GpaItem {
+  totalScore: number | null;
+  credits?: number;
+}
+
+export function calculateGpa4(items: GpaItem[]): number {
   const valid = items.filter((it) => it.totalScore !== null);
   if (valid.length === 0) return 0;
-  const sumGpa = valid.reduce((acc, curr) => acc + toLetterGrade(curr.totalScore).gpa, 0);
-  return Number((sumGpa / valid.length).toFixed(2));
+
+  let totalWeightedGpa = 0;
+  let totalCredits = 0;
+
+  for (const it of valid) {
+    const credits = typeof it.credits === 'number' && it.credits > 0 ? it.credits : 3;
+    const gpa = toLetterGrade(it.totalScore).gpa;
+    totalWeightedGpa += gpa * credits;
+    totalCredits += credits;
+  }
+
+  if (totalCredits === 0) return 0;
+  return Number((totalWeightedGpa / totalCredits).toFixed(2));
 }
 
 export function getAcademicClassification(gpa4: number): string {

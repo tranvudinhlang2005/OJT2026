@@ -8,6 +8,7 @@ import { ChangeRoleModal } from '../../components/admin/users/ChangeRoleModal';
 import { ResetPasswordModal } from '../../components/admin/users/ResetPasswordModal';
 import { AssignCoursesModal } from '../../components/admin/users/AssignCoursesModal';
 import { userService } from '../../services/userService';
+import { getApiErrorMessage } from '../../services/axiosClient';
 import type {
   ManagedUser,
   UserFilter,
@@ -101,7 +102,7 @@ export default function UsersPage() {
       loadData();
       loadStats();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Không thể thay đổi trạng thái');
+      toast.error(getApiErrorMessage(err, 'Không thể thay đổi trạng thái'));
     }
   };
 
@@ -112,7 +113,7 @@ export default function UsersPage() {
       loadData();
       loadStats();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Không thể mở khóa tài khoản');
+      toast.error(getApiErrorMessage(err, 'Không thể mở khóa tài khoản'));
     }
   };
 
@@ -127,8 +128,7 @@ export default function UsersPage() {
       loadData();
       loadStats();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
-      const msg = axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi chuyển đổi vai trò');
+      const msg = getApiErrorMessage(err, 'Lỗi khi chuyển đổi vai trò');
       toast.error(msg);
       throw err;
     }
@@ -140,7 +140,7 @@ export default function UsersPage() {
       toast.success(result.message, { duration: 5000 });
       loadData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi đặt lại mật khẩu';
+      const msg = getApiErrorMessage(err, 'Lỗi khi đặt lại mật khẩu');
       toast.error(msg);
       throw err;
     }

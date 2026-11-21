@@ -95,6 +95,21 @@ export default function TeacherGradesPage() {
   const handleSaveDraft = async () => {
     if (!activeClass || !resultSheet) return;
 
+    const invalidScoreItem = Object.entries(scoresDraft).find(([, scores]) => {
+      if (scores.midtermScore !== undefined && scores.midtermScore !== null) {
+        if (isNaN(scores.midtermScore) || scores.midtermScore < 0 || scores.midtermScore > 10) return true;
+      }
+      if (scores.finalScore !== undefined && scores.finalScore !== null) {
+        if (isNaN(scores.finalScore) || scores.finalScore < 0 || scores.finalScore > 10) return true;
+      }
+      return false;
+    });
+
+    if (invalidScoreItem) {
+      toast.error('Điểm thành phần phải nằm trong thang điểm từ 0.0 đến 10.0.');
+      return;
+    }
+
     const missingReasonItem = Object.entries(scoresDraft).find(([studentId, scores]) => {
       const orig = resultSheet.items.find((it) => String(it.studentId) === String(studentId));
       if (!orig) return false;
@@ -364,6 +379,12 @@ export default function TeacherGradesPage() {
                       const isScoreChanged =
                         (draft.midtermScore !== undefined && draft.midtermScore !== item.midtermScore) ||
                         (draft.finalScore !== undefined && draft.finalScore !== item.finalScore);
+                      const mWeight = Number(resultSheet.midtermWeight ?? activeClass.midtermWeight ?? 0.3);
+                      const fWeight = Number(resultSheet.finalWeight ?? activeClass.finalWeight ?? 0.7);
+                      const computedTotal =
+                        midtermVal !== null && finalVal !== null && midtermVal !== undefined && finalVal !== undefined
+                          ? Number((midtermVal * mWeight + finalVal * fWeight).toFixed(2))
+                          : item.totalScore;
 
                       return (
                         <tr key={item.studentId} className="hover:bg-slate-50">
@@ -401,7 +422,7 @@ export default function TeacherGradesPage() {
                             />
                           </td>
                           <td className="p-2.5 text-center font-bold text-indigo-700 font-mono">
-                            {item.totalScore !== null ? item.totalScore.toFixed(1) : '-'}
+                            {computedTotal !== null && computedTotal !== undefined ? computedTotal.toFixed(1) : '-'}
                           </td>
                           <td className="p-2.5 text-center">
                             <span

@@ -38,6 +38,8 @@ interface BackendClassResponse {
   gradingStatus: ClassOffering['gradingStatus'];
   startedAt: string | null;
   createdById: number;
+  submittedAt?: string | null;
+  returnReason?: string | null;
 }
 
 interface BackendSessionResponse {
@@ -118,6 +120,8 @@ function mapToClassOffering(item: BackendClassResponse): ClassOffering {
     midtermWeight: Number(item.midtermWeight ?? 0.3),
     finalWeight: Number(item.finalWeight ?? 0.7),
     gradingStatus: item.gradingStatus,
+    submittedAt: item.submittedAt || null,
+    returnReason: item.returnReason || null,
     createdAt: item.startDate || new Date().toISOString(),
     updatedAt: item.startDate || new Date().toISOString(),
   };

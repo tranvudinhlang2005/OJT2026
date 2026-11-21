@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, UserPlus, AlertCircle, Info, Loader2 } from 'lucide-react';
 import type { CreateUserPayload, CreatableUserRole } from '../../../types/user';
+import { getApiErrorDetails } from '../../../services/axiosClient';
 
 interface CreateUserModalProps {
   isOpen: boolean;
@@ -28,8 +29,19 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
   const [phone, setPhone] = useState('');
 
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
+
+  const clearFieldError = (field: string) => {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
 
   const resetForm = useCallback(() => {
     setRole('STUDENT');
@@ -44,6 +56,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
     setDepartment('');
     setPhone('');
     setError(null);
+    setFieldErrors({});
     setIsSubmitting(false);
     submittingRef.current = false;
   }, []);
@@ -101,6 +114,7 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
     try {
       submittingRef.current = true;
       setIsSubmitting(true);
+      setFieldErrors({});
       await onSubmit({
         username,
         email,
@@ -117,8 +131,9 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
       resetForm();
       onClose();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
-      setError(axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Có lỗi xảy ra khi tạo tài khoản'));
+      const errDetail = getApiErrorDetails(err, 'Có lỗi xảy ra khi tạo tài khoản');
+      setError(errDetail.message);
+      setFieldErrors(errDetail.fieldErrors);
     } finally {
       submittingRef.current = false;
       setIsSubmitting(false);
@@ -182,10 +197,20 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                 type="text"
                 required
                 value={username}
-                onChange={e => setUsername(e.target.value)}
+                onChange={e => {
+                  setUsername(e.target.value);
+                  clearFieldError('username');
+                }}
                 placeholder="VD: nam_nguyen"
-                className="w-full rounded-lg border border-slate-300 p-2 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className={`w-full rounded-lg border p-2 text-sm text-slate-800 focus:outline-none focus:ring-1 ${
+                  fieldErrors.username
+                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
+                }`}
               />
+              {fieldErrors.username && (
+                <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.username}</p>
+              )}
             </div>
 
             <div>
@@ -196,10 +221,20 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                 type="text"
                 required
                 value={fullName}
-                onChange={e => setFullName(e.target.value)}
+                onChange={e => {
+                  setFullName(e.target.value);
+                  clearFieldError('fullName');
+                }}
                 placeholder="VD: Nguyễn Văn Nam"
-                className="w-full rounded-lg border border-slate-300 p-2 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className={`w-full rounded-lg border p-2 text-sm text-slate-800 focus:outline-none focus:ring-1 ${
+                  fieldErrors.fullName
+                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
+                }`}
               />
+              {fieldErrors.fullName && (
+                <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.fullName}</p>
+              )}
             </div>
           </div>
 
@@ -212,10 +247,20 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                 type="email"
                 required
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={e => {
+                  setEmail(e.target.value);
+                  clearFieldError('email');
+                }}
                 placeholder="VD: nam@edu.vn"
-                className="w-full rounded-lg border border-slate-300 p-2 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className={`w-full rounded-lg border p-2 text-sm text-slate-800 focus:outline-none focus:ring-1 ${
+                  fieldErrors.email
+                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
+                }`}
               />
+              {fieldErrors.email && (
+                <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -226,10 +271,20 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                 type="text"
                 required
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={e => {
+                  setPassword(e.target.value);
+                  clearFieldError('password');
+                }}
                 placeholder="VD: Password@123"
-                className="w-full rounded-lg border border-slate-300 p-2 text-sm font-mono text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className={`w-full rounded-lg border p-2 text-sm font-mono text-slate-800 focus:outline-none focus:ring-1 ${
+                  fieldErrors.password
+                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
+                }`}
               />
+              {fieldErrors.password && (
+                <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.password}</p>
+              )}
             </div>
           </div>
 
@@ -247,10 +302,20 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                     type="text"
                     required
                     value={studentCode}
-                    onChange={e => setStudentCode(e.target.value)}
+                    onChange={e => {
+                      setStudentCode(e.target.value);
+                      clearFieldError('studentCode');
+                    }}
                     placeholder="VD: SE170123"
-                    className="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm text-slate-800 focus:border-emerald-500 focus:outline-none"
+                    className={`w-full rounded-lg border bg-white p-2 text-sm text-slate-800 focus:outline-none ${
+                      fieldErrors.studentCode
+                        ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+                        : 'border-slate-300 focus:border-emerald-500'
+                    }`}
                   />
+                  {fieldErrors.studentCode && (
+                    <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.studentCode}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">
@@ -293,10 +358,20 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                     type="text"
                     required
                     value={instructorCode}
-                    onChange={e => setInstructorCode(e.target.value)}
+                    onChange={e => {
+                      setInstructorCode(e.target.value);
+                      clearFieldError('instructorCode');
+                    }}
                     placeholder="VD: GV004"
-                    className="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
+                    className={`w-full rounded-lg border bg-white p-2 text-sm text-slate-800 focus:outline-none ${
+                      fieldErrors.instructorCode
+                        ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+                        : 'border-slate-300 focus:border-blue-500'
+                    }`}
                   />
+                  {fieldErrors.instructorCode && (
+                    <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.instructorCode}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">

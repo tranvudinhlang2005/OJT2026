@@ -73,6 +73,42 @@ axiosClient.interceptors.response.use(
   }
 );
 
+export interface ApiErrorDetail {
+  message: string;
+  fieldErrors: Record<string, string>;
+}
+
+export function getApiErrorDetails(error: unknown, fallback = 'Đã có lỗi xảy ra. Vui lòng thử lại.'): ApiErrorDetail {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data;
+    if (typeof data === 'string' && data.trim()) {
+      return { message: data, fieldErrors: {} };
+    }
+    if (data && typeof data === 'object') {
+      const errObj = data as {
+        message?: string;
+        error?: string;
+        detail?: string;
+        details?: Record<string, string | string[]>;
+      };
+      const fieldErrors: Record<string, string> = {};
+      if (errObj.details && typeof errObj.details === 'object' && !Array.isArray(errObj.details)) {
+        for (const [key, val] of Object.entries(errObj.details)) {
+          fieldErrors[key] = Array.isArray(val) ? val.join(', ') : String(val);
+        }
+      }
+      return {
+        message: errObj.message || errObj.detail || errObj.error || fallback,
+        fieldErrors,
+      };
+    }
+  }
+  if (error instanceof Error) {
+    return { message: error.message, fieldErrors: {} };
+  }
+  return { message: fallback, fieldErrors: {} };
+}
+
 /**
  * Standardized helper to extract a friendly error message from Axios errors or backend responses.
  */

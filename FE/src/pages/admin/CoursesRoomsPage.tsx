@@ -21,6 +21,7 @@ import { CreateRoomModal } from '../../components/admin/rooms/CreateRoomModal';
 import { EditRoomModal } from '../../components/admin/rooms/EditRoomModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { getApiErrorMessage } from '../../services/axiosClient';
 
 export default function CoursesRoomsPage() {
   const { user } = useAuth();
@@ -91,7 +92,7 @@ export default function CoursesRoomsPage() {
       );
       await loadCourses();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Lỗi khi cập nhật trạng thái');
+      toast.error(getApiErrorMessage(err, 'Lỗi khi cập nhật trạng thái'));
     }
   };
 
@@ -106,7 +107,7 @@ export default function CoursesRoomsPage() {
       );
       await loadRooms();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Lỗi khi cập nhật trạng thái');
+      toast.error(getApiErrorMessage(err, 'Lỗi khi cập nhật trạng thái'));
     }
   };
 

@@ -7,6 +7,7 @@ import { ReturnResultModal } from '../../components/admin/approvals/ReturnResult
 import { CompleteClassModal } from '../../components/admin/approvals/CompleteClassModal';
 import { approvalService } from '../../services/approvalService';
 import { dashboardService } from '../../services/dashboardService';
+import { getApiErrorMessage } from '../../services/axiosClient';
 import type {
   ApprovalFilter,
   ApprovalStats,
@@ -116,7 +117,7 @@ export default function ApprovalsPage() {
       setSelectedDetail(detail);
       setIsDetailOpen(true);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Lỗi khi tải chi tiết bảng điểm');
+      toast.error(getApiErrorMessage(err, 'Lỗi khi tải chi tiết bảng điểm'));
     }
   };
 
@@ -128,7 +129,7 @@ export default function ApprovalsPage() {
       toast.success(`Đã phê duyệt kết quả bảng điểm lớp ${selectedDetail.classCode} thành công!`);
       await loadData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Có lỗi xảy ra khi phê duyệt';
+      const msg = getApiErrorMessage(err, 'Có lỗi xảy ra khi phê duyệt');
       toast.error(msg);
       throw err;
     }
@@ -151,7 +152,7 @@ export default function ApprovalsPage() {
       setIsDetailOpen(false);
       await loadData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi trả kết quả';
+      const msg = getApiErrorMessage(err, 'Lỗi khi trả kết quả');
       toast.error(msg);
       throw err;
     }
@@ -187,7 +188,7 @@ export default function ApprovalsPage() {
       }
       await loadData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi đóng lớp học';
+      const msg = getApiErrorMessage(err, 'Lỗi khi đóng lớp học');
       toast.error(msg);
       throw err;
     }

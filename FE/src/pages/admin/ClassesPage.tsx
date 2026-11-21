@@ -10,6 +10,8 @@ import { CancelClassModal } from '@/components/admin/classes/CancelClassModal';
 import { DeleteClassModal } from '@/components/admin/classes/DeleteClassModal';
 import { ChangeCapacityModal } from '@/components/admin/classes/ChangeCapacityModal';
 import { classService } from '@/services/classService';
+import { dashboardService } from '@/services/dashboardService';
+import { getApiErrorMessage } from '@/services/axiosClient';
 import type {
   ClassOffering,
   ClassFilter,
@@ -34,6 +36,7 @@ export default function ClassesPage() {
   const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [instructors, setInstructors] = useState<InstructorSummary[]>([]);
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
+  const [availableSemesters, setAvailableSemesters] = useState<string[]>([]);
 
   const [filter, setFilter] = useState<ClassFilter>({
     semester: 'ALL',
@@ -56,14 +59,16 @@ export default function ClassesPage() {
   useEffect(() => {
     async function loadMetadata() {
       try {
-        const [coursesRes, instRes, roomsRes] = await Promise.allSettled([
+        const [coursesRes, instRes, roomsRes, semsRes] = await Promise.allSettled([
           classService.getCourses(),
           canManage ? classService.getInstructors() : Promise.resolve([]),
           canManage ? classService.getRooms() : Promise.resolve([]),
+          dashboardService.getSemesters(),
         ]);
         if (coursesRes.status === 'fulfilled') setCourses(coursesRes.value);
         if (instRes.status === 'fulfilled') setInstructors(instRes.value);
         if (roomsRes.status === 'fulfilled') setRooms(roomsRes.value);
+        if (semsRes.status === 'fulfilled') setAvailableSemesters(semsRes.value);
       } catch {
         toast.error('Không thể tải danh mục dữ liệu bổ trợ.');
       }
@@ -106,17 +111,19 @@ export default function ClassesPage() {
   }, [loadClassesData]);
 
   const distinctSemesters = useMemo(
-    () => Array.from(new Set(allClasses.map((c) => c.semester))),
-    [allClasses]
+    () => Array.from(new Set([...availableSemesters, ...allClasses.map((c) => c.semester)].filter(Boolean))),
+    [availableSemesters, allClasses]
   );
 
   const handleCreateClass = async (payload: CreateClassPayload) => {
     try {
       const created = await classService.createClass(payload);
+      dashboardService.clearSemestersCache();
+      dashboardService.getSemesters(true).then((sems) => setAvailableSemesters(sems)).catch(() => {});
       toast.success(`Đã tạo thành công lớp học phần "${created.classCode}"`);
       await loadClassesData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi tạo lớp';
+      const msg = getApiErrorMessage(err, 'Lỗi khi tạo lớp');
       toast.error(msg);
       throw err;
     }
@@ -128,7 +135,7 @@ export default function ClassesPage() {
       toast.success('Cập nhật thông tin lớp học phần thành công');
       await loadClassesData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi cập nhật lớp';
+      const msg = getApiErrorMessage(err, 'Lỗi khi cập nhật lớp');
       toast.error(msg);
       throw err;
     }
@@ -140,7 +147,7 @@ export default function ClassesPage() {
       toast.success('Phân công giảng viên phụ trách thành công');
       await loadClassesData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi phân công giảng viên';
+      const msg = getApiErrorMessage(err, 'Lỗi khi phân công giảng viên');
       toast.error(msg);
       throw err;
     }
@@ -152,7 +159,7 @@ export default function ClassesPage() {
       toast.success(`Đã công bố mở đăng ký cho lớp "${cls.classCode}"`);
       await loadClassesData();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Không thể công bố mở lớp');
+      toast.error(getApiErrorMessage(err, 'Không thể công bố mở lớp'));
     }
   };
 
@@ -162,7 +169,7 @@ export default function ClassesPage() {
       toast.success('Đã cập nhật sĩ số tối đa thành công');
       await loadClassesData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi đổi sĩ số';
+      const msg = getApiErrorMessage(err, 'Lỗi khi đổi sĩ số');
       toast.error(msg);
       throw err;
     }
@@ -174,7 +181,7 @@ export default function ClassesPage() {
       toast.success(`Lớp "${cls.classCode}" đã chuyển sang trạng thái Đang diễn ra`);
       await loadClassesData();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Lỗi khi bắt đầu lớp học');
+      toast.error(getApiErrorMessage(err, 'Lỗi khi bắt đầu lớp học'));
     }
   };
 
@@ -185,7 +192,7 @@ export default function ClassesPage() {
       toast.success(`Đã rút lớp "${cls.classCode}" về trạng thái nháp thành công`);
       await loadClassesData();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Lỗi khi rút lớp về nháp');
+      toast.error(getApiErrorMessage(err, 'Lỗi khi rút lớp về nháp'));
     }
   };
 
@@ -195,7 +202,7 @@ export default function ClassesPage() {
       toast.warning('Đã hủy lớp học phần.');
       await loadClassesData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi hủy lớp';
+      const msg = getApiErrorMessage(err, 'Lỗi khi hủy lớp');
       toast.error(msg);
       throw err;
     }
@@ -207,7 +214,7 @@ export default function ClassesPage() {
       toast.success('Đã xóa vĩnh viễn lớp học bản nháp thành công');
       await loadClassesData();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Lỗi khi xóa lớp';
+      const msg = getApiErrorMessage(err, 'Lỗi khi xóa lớp');
       toast.error(msg);
       throw err;
     }

@@ -57,9 +57,9 @@ export const approvalService = {
       studentsCount: cls.enrolledCount,
       sessionsCount: 0,
       unlockedSessionsCount: 0,
-      submittedAt: cls.createdAt,
+      submittedAt: cls.submittedAt || cls.createdAt,
       confirmedAt: undefined,
-      returnReason: cls.cancelReason || undefined,
+      returnReason: cls.returnReason || undefined,
       hasIncompleteGrades: false,
     }));
   },
@@ -167,10 +167,16 @@ export const approvalService = {
 
   async lockAllSessionsForClass(classId: string): Promise<void> {
     const sessions = await classService.getSessions(classId);
-    for (const session of sessions) {
-      if (!session.attendanceLocked) {
-        await axiosClient.post(`/sessions/${session.id}/lock`);
-      }
+    const unlockedSessions = sessions.filter((s) => !s.attendanceLocked);
+    if (unlockedSessions.length === 0) return;
+
+    const results = await Promise.allSettled(
+      unlockedSessions.map((s) => axiosClient.post(`/sessions/${s.id}/lock`))
+    );
+
+    const rejected = results.filter((r) => r.status === 'rejected');
+    if (rejected.length > 0) {
+      throw new Error(`Đã có ${rejected.length}/${unlockedSessions.length} buổi học không thể khóa do lỗi.`);
     }
   },
 };

@@ -22,6 +22,7 @@ import { ClassRosterTab, type StudentRosterItem } from './detail/ClassRosterTab'
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/contexts/ToastContext';
 import { formatDateTime } from '@/utils/dateFormat';
+import { getApiErrorMessage } from '@/services/axiosClient';
 
 export interface ClassDetailModalProps {
   isOpen: boolean;
@@ -115,7 +116,7 @@ export function ClassDetailModal({
       await loadSessions();
       onClassUpdated();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Lỗi khi xóa buổi học');
+      toast.error(getApiErrorMessage(err, 'Lỗi khi xóa buổi học'));
     }
   };
 
@@ -125,7 +126,7 @@ export function ClassDetailModal({
       toast.success('Đã mở khóa điểm danh thành công.');
       await loadSessions();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Lỗi khi mở khóa điểm danh');
+      toast.error(getApiErrorMessage(err, 'Lỗi khi mở khóa điểm danh'));
     }
   };
 

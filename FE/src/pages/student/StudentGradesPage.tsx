@@ -63,8 +63,12 @@ export default function StudentGradesPage() {
   }, [results, selectedSemester]);
 
   const semesterGpa = useMemo(() => {
-    return calculateGpa4(filteredGrades).toFixed(2);
-  }, [filteredGrades]);
+    const withCredits = filteredGrades.map((g) => ({
+      totalScore: g.totalScore,
+      credits: courseCreditsMap[g.courseCode] || 3,
+    }));
+    return calculateGpa4(withCredits).toFixed(2);
+  }, [filteredGrades, courseCreditsMap]);
 
   const accumulatedCredits = useMemo(() => {
     const passed = results.filter((r) => r.finalStatus === 'PASSED');
@@ -72,8 +76,12 @@ export default function StudentGradesPage() {
   }, [results, courseCreditsMap]);
 
   const totalGpa4 = useMemo(() => {
-    return calculateGpa4(results);
-  }, [results]);
+    const withCredits = results.map((g) => ({
+      totalScore: g.totalScore,
+      credits: courseCreditsMap[g.courseCode] || 3,
+    }));
+    return calculateGpa4(withCredits);
+  }, [results, courseCreditsMap]);
 
   return (
     <div className="space-y-6">

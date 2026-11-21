@@ -14,6 +14,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { attendanceService } from '../../services/attendanceService';
 import { scheduleService } from '../../services/scheduleService';
 import { classService } from '../../services/classService';
+import { getApiErrorMessage } from '../../services/axiosClient';
 import {
   scheduleReducer,
   initialScheduleState,
@@ -55,6 +56,7 @@ export default function TeacherSchedulePage() {
 
   const handleOpenAttendance = async (session: TeachingSession) => {
     dispatch({ type: 'OPEN_ATTENDANCE_MODAL', payload: session });
+    dispatch({ type: 'SET_STUDENTS', payload: [] });
     let activeSessionId = session.id.startsWith('s-')
       ? session.id.replace('s-', '')
       : session.id;
@@ -87,7 +89,7 @@ export default function TeacherSchedulePage() {
           dispatch({
             type: 'SET_STUDENTS',
             payload: sheet.items.map((it) => ({
-              id: it.studentId,
+              id: String(it.studentId),
               name: it.fullName,
               code: it.studentCode,
               status: (it.status ? it.status.toLowerCase() : 'present') as AttendanceStatus,
@@ -97,7 +99,7 @@ export default function TeacherSchedulePage() {
         }
       }
     } catch {
-      // Keep default students state
+      toast.error('Không thể tải danh sách điểm danh của buổi học.');
     }
   };
 
@@ -120,6 +122,21 @@ export default function TeacherSchedulePage() {
   const handleSaveAttendance = async () => {
     if (!selectedSession) return;
 
+    if (students.length === 0) {
+      toast.warning('Không có danh sách sinh viên để điểm danh.');
+      return;
+    }
+
+    const invalidStudent = students.find((s) => {
+      const num = Number(s.id);
+      return !Number.isInteger(num) || num <= 0;
+    });
+
+    if (invalidStudent) {
+      toast.error(`Học viên "${invalidStudent.name || invalidStudent.code}" có mã định danh không hợp lệ.`);
+      return;
+    }
+
     const presentCount = students.filter((s) => s.status === 'present').length;
     const lateCount = students.filter((s) => s.status === 'late').length;
     const absentCount = students.filter((s) => s.status === 'absent').length;
@@ -128,8 +145,8 @@ export default function TeacherSchedulePage() {
       ? selectedSession.id.replace('s-', '')
       : selectedSession.id;
 
-    const payloadItems = students.map((s, idx) => ({
-      studentId: Number(s.id) || idx + 1,
+    const payloadItems = students.map((s) => ({
+      studentId: Number(s.id),
       status: (s.status === 'present' ? 'PRESENT' : s.status === 'late' ? 'LATE' : 'ABSENT') as 'PRESENT' | 'ABSENT' | 'LATE',
       remarks: s.remarks?.trim() || undefined,
     }));
@@ -150,8 +167,32 @@ export default function TeacherSchedulePage() {
         `Đã lưu dữ liệu điểm danh thành công! (${presentCount} có mặt, ${lateCount} muộn, ${absentCount} vắng)`
       );
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } } };
-      toast.error(axiosErr.response?.data?.message || 'Có lỗi khi lưu dữ liệu điểm danh về hệ thống.');
+      const axiosErr = err as { response?: { status?: number; data?: { code?: string; message?: string } } };
+      if (axiosErr.response?.status === 409 || axiosErr.response?.data?.code === 'VERSION_CONFLICT') {
+        try {
+          const latestSheet = await attendanceService.getAttendance(sessionIdParam);
+          if (latestSheet) {
+            setSessionVersion(latestSheet.version);
+            if (latestSheet.items && latestSheet.items.length > 0) {
+              dispatch({
+                type: 'SET_STUDENTS',
+                payload: latestSheet.items.map((it) => ({
+                  id: String(it.studentId),
+                  name: it.fullName,
+                  code: it.studentCode,
+                  status: (it.status ? it.status.toLowerCase() : 'present') as AttendanceStatus,
+                  remarks: it.remarks || '',
+                })),
+              });
+            }
+          }
+          toast.warning('Dữ liệu điểm danh vừa được cập nhật từ phiên khác. Hệ thống đã đồng bộ lại dữ liệu mới nhất, vui lòng kiểm tra và lưu lại.');
+          return;
+        } catch {
+          // Fall through
+        }
+      }
+      toast.error(getApiErrorMessage(err, 'Có lỗi khi lưu dữ liệu điểm danh về hệ thống.'));
     } finally {
       setIsSaving(false);
     }
@@ -160,12 +201,28 @@ export default function TeacherSchedulePage() {
   const handleLockAttendance = async () => {
     if (!selectedSession) return;
     if (!confirm('Sau khi khóa, bạn sẽ không thể tự chỉnh sửa điểm danh của buổi học này nữa. Bạn có chắc chắn muốn khóa?')) return;
+
+    if (students.length === 0) {
+      toast.warning('Không có danh sách sinh viên để điểm danh.');
+      return;
+    }
+
+    const invalidStudent = students.find((s) => {
+      const num = Number(s.id);
+      return !Number.isInteger(num) || num <= 0;
+    });
+
+    if (invalidStudent) {
+      toast.error(`Học viên "${invalidStudent.name || invalidStudent.code}" có mã định danh không hợp lệ.`);
+      return;
+    }
+
     const sessionIdParam = selectedSession.id.startsWith('s-')
       ? selectedSession.id.replace('s-', '')
       : selectedSession.id;
 
-    const payloadItems = students.map((s, idx) => ({
-      studentId: Number(s.id) || idx + 1,
+    const payloadItems = students.map((s) => ({
+      studentId: Number(s.id),
       status: (s.status === 'present' ? 'PRESENT' : s.status === 'late' ? 'LATE' : 'ABSENT') as 'PRESENT' | 'ABSENT' | 'LATE',
       remarks: s.remarks?.trim() || undefined,
     }));
@@ -181,8 +238,32 @@ export default function TeacherSchedulePage() {
       toast.success('Đã lưu và khóa điểm danh buổi học thành công!');
       handleCloseAttendance();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } } };
-      toast.error(axiosErr.response?.data?.message || 'Có lỗi khi khóa điểm danh buổi học.');
+      const axiosErr = err as { response?: { status?: number; data?: { code?: string; message?: string } } };
+      if (axiosErr.response?.status === 409 || axiosErr.response?.data?.code === 'VERSION_CONFLICT') {
+        try {
+          const latestSheet = await attendanceService.getAttendance(sessionIdParam);
+          if (latestSheet) {
+            setSessionVersion(latestSheet.version);
+            if (latestSheet.items && latestSheet.items.length > 0) {
+              dispatch({
+                type: 'SET_STUDENTS',
+                payload: latestSheet.items.map((it) => ({
+                  id: String(it.studentId),
+                  name: it.fullName,
+                  code: it.studentCode,
+                  status: (it.status ? it.status.toLowerCase() : 'present') as AttendanceStatus,
+                  remarks: it.remarks || '',
+                })),
+              });
+            }
+          }
+          toast.warning('Dữ liệu điểm danh vừa được cập nhật từ phiên khác. Hệ thống đã đồng bộ lại dữ liệu mới nhất, vui lòng kiểm tra trước khi khóa.');
+          return;
+        } catch {
+          // Fall through
+        }
+      }
+      toast.error(getApiErrorMessage(err, 'Có lỗi khi khóa điểm danh buổi học.'));
     } finally {
       setIsSaving(false);
     }
