@@ -26,7 +26,6 @@ interface ClassTableProps {
   onPublish: (cls: ClassOffering) => void;
   onUnpublish?: (cls: ClassOffering) => void;
   onStart: (cls: ClassOffering) => void;
-  onClose?: (cls: ClassOffering) => void;
   onCancel: (cls: ClassOffering) => void;
   onDelete: (cls: ClassOffering) => void;
 }
@@ -42,7 +41,6 @@ export function ClassTable({
   onPublish,
   onUnpublish,
   onStart,
-  onClose,
   onCancel,
   onDelete,
 }: ClassTableProps) {

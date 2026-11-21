@@ -221,7 +221,7 @@ test.describe('Grades & Approvals Suite', () => {
     const confirmBtn = page.getByRole('button', { name: 'Phê duyệt kết quả' });
     await expect(confirmBtn).toBeVisible();
     await confirmBtn.click();
-    expect(confirmCalled).toBeTruthy();
+    await expect.poll(() => confirmCalled).toBeTruthy();
   });
 
   test('Quản lý đào tạo trả về bảng điểm kèm lý do (POST /classes/{id}/results/return)', async ({ page }) => {

@@ -54,14 +54,14 @@ export default function ClassesPage() {
   useEffect(() => {
     async function loadMetadata() {
       try {
-        const [c, inst, r] = await Promise.all([
+        const [coursesRes, instRes, roomsRes] = await Promise.allSettled([
           classService.getCourses(),
-          canManage ? classService.getInstructors().catch(() => []) : Promise.resolve([]),
-          canManage ? classService.getRooms().catch(() => []) : Promise.resolve([]),
+          canManage ? classService.getInstructors() : Promise.resolve([]),
+          canManage ? classService.getRooms() : Promise.resolve([]),
         ]);
-        setCourses(c);
-        setInstructors(inst);
-        setRooms(r);
+        if (coursesRes.status === 'fulfilled') setCourses(coursesRes.value);
+        if (instRes.status === 'fulfilled') setInstructors(instRes.value);
+        if (roomsRes.status === 'fulfilled') setRooms(roomsRes.value);
       } catch {
         toast.error('Không thể tải danh mục dữ liệu bổ trợ.');
       }

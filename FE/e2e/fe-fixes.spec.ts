@@ -642,7 +642,7 @@ test.describe('FE Bugfixes Verification Suite', () => {
 
     // Bấm nút rút về nháp
     await unpublishBtn.click();
-    expect(unpublishCalled).toBeTruthy();
+    await expect.poll(() => unpublishCalled).toBeTruthy();
     await expect(page.getByText(/Đã rút lớp.*về trạng thái nháp thành công/i)).toBeVisible();
   });
 
@@ -827,8 +827,8 @@ test.describe('FE Bugfixes Verification Suite', () => {
     // 1. Bấm đăng ký lớp học -> có dialog xác nhận
     const registerBtn = page.getByRole('button', { name: 'Đăng ký', exact: true }).first();
     await registerBtn.click();
+    await expect.poll(() => enrollCalled).toBeTruthy();
     expect(dialogMessages.some((msg) => msg.includes('Xác nhận đăng ký'))).toBeTruthy();
-    expect(enrollCalled).toBeTruthy();
 
     // 2. Chuyển sang tab "Lớp đã đăng ký"
     await page.getByRole('button', { name: /lớp đã đăng ký/i }).click();
@@ -841,8 +841,8 @@ test.describe('FE Bugfixes Verification Suite', () => {
     // 3. Bấm hủy đăng ký -> có dialog xác nhận
     const unregisterBtn = page.getByRole('button', { name: 'Hủy đăng ký' }).first();
     await unregisterBtn.click();
+    await expect.poll(() => cancelCalled).toBeTruthy();
     expect(dialogMessages.some((msg) => msg.includes('Bạn có chắc chắn muốn hủy đăng ký'))).toBeTruthy();
-    expect(cancelCalled).toBeTruthy();
   });
 
   test('Lỗi 14 (Ticket 06): Học viên đổi mật khẩu cá nhân thành công tại trang Profile', async ({ page }) => {

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Calendar, Clock, DoorOpen, ShieldAlert, AlertTriangle, Loader2 } from 'lucide-react';
 import type { RoomSummary, CreateSessionPayload, ClassSession } from '../../../types/classOffering';
+import { formatDate } from '../../../utils/dateFormat';
 
 interface AddSessionModalProps {
   isOpen: boolean;
@@ -86,7 +87,7 @@ export function AddSessionModal({
     }
 
     if (sessionDate < startDate || sessionDate > endDate) {
-      setError(`Ngày học phải nằm trong khoảng thời gian diễn ra khóa học (${startDate} đến ${endDate}).`);
+      setError(`Ngày học phải nằm trong khoảng thời gian diễn ra khóa học (${formatDate(startDate)} đến ${formatDate(endDate)}).`);
       return;
     }
 
@@ -188,7 +189,7 @@ export function AddSessionModal({
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
             <p className="mt-1 text-[11px] text-slate-400">
-              Khóa học diễn ra từ {startDate} đến {endDate}
+              Khóa học diễn ra từ {formatDate(startDate)} đến {formatDate(endDate)}
             </p>
           </div>
 
