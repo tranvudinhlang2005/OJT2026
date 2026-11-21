@@ -152,6 +152,7 @@ export const classService = {
     if (filter.courseId && filter.courseId !== 'ALL') params.courseId = Number(filter.courseId);
     if (filter.status && filter.status !== 'ALL') params.status = filter.status;
     if (filter.instructorId && filter.instructorId !== 'ALL') params.instructorId = Number(filter.instructorId);
+    if (filter.gradingStatus && filter.gradingStatus !== 'ALL') params.gradingStatus = filter.gradingStatus;
     if (filter.keyword && filter.keyword.trim()) params.keyword = filter.keyword.trim();
 
     const res = await axiosClient.get<PageResponse<BackendClassResponse>>('/classes', { params });

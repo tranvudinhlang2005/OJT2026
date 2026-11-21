@@ -29,6 +29,7 @@ export default function DashboardPage() {
   const { toast } = useToast();
 
   const isAdmin = user?.role === 'TRAINING_ADMIN';
+  const canViewSecurityAlerts = isAdmin;
   const canViewAudit = isAdmin;
 
   const [activeTab, setActiveTab] = useState<'overview' | 'audit'>('overview');
@@ -92,8 +93,12 @@ export default function DashboardPage() {
       const [summaryData, classesData, alertsData, logsData] = await Promise.all([
         dashboardService.getSummary(filter),
         dashboardService.getDashboardClasses(filter),
-        isAdmin ? dashboardService.getSecurityAlerts() : Promise.resolve(null),
-        isAdmin ? dashboardService.getGradeAuditLogs() : Promise.resolve([]),
+        canViewSecurityAlerts
+          ? dashboardService.getSecurityAlerts(filter.from || undefined, filter.to || undefined)
+          : Promise.resolve(null),
+        isAdmin
+          ? dashboardService.getGradeAuditLogs(undefined, filter.from || undefined, filter.to || undefined)
+          : Promise.resolve([]),
       ]);
 
       setSummary(summaryData);
@@ -110,7 +115,7 @@ export default function DashboardPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [filter, isAdmin, toast]);
+  }, [filter, isAdmin, canViewSecurityAlerts, toast]);
 
   useEffect(() => {
     loadDashboardData();
@@ -187,7 +192,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          {isAdmin ? (
+          {canViewSecurityAlerts ? (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
               <div className="lg:col-span-7">
                 <DashboardClassTable classes={dashboardClasses} isLoading={isLoading} />
@@ -213,7 +218,7 @@ export default function DashboardPage() {
                   Thanh tra tính toàn vẹn của điểm số
                 </h4>
                 <p className="text-xs text-indigo-700 mt-0.5">
-                  Mọi thao tác thay đổi điểm sau khi đã nhập của Giảng viên đều bắt buộc giải trình lý do (D18). Dữ liệu này chỉ Quản trị viên mới có thẩm quyền truy cập.
+                  Mọi thao tác thay đổi điểm sau khi đã nhập của Giảng viên đều bắt buộc giải trình lý do. Dữ liệu này chỉ Quản trị viên mới có thẩm quyền truy cập.
                 </p>
               </div>
             </div>

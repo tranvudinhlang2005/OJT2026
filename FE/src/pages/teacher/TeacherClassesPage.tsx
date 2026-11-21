@@ -123,14 +123,12 @@ export default function TeacherClassesPage() {
         </div>
       )}
 
-      {/* Roster Modal */}
       <ClassRosterModal
         classItem={rosterModal.data}
         isOpen={rosterModal.isOpen}
         onClose={rosterModal.close}
       />
 
-      {/* Sessions List Modal */}
       <ClassSessionsModal
         classItem={sessionsModal.data}
         isOpen={sessionsModal.isOpen}
@@ -138,7 +136,6 @@ export default function TeacherClassesPage() {
         onSelectSession={(session) => attendanceModal.open(session)}
       />
 
-      {/* Attendance Sheet Modal */}
       <AttendanceSheetModal
         session={attendanceModal.data}
         classItem={sessionsModal.data}

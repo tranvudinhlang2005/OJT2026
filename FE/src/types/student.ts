@@ -1,5 +1,6 @@
 export interface OpenClass {
   id: string;
+  classCode?: string;
   courseCode: string;
   courseName: string;
   credits: number;
@@ -11,6 +12,9 @@ export interface OpenClass {
   timeSlot: string;
   maxSeats: number;
   enrolledSeats: number;
+  availableSeats?: number;
+  isFull?: boolean;
+  cancelDeadline?: string;
   semester: string;
   department: string;
 }

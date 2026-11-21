@@ -1,0 +1,4 @@
+export const DEFAULT_COURSE_CREDITS = 3;
+export const DEFAULT_FALLBACK_CAPACITY = 50;
+export const DEFAULT_MIN_ATTENDANCE_PCT = 80.0;
+export const DEFAULT_PASS_SCORE = 5.0;

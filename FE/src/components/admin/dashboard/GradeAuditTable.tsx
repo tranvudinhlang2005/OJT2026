@@ -77,7 +77,7 @@ export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
               <th className="px-5 py-3 text-center">Cột điểm</th>
               <th className="px-5 py-3 text-center">Điểm cũ → Mới</th>
               <th className="px-5 py-3">Người sửa</th>
-              <th className="px-5 py-3">Lý do điều chỉnh (Bắt buộc D18)</th>
+              <th className="px-5 py-3">Lý do điều chỉnh</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">

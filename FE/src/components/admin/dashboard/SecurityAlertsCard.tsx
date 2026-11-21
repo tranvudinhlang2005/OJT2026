@@ -114,7 +114,7 @@ export function SecurityAlertsCard({ alerts, isLoading }: SecurityAlertsCardProp
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              {alerts.recentEvents.map((evt) => (
+              {(Array.isArray(alerts.recentEvents) ? alerts.recentEvents : []).map((evt) => (
                 <tr key={evt.id} className="hover:bg-slate-50/80 transition">
                   <td className="px-4 py-2 text-slate-500 whitespace-nowrap">
                     <span className="flex items-center gap-1 font-mono text-[11px]">

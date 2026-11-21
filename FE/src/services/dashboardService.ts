@@ -61,7 +61,7 @@ interface BackendGradeAuditLogResponse {
 
 let cachedSemesters: { data: string[]; timestamp: number } | null = null;
 let semestersInflightPromise: Promise<string[]> | null = null;
-const SEMESTERS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const SEMESTERS_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export const dashboardService = {
   async getSummary(filter: DashboardFilter = {}): Promise<DashboardSummary> {

@@ -35,6 +35,17 @@ export function calculateGpa4(items: GpaItem[]): number {
   return Number((totalWeightedGpa / totalCredits).toFixed(2));
 }
 
+export interface CreditItem {
+  finalStatus: string;
+  credits?: number;
+}
+
+export function calculateAccumulatedCredits(items: CreditItem[]): number {
+  return items
+    .filter((item) => item.finalStatus === 'PASSED')
+    .reduce((sum, item) => sum + (typeof item.credits === 'number' && item.credits > 0 ? item.credits : 3), 0);
+}
+
 export function getAcademicClassification(gpa4: number): string {
   if (gpa4 >= 3.6) return 'Xuất sắc';
   if (gpa4 >= 3.2) return 'Giỏi';

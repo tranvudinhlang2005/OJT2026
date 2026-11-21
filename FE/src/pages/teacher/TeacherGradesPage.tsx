@@ -14,6 +14,7 @@ import {
   type ClassResultEntryItem,
 } from '../../services/instructorService';
 import type { ClassOffering } from '../../types/classOffering';
+import { DEFAULT_MIN_ATTENDANCE_PCT, DEFAULT_PASS_SCORE } from '../../constants/academic';
 
 export default function TeacherGradesPage() {
   const { toast } = useToast();
@@ -318,6 +319,9 @@ export default function TeacherGradesPage() {
                 </h3>
                 <p className="text-xs text-slate-500">
                   {activeClass.semester} • Trọng số: Giữa kỳ ({Math.round(activeClass.midtermWeight * 100)}%) - Cuối kỳ ({Math.round(activeClass.finalWeight * 100)}%)
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Chuyên cần tối thiểu: {activeClass.minAttendancePct ?? DEFAULT_MIN_ATTENDANCE_PCT}% • Điểm đạt: {activeClass.passScore ?? DEFAULT_PASS_SCORE}
                 </p>
                 {resultSheet?.returnReason && (
                   <div className="mt-2 flex items-center gap-2 rounded-lg bg-rose-50 p-2 text-xs text-rose-700 border border-rose-200">

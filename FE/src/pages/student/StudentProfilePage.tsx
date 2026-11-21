@@ -4,8 +4,6 @@ import {
   Calendar,
   Mail,
   GraduationCap,
-  Building2,
-  BookOpen,
   CheckCircle2,
   Clock,
   AlertCircle,
@@ -16,7 +14,9 @@ import { useToast } from '../../contexts/ToastContext';
 import { authService } from '../../services/authService';
 import { studentService, type StudentProfile } from '../../services/studentService';
 import { courseService } from '../../services/courseService';
-import { calculateGpa4 } from '../../utils/gradeUtils';
+import { calculateGpa4, calculateAccumulatedCredits } from '../../utils/gradeUtils';
+import { formatDate } from '../../utils/dateFormat';
+import { DEFAULT_COURSE_CREDITS } from '../../constants/academic';
 
 export default function StudentProfilePage() {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
@@ -91,25 +91,17 @@ export default function StudentProfilePage() {
 
       setProfile(prof);
 
-      const cMap: Record<string, number> = {};
-      courses.forEach((c) => {
-        cMap[c.code] = c.credits;
-      });
+      const creditMap = new Map<string, number>(courses.map((c) => [c.code, c.credits]));
+      const itemsWithCredits = results.map((r) => ({
+        ...r,
+        credits: creditMap.get(r.courseCode) || DEFAULT_COURSE_CREDITS,
+      }));
 
-      const passed = results.filter((r) => r.finalStatus === 'PASSED');
-      const totalCredits = passed.reduce(
-        (acc, curr) => acc + (cMap[curr.courseCode] || 3),
-        0
-      );
-      setAccumulatedCredits(totalCredits);
+      setAccumulatedCredits(calculateAccumulatedCredits(itemsWithCredits));
 
-      const validWithScore = results.filter((r) => r.totalScore !== null);
+      const validWithScore = itemsWithCredits.filter((r) => r.totalScore !== null);
       if (validWithScore.length > 0) {
-        const withCredits = results.map((r) => ({
-          totalScore: r.totalScore,
-          credits: cMap[r.courseCode] || 3,
-        }));
-        setGpa4(calculateGpa4(withCredits));
+        setGpa4(calculateGpa4(validWithScore));
       } else {
         setGpa4(null);
       }
@@ -176,7 +168,6 @@ export default function StudentProfilePage() {
               <p className="text-sm font-mono text-slate-500 mt-0.5">
                 MSSV: <strong className="text-slate-800">{p.studentCode}</strong> | Lớp sinh hoạt: {p.homeroomClass}
               </p>
-              <p className="text-xs text-slate-600 mt-1">Khoa Công nghệ Thông tin • Hệ chính quy</p>
             </div>
           </div>
 
@@ -212,27 +203,15 @@ export default function StudentProfilePage() {
               <dd className="mt-1 font-semibold text-slate-800 text-sm">{p.homeroomClass}</dd>
             </div>
             <div>
-              <dt className="text-slate-400">Khoa / Viện quản lý</dt>
-              <dd className="mt-1 font-medium text-slate-800 flex items-center gap-1.5">
-                <Building2 className="h-3.5 w-3.5 text-slate-400" />
-                <span>Khoa Công nghệ Thông tin</span>
+              <dt className="text-slate-400">Trạng thái học vụ</dt>
+              <dd className="mt-1 font-semibold text-slate-800 text-sm">
+                {p.status === 'ACTIVE' ? 'Đang theo học' : p.status}
               </dd>
             </div>
             <div>
-              <dt className="text-slate-400">Chuyên ngành đào tạo</dt>
-              <dd className="mt-1 font-medium text-slate-800 flex items-center gap-1.5">
-                <BookOpen className="h-3.5 w-3.5 text-slate-400" />
-                <span>Kỹ thuật Phần mềm</span>
-              </dd>
-            </div>
-            <div>
-              <dt className="text-slate-400">Hệ đào tạo</dt>
-              <dd className="mt-1 font-medium text-slate-800">Đại học chính quy</dd>
-            </div>
-            <div>
-              <dt className="text-slate-400">Tiến độ tích lũy</dt>
-              <dd className="mt-1 font-semibold text-slate-800">
-                {accumulatedCredits} / 140 Tín chỉ
+              <dt className="text-slate-400">Tổng tín chỉ tích lũy</dt>
+              <dd className="mt-1 font-semibold text-slate-800 text-sm">
+                {accumulatedCredits} Tín chỉ
               </dd>
             </div>
           </dl>
@@ -253,7 +232,7 @@ export default function StudentProfilePage() {
               <dt className="text-slate-400">Ngày sinh</dt>
               <dd className="mt-1 font-medium text-slate-800 flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                <span>{p.dateOfBirth || 'Chưa cập nhật'}</span>
+                <span>{p.dateOfBirth ? formatDate(p.dateOfBirth) : 'Chưa cập nhật'}</span>
               </dd>
             </div>
             <div className="sm:col-span-2">
@@ -283,7 +262,7 @@ export default function StudentProfilePage() {
         {isRedirecting && (
           <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">
             <RefreshCw className="h-4 w-4 animate-spin text-emerald-600" />
-            <span>Đổi mật khẩu thành công! Hệ thống đang chuyển hướng về trang đăng nhập...</span>
+            <span>Hệ thống đang chuyển hướng về trang đăng nhập...</span>
           </div>
         )}
 

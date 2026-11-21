@@ -18,7 +18,9 @@ export interface TeachingSession {
   sessionIndex: number;
   totalSessions: number;
   attendanceStatus: 'completed' | 'pending' | 'in_progress';
-  studentsCount: number;
+  studentsCount?: number;
+  topic?: string;
+  attendanceLocked?: boolean;
 }
 
 export interface ScheduleState {

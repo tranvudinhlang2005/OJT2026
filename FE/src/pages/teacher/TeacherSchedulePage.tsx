@@ -15,6 +15,9 @@ import { attendanceService } from '../../services/attendanceService';
 import { scheduleService } from '../../services/scheduleService';
 import { classService } from '../../services/classService';
 import { getApiErrorMessage } from '../../services/axiosClient';
+import { formatDate } from '../../utils/dateFormat';
+import { useWeekNavigation } from '../../hooks/useWeekNavigation';
+import { WeekNavigator } from '../../components/common/WeekNavigator';
 import {
   scheduleReducer,
   initialScheduleState,
@@ -28,10 +31,13 @@ export default function TeacherSchedulePage() {
   const [sessionVersion, setSessionVersion] = useState<number>(0);
   const [state, dispatch] = useReducer(scheduleReducer, initialScheduleState);
   const { sessions, selectedSession, students, isModalOpen } = state;
+  const { weekOffset, setWeekOffset, weekRange } = useWeekNavigation();
 
   useEffect(() => {
+    const from = weekRange?.from;
+    const to = weekRange?.to;
     scheduleService
-      .getMySchedule()
+      .getMySchedule(from, to)
       .then((items) => {
         if (items) {
           const mapped: TeachingSession[] = items.map((it, idx) => ({
@@ -43,8 +49,9 @@ export default function TeacherSchedulePage() {
             time: `${it.startTime} - ${it.endTime}`,
             sessionIndex: idx + 1,
             totalSessions: items.length,
-            attendanceStatus: 'in_progress',
-            studentsCount: 40,
+            attendanceStatus: it.attendanceLocked ? 'completed' : 'in_progress',
+            topic: it.topic,
+            attendanceLocked: it.attendanceLocked,
           }));
           dispatch({ type: 'SET_SESSIONS', payload: mapped });
         }
@@ -52,7 +59,7 @@ export default function TeacherSchedulePage() {
       .catch(() => {
         toast.error('Không thể tải lịch giảng dạy từ hệ thống.');
       });
-  }, [toast]);
+  }, [toast, weekRange]);
 
   const handleOpenAttendance = async (session: TeachingSession) => {
     dispatch({ type: 'OPEN_ATTENDANCE_MODAL', payload: session });
@@ -78,7 +85,6 @@ export default function TeacherSchedulePage() {
         }
       }
     } catch {
-      // Keep activeSessionId as fallback
     }
 
     try {
@@ -189,7 +195,6 @@ export default function TeacherSchedulePage() {
           toast.warning('Dữ liệu điểm danh vừa được cập nhật từ phiên khác. Hệ thống đã đồng bộ lại dữ liệu mới nhất, vui lòng kiểm tra và lưu lại.');
           return;
         } catch {
-          // Fall through
         }
       }
       toast.error(getApiErrorMessage(err, 'Có lỗi khi lưu dữ liệu điểm danh về hệ thống.'));
@@ -260,7 +265,6 @@ export default function TeacherSchedulePage() {
           toast.warning('Dữ liệu điểm danh vừa được cập nhật từ phiên khác. Hệ thống đã đồng bộ lại dữ liệu mới nhất, vui lòng kiểm tra trước khi khóa.');
           return;
         } catch {
-          // Fall through
         }
       }
       toast.error(getApiErrorMessage(err, 'Có lỗi khi khóa điểm danh buổi học.'));
@@ -321,6 +325,14 @@ export default function TeacherSchedulePage() {
         </div>
       </div>
 
+      <WeekNavigator
+        weekOffset={weekOffset}
+        weekRange={weekRange}
+        onOffsetChange={setWeekOffset}
+        themeColor="indigo"
+        allWeeksLabel="Toàn bộ lịch giảng dạy"
+      />
+
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold text-slate-900">Danh sách các ca học sắp tới</h2>
@@ -359,11 +371,16 @@ export default function TeacherSchedulePage() {
                 </div>
 
                 <h3 className="text-base font-semibold text-slate-900">{session.subject}</h3>
+                {session.topic && (
+                  <p className="text-xs text-indigo-700 font-medium bg-indigo-50/70 px-2 py-0.5 rounded-md inline-block">
+                    {session.topic}
+                  </p>
+                )}
 
                 <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
                   <span className="flex items-center gap-1">
                     <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
-                    {session.date}
+                    {formatDate(session.date)}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="h-3.5 w-3.5 text-slate-400" />
@@ -373,10 +390,12 @@ export default function TeacherSchedulePage() {
                     <MapPin className="h-3.5 w-3.5 text-slate-400" />
                     {session.room}
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3.5 w-3.5 text-slate-400" />
-                    {session.studentsCount} sinh viên
-                  </span>
+                  {session.studentsCount !== undefined && (
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5 text-slate-400" />
+                      {session.studentsCount} sinh viên
+                    </span>
+                  )}
                 </div>
               </div>
 

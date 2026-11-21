@@ -80,6 +80,7 @@ export interface ClassFilter {
   status?: ClassStatus | 'ALL';
   instructorId?: string;
   keyword?: string;
+  gradingStatus?: GradingStatus | 'ALL';
 }
 
 export interface CreateClassPayload {

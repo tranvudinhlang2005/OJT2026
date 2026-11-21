@@ -109,9 +109,6 @@ export function getApiErrorDetails(error: unknown, fallback = 'Đã có lỗi x�
   return { message: fallback, fieldErrors: {} };
 }
 
-/**
- * Standardized helper to extract a friendly error message from Axios errors or backend responses.
- */
 export function getApiErrorMessage(error: unknown, fallback = 'Đã có lỗi xảy ra. Vui lòng thử lại.'): string {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data;

@@ -47,7 +47,6 @@ export default function ClassesPage() {
 
   const [isLoading, setIsLoading] = useState(true);
 
-  // Consolidated modal states via useModal
   const createModal = useModal();
   const editModal = useModal<ClassOffering>();
   const assignModal = useModal<ClassOffering>();
@@ -86,10 +85,24 @@ export default function ClassesPage() {
   const loadClassesData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const [filteredData, fullData] = await Promise.all([
-        classService.getClasses(filter),
-        classService.getClasses(),
-      ]);
+      const isDefaultFilter =
+        (!filter.semester || filter.semester === 'ALL') &&
+        (!filter.courseId || filter.courseId === 'ALL') &&
+        (!filter.status || filter.status === 'ALL') &&
+        !filter.keyword?.trim();
+
+      let filteredData: ClassOffering[];
+      let fullData: ClassOffering[];
+
+      if (isDefaultFilter) {
+        fullData = await classService.getClasses();
+        filteredData = fullData;
+      } else {
+        [filteredData, fullData] = await Promise.all([
+          classService.getClasses(filter),
+          classService.getClasses(),
+        ]);
+      }
       setClasses(filteredData);
       setAllClasses(fullData);
 

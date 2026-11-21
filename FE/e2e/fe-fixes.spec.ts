@@ -1047,4 +1047,202 @@ test.describe('FE Bugfixes Verification Suite', () => {
     expect(attendancePutUrl).toContain('/api/v1/sessions/201/attendance');
     expect(attendancePutUrl).not.toContain('sched-');
   });
+
+  test('Lỗi 18 (TDD - Slice 1): Thời khóa biểu cá nhân của Học viên và Giảng viên mặc định hiển thị tuần hiện tại với tham số from và to', async ({ page }) => {
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    let scheduleQueryUrl: string | null = null;
+    await page.route('**/api/v1/me/schedule*', async (route) => {
+      scheduleQueryUrl = route.request().url();
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 101,
+            classCode: 'INT3110.O21',
+            courseName: 'CSDL Nâng cao',
+            sessionDate: '2026-03-02',
+            startTime: '08:00',
+            endTime: '11:30',
+            roomCode: 'A1-201',
+            dayOfWeek: 2,
+            period: '1-4',
+          },
+        ]),
+      });
+    });
+
+    await page.goto('/student/schedule');
+    await expect(page.getByRole('heading', { name: /thời khóa biểu/i })).toBeVisible();
+
+    await expect.poll(() => scheduleQueryUrl).toBeTruthy();
+    const url = new URL(scheduleQueryUrl!);
+    const fromParam = url.searchParams.get('from');
+    const toParam = url.searchParams.get('to');
+
+    expect(fromParam).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(toParam).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  test('Lỗi 19 (TDD - Slice 2): Trang Hồ sơ Học viên chỉ hiển thị dữ liệu chân thực từ Backend và định dạng ngày sinh đúng chuẩn DD/MM/YYYY', async ({ page }) => {
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    await page.route('**/api/v1/students/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: '3',
+          studentCode: 'SV2026001',
+          fullName: 'Nguyễn Văn Sinh Viên',
+          email: 'student@university.edu.vn',
+          dateOfBirth: '2004-11-20T00:00:00.000Z',
+          homeroomClass: 'CNTT2022',
+          status: 'ACTIVE',
+        }),
+      });
+    });
+
+    await page.goto('/student/profile');
+    await expect(page.getByRole('heading', { name: 'Nguyễn Văn Sinh Viên' })).toBeVisible();
+
+    // 1. Phải format ngày sinh theo DD/MM/YYYY
+    await expect(page.getByText('20/11/2004')).toBeVisible();
+
+    // 2. Không được hiển thị dữ liệu ngụy tạo theo quy chuẩn truthful-data.md
+    await expect(page.getByText(/140 Tín chỉ/i)).not.toBeVisible();
+    await expect(page.getByText('Kỹ thuật Phần mềm')).not.toBeVisible();
+  });
+
+  test('Lỗi 20 (TDD - Slice 3): Thời khóa biểu Giảng viên hiển thị chủ đề bài dạy (topic) và phản ánh đúng trạng thái điểm danh từ API', async ({ page }) => {
+    await injectSession(page, INSTRUCTOR_USER);
+    await setupDefaultMocks(page, INSTRUCTOR_USER);
+
+    await page.route('**/api/v1/me/schedule*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 301,
+            classCode: 'INT3110.O21',
+            courseName: 'Cơ sở dữ liệu nâng cao',
+            sessionDate: '2026-03-02',
+            startTime: '08:00:00',
+            endTime: '11:30:00',
+            roomCode: 'A1-201',
+            topic: 'Thiết kế chỉ mục B-Tree và Tối ưu truy vấn',
+            attendanceLocked: true,
+          },
+        ]),
+      });
+    });
+
+    await page.goto('/teacher/schedule');
+    await expect(page.getByRole('heading', { name: /lịch giảng dạy & điểm danh/i })).toBeVisible();
+
+    // 1. Phải hiển thị chủ đề bài dạy topic theo spec
+    await expect(page.getByText('Thiết kế chỉ mục B-Tree và Tối ưu truy vấn')).toBeVisible();
+
+    // 2. Buổi học attendanceLocked = true phải có badge 'Đã điểm danh'
+    await expect(page.getByText('Đã điểm danh')).toBeVisible();
+  });
+
+  test('Lỗi 21 (TDD - Slice 4): Trang Nhập điểm Giảng viên hiển thị chuẩn đánh giá tỷ lệ chuyên cần tối thiểu và điểm đạt tối thiểu', async ({ page }) => {
+    await injectSession(page, INSTRUCTOR_USER);
+    await setupDefaultMocks(page, INSTRUCTOR_USER);
+
+    await page.goto('/teacher/grades');
+    await expect(page.getByRole('heading', { name: /quản lý kết quả/i })).toBeVisible();
+
+    const editBtn = page.getByRole('button', { name: /nhập điểm|xem điểm/i }).first();
+    await expect(editBtn).toBeVisible();
+    await editBtn.click();
+
+    await expect(page.getByRole('heading', { name: /sổ điểm/i })).toBeVisible();
+
+    // 1. Phải hiển thị tỷ lệ chuyên cần tối thiểu theo spec
+    await expect(page.getByText(/chuyên cần tối thiểu:/i)).toBeVisible();
+
+    // 2. Phải hiển thị điểm đạt chuẩn theo spec
+    await expect(page.getByText(/điểm đạt:/i)).toBeVisible();
+  });
+
+  test('Lỗi 22 (TDD - Slice 5): Cổng Đăng ký Học phần hiển thị hạn chót hủy môn kèm giờ phút (formatDateTime) và dialog xác nhận đầy đủ lịch học', async ({ page }) => {
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    const dialogMessages: string[] = [];
+    page.on('dialog', async (dialog) => {
+      dialogMessages.push(dialog.message());
+      await dialog.accept();
+    });
+
+    await page.route('**/api/v1/classes?*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: [
+            {
+              id: 99,
+              classCode: 'INT3110.O21',
+              courseId: 1,
+              courseCode: 'INT3110',
+              courseName: 'Cơ sở dữ liệu nâng cao',
+              course: { id: 1, code: 'INT3110', name: 'Cơ sở dữ liệu nâng cao', credits: 3 },
+              semester: 'Học kỳ 1 (2026-2027)',
+              status: 'OPEN',
+              startDate: '2026-03-01',
+              endDate: '2026-06-30',
+              cancelDeadline: '2026-03-15T17:30:00',
+              maxCapacity: 50,
+              enrolledCount: 10,
+              availableSeats: 40,
+              isFull: false,
+              instructorId: 1,
+              instructorName: 'Nguyễn Văn Giảng',
+              instructor: { id: 1, fullName: 'Nguyễn Văn Giảng' },
+            },
+          ],
+          page: 0,
+          size: 10,
+          totalElements: 1,
+          totalPages: 1,
+        }),
+      });
+    });
+
+    await page.goto('/student/registration');
+    await expect(page.getByRole('heading', { name: /đăng ký lớp học phần/i })).toBeVisible();
+
+    // 1. Hạn hủy môn phải hiển thị đầy đủ ngày và giờ phút theo spec
+    await expect(page.getByText('Hạn hủy: 15/03/2026 17:30')).toBeVisible();
+
+    // 2. Dialog đăng ký phải chứa thông tin xác nhận và lịch học
+    await page.getByRole('button', { name: 'Đăng ký', exact: true }).first().click();
+    await expect.poll(() => dialogMessages.length).toBeGreaterThan(0);
+    expect(dialogMessages[0]).toContain('Xác nhận đăng ký');
+    expect(dialogMessages[0]).toContain('INT3110');
+  });
+
+  test('Lỗi 23 (TDD - Slice 6): Dashboard quản trị không chứa mã đặc tả nội bộ (D18) trong văn bản giao diện', async ({ page }) => {
+    await injectSession(page, ADMIN_USER);
+    await setupDefaultMocks(page, ADMIN_USER);
+
+    await page.goto('/admin');
+    await expect(page.getByRole('heading', { name: /tổng quan/i })).toBeVisible();
+
+    await page.getByRole('button', { name: /nhật ký sửa điểm/i }).click();
+    await expect(page.getByText(/thanh tra tính toàn vẹn của điểm số/i)).toBeVisible();
+
+    // 1. Phải chứa nội dung giải thích lý do
+    await expect(page.getByText(/bắt buộc giải trình lý do/i)).toBeVisible();
+
+    // 2. Tuyệt đối không được chứa mã đặc tả nội bộ (D18)
+    await expect(page.getByText('(D18)')).not.toBeVisible();
+  });
 });

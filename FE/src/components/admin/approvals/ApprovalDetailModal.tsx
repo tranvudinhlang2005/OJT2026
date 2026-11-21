@@ -36,10 +36,11 @@ export function ApprovalDetailModal({
 
   if (!isOpen || !resultDetail) return null;
 
-  const totalStudents = resultDetail.items.length;
-  const passedStudents = resultDetail.items.filter((i) => i.finalStatus === 'PASSED').length;
-  const failedStudents = resultDetail.items.filter((i) => i.finalStatus === 'FAILED').length;
-  const hasIncompleteGrades = resultDetail.items.some(
+  const items = Array.isArray(resultDetail.items) ? resultDetail.items : [];
+  const totalStudents = items.length;
+  const passedStudents = items.filter((i) => i.finalStatus === 'PASSED').length;
+  const failedStudents = items.filter((i) => i.finalStatus === 'FAILED').length;
+  const hasIncompleteGrades = items.some(
     (i) => i.midtermScore === null || i.finalScore === null
   );
 
@@ -240,7 +241,7 @@ export function ApprovalDetailModal({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 bg-white">
-                  {resultDetail.items.map((item, idx) => {
+                  {items.map((item, idx) => {
                     const isPassed = item.finalStatus === 'PASSED';
                     const isFailed = item.finalStatus === 'FAILED';
 

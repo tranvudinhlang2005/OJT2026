@@ -36,6 +36,7 @@ export const approvalService = {
     const classes = await classService.getClasses({
       semester: filter.semester,
       keyword: filter.keyword,
+      gradingStatus: filter.gradingStatus && filter.gradingStatus !== 'ALL' ? filter.gradingStatus : undefined,
     });
 
     const targetClasses = classes.filter((cls) => {
@@ -65,7 +66,7 @@ export const approvalService = {
   },
 
   async getApprovalStats(): Promise<ApprovalStats> {
-    const classes = await classService.getClasses();
+    const classes = await classService.getClasses({ status: 'IN_PROGRESS' });
 
     return {
       total: classes.length,

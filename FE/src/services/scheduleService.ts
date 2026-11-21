@@ -9,6 +9,7 @@ export interface ScheduleItem {
   classCode: string;
   courseName: string;
   topic?: string;
+  attendanceLocked?: boolean;
 }
 
 interface BackendScheduleResponse {
@@ -19,6 +20,7 @@ interface BackendScheduleResponse {
   classCode: string;
   courseName: string;
   topic: string | null;
+  attendanceLocked?: boolean | null;
 }
 
 export const scheduleService = {
@@ -39,6 +41,7 @@ export const scheduleService = {
       classCode: it.classCode,
       courseName: it.courseName,
       topic: it.topic || undefined,
+      attendanceLocked: Boolean(it.attendanceLocked),
     }));
   },
 };

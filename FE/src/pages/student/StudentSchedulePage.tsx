@@ -13,6 +13,8 @@ import { ROUTES } from '../../routes/paths';
 import { useToast } from '../../contexts/ToastContext';
 import { scheduleService, type ScheduleItem } from '../../services/scheduleService';
 import { formatDate } from '../../utils/dateFormat';
+import { useWeekNavigation } from '../../hooks/useWeekNavigation';
+import { WeekNavigator } from '../../components/common/WeekNavigator';
 
 const DAYS = [
   { value: 1, label: 'Thứ Hai' },
@@ -29,12 +31,16 @@ export default function StudentSchedulePage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { weekOffset, setWeekOffset, weekRange } = useWeekNavigation();
 
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
       try {
-        const items = await scheduleService.getMySchedule();
+        setLoading(true);
+        const from = weekRange?.from;
+        const to = weekRange?.to;
+        const items = await scheduleService.getMySchedule(from, to);
         if (isMounted) setScheduleItems(items);
       } catch {
         toast.error('Không thể tải dữ liệu thời khóa biểu từ hệ thống.');
@@ -47,7 +53,7 @@ export default function StudentSchedulePage() {
     return () => {
       isMounted = false;
     };
-  }, [toast]);
+  }, [toast, weekRange]);
 
   const sortedItems = useMemo(() => {
     return [...scheduleItems].sort((a, b) => {
@@ -102,6 +108,14 @@ export default function StudentSchedulePage() {
           </div>
         </div>
       </div>
+
+      <WeekNavigator
+        weekOffset={weekOffset}
+        weekRange={weekRange}
+        onOffsetChange={setWeekOffset}
+        themeColor="blue"
+        allWeeksLabel="Toàn bộ thời khóa biểu"
+      />
 
       {loading ? (
         <div className="flex h-48 items-center justify-center">

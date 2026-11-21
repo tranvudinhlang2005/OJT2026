@@ -9,21 +9,23 @@ import {
 import { useToast } from '../../contexts/ToastContext';
 import { studentService, type StudentResult, type StudentProfile } from '../../services/studentService';
 import { courseService } from '../../services/courseService';
-import { toLetterGrade, calculateGpa4, getAcademicClassification } from '../../utils/gradeUtils';
+import type { CourseItem } from '../../types/course';
+import { toLetterGrade, calculateGpa4, calculateAccumulatedCredits, getAcademicClassification } from '../../utils/gradeUtils';
+import { DEFAULT_COURSE_CREDITS } from '../../constants/academic';
 
 export default function StudentGradesPage() {
   const { toast } = useToast();
   const [selectedSemester, setSelectedSemester] = useState('ALL');
   const [results, setResults] = useState<StudentResult[]>([]);
+  const [courses, setCourses] = useState<CourseItem[]>([]);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
-  const [courseCreditsMap, setCourseCreditsMap] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
       try {
-        const [resList, prof, courses] = await Promise.all([
+        const [resList, prof, courseList] = await Promise.all([
           studentService.getMyResults(),
           studentService.getMyProfile().catch(() => null),
           courseService.getCourses().catch(() => []),
@@ -31,11 +33,7 @@ export default function StudentGradesPage() {
         if (isMounted) {
           setResults(resList);
           setProfile(prof);
-          const cMap: Record<string, number> = {};
-          courses.forEach((c) => {
-            cMap[c.code] = c.credits;
-          });
-          setCourseCreditsMap(cMap);
+          setCourses(courseList);
         }
       } catch {
         if (isMounted) {
@@ -52,36 +50,38 @@ export default function StudentGradesPage() {
     };
   }, [toast]);
 
+  const courseCreditsMap = useMemo(() => {
+    return new Map<string, number>(courses.map((c) => [c.code, c.credits]));
+  }, [courses]);
+
+  const resultsWithCredits = useMemo(() => {
+    return results.map((r) => ({
+      ...r,
+      credits: courseCreditsMap.get(r.courseCode) || DEFAULT_COURSE_CREDITS,
+    }));
+  }, [results, courseCreditsMap]);
+
   const semesters = useMemo(() => {
     const set = new Set(results.map((g) => g.semester));
     return Array.from(set);
   }, [results]);
 
   const filteredGrades = useMemo(() => {
-    if (selectedSemester === 'ALL') return results;
-    return results.filter((g) => g.semester === selectedSemester);
-  }, [results, selectedSemester]);
+    if (selectedSemester === 'ALL') return resultsWithCredits;
+    return resultsWithCredits.filter((g) => g.semester === selectedSemester);
+  }, [resultsWithCredits, selectedSemester]);
 
   const semesterGpa = useMemo(() => {
-    const withCredits = filteredGrades.map((g) => ({
-      totalScore: g.totalScore,
-      credits: courseCreditsMap[g.courseCode] || 3,
-    }));
-    return calculateGpa4(withCredits).toFixed(2);
-  }, [filteredGrades, courseCreditsMap]);
+    return calculateGpa4(filteredGrades).toFixed(2);
+  }, [filteredGrades]);
 
   const accumulatedCredits = useMemo(() => {
-    const passed = results.filter((r) => r.finalStatus === 'PASSED');
-    return passed.reduce((acc, curr) => acc + (courseCreditsMap[curr.courseCode] || 3), 0);
-  }, [results, courseCreditsMap]);
+    return calculateAccumulatedCredits(resultsWithCredits);
+  }, [resultsWithCredits]);
 
   const totalGpa4 = useMemo(() => {
-    const withCredits = results.map((g) => ({
-      totalScore: g.totalScore,
-      credits: courseCreditsMap[g.courseCode] || 3,
-    }));
-    return calculateGpa4(withCredits);
-  }, [results, courseCreditsMap]);
+    return calculateGpa4(resultsWithCredits);
+  }, [resultsWithCredits]);
 
   return (
     <div className="space-y-6">
