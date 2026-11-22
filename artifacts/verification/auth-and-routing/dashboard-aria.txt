@@ -1,0 +1,107 @@
+Admin Portal
+Quản trị hệ thống
+MENU QUẢN TRỊ
+Tổng quan
+Tài khoản & Hồ sơ
+Khóa học & Phòng học
+Lớp & Lịch học
+Xét duyệt kết quả
+AD
+
+Admin Đào tạo
+
+admin@edu.vn
+
+Tổng quan hệ thống
+Tổng quan vận hành
+Nhật ký sửa điểm (Audit)
+HỌC KỲ
+Tất cả học kỳ
+MÔN HỌC
+Tất cả môn học
+TỪ NGÀY
+ĐẾN NGÀY
+Làm mới
+
+TỶ LỆ LẤP ĐẦY
+
+0%
+
+Lớp mở & đang học
+
+ĐANG VẬN HÀNH
+
+0 lớp
+
+0 mở ĐK • 0 đang học
+
+TỔNG GHI DANH
+
+0
+
+TB 0 SV / lớp
+
+Tổng sinh viên ghi danh
+
+TỔNG SỨC CHỨA
+
+0 chỗ
+
+Tối đa 0 lớp học
+
+Cơ cấu trạng thái lớp học phần
+0 lớp học
+Tỷ trọng 5 trạng thái
+Toàn khóa học
+0
+LỚP HỌC
+Mở đăng ký
+0
+(0%)
+Đang diễn ra
+0
+(0%)
+Đã hoàn tất
+0
+(0%)
+Bản nháp
+0
+(0%)
+Đã hủy
+0
+(0%)
+Đang vận hành: 0 lớp
+Hoàn tất: 0 lớp
+Biểu đồ Sĩ số theo lớp học
+Đang hoạt động
+Top sĩ số
+Tất cả
+Sĩ số sinh viên ghi danh
+0 lớp hiển thị
+Không có lớp học phần nào phù hợp trong bộ lọc hiện tại.
+Hiệu suất đào tạo theo từng lớp học phần
+LỚP HỌC PHẦN	HỌC KỲ	TRẠNG THÁI	TỶ LỆ LẤP ĐẦY	TỶ LỆ ĐẠT
+Không tìm thấy lớp học phần phù hợp
+Hiển thị 1 - 0 trên tổng số 0 lớp
+1 / 1
+Đang tải thông tin an ninh hệ thống...
+
+Thành công
+
+Đăng nhập thành công (Admin Đào tạo)
+
+Thất bại
+
+Không thể tải danh mục bổ trợ cho Dashboard.
+
+Thất bại
+
+Không thể tải danh mục bổ trợ cho Dashboard.
+
+Thất bại
+
+Có lỗi xảy ra khi tải dữ liệu Dashboard.
+
+Thất bại
+
+Có lỗi xảy ra khi tải dữ liệu Dashboard.

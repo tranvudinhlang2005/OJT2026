@@ -1,0 +1,59 @@
+Admin Portal
+Quản trị hệ thống
+MENU QUẢN TRỊ
+Tổng quan
+Tài khoản & Hồ sơ
+Khóa học & Phòng học
+Lớp & Lịch học
+Xét duyệt kết quả
+AD
+
+Admin Đào tạo
+
+admin@edu.vn
+
+Quản lý Khóa học & Phòng học
+Thêm Phòng học mới
+TỔNG MÔN HỌC
+
+1
+
+1 môn đang kích hoạt
+
+MÔN ĐANG MỞ
+
+1
+
+Sẵn sàng mở lớp học
+
+TỔNG PHÒNG HỌC
+
+2
+
+2 phòng hoạt động
+
+PHÒNG BẢO TRÌ
+
+0
+
+Đang tạm khóa xếp lịch
+
+Danh mục Môn học (1)
+Danh mục Phòng học (2)
+Tất cả trạng thái
+Sẵn sàng
+Bảo trì
+MÃ PHÒNG	SỨC CHỨA TỐI ĐA	TRẠNG THÁI PHÒNG	THAO TÁC
+
+A1-201
+	
+40 chỗ ngồi
+	
+Sẵn sàng sử dụng	
+
+
+B2-305
+	
+60 chỗ ngồi
+	
+Sẵn sàng sử dụng	

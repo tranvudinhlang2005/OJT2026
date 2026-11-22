@@ -1,0 +1,17 @@
+{
+  "feature": "auth-and-routing",
+  "timestamp": "2026-11-22T05:34:04.145Z",
+  "steps": [
+    {
+      "step": "Open Login",
+      "url": "http://localhost:5173/login",
+      "status": "OK"
+    },
+    {
+      "step": "Admin Dashboard Redirect",
+      "url": "http://localhost:5173/admin",
+      "status": "OK"
+    }
+  ],
+  "success": true
+}

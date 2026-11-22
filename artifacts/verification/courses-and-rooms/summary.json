@@ -1,0 +1,17 @@
+{
+  "feature": "courses-and-rooms",
+  "timestamp": "2026-11-22T05:37:34.724Z",
+  "steps": [
+    {
+      "step": "Open Courses Tab",
+      "url": "http://localhost:5173/admin/courses-rooms",
+      "status": "OK"
+    },
+    {
+      "step": "Switch to Classrooms Tab",
+      "url": "http://localhost:5173/admin/courses-rooms",
+      "status": "OK"
+    }
+  ],
+  "success": true
+}
