@@ -1,5 +1,6 @@
 import { Users, TrendingUp, Award, BookOpen, GraduationCap, UserCheck } from 'lucide-react';
 import type { DashboardSummary, DashboardClassItem } from '../../../types/dashboard';
+import { formatPct } from '../../../utils/formatPct';
 
 interface DashboardKPIsProps {
   summary: DashboardSummary;
@@ -7,11 +8,6 @@ interface DashboardKPIsProps {
 }
 
 export function DashboardKPIs({ summary, classes = [] }: DashboardKPIsProps) {
-  const formatPct = (val: number | null) => {
-    if (val === null) return null;
-    return (val <= 1 ? val * 100 : val).toFixed(1);
-  };
-
   const fillRatePct = formatPct(summary.fillRate);
   const completionRatePct = formatPct(summary.completionRate);
   const attendanceRatePct = formatPct(summary.averageAttendanceRate);
