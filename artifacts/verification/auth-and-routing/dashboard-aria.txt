@@ -43,6 +43,12 @@ TB 0 SV / lớp
 
 Tổng sinh viên ghi danh
 
+TỶ LỆ CHUYÊN CẦN
+
+N/A
+
+Toàn bộ các buổi điểm danh
+
 TỔNG SỨC CHỨA
 
 0 chỗ
