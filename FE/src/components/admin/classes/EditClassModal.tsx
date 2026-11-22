@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Edit, ShieldAlert, Loader2 } from 'lucide-react';
 import type { ClassOffering, UpdateClassPayload } from '../../../types/classOffering';
 import { getApiErrorDetails } from '../../../services/axiosClient';
-import { validateClassDateAndWeights } from '../../../utils/validation';
+import { validateClassDates } from '../../../utils/validation';
 
 interface EditClassModalProps {
   isOpen: boolean;
@@ -93,13 +93,7 @@ export function EditClassModal({
     if (!classOffering || isSubmitting || submittingRef.current) return;
     setError(null);
 
-    const validationErr = validateClassDateAndWeights(
-      startDate,
-      endDate,
-      cancelDeadline,
-      midtermWeight,
-      finalWeight
-    );
+    const validationErr = validateClassDates(startDate, endDate, cancelDeadline);
     if (validationErr) {
       setError(validationErr);
       return;

@@ -103,9 +103,8 @@ export const userService = {
             axiosClient
               .get<PageResponse<BackendStudentResponse>>('/students', { params: { size: 100 } })
               .then((res) => {
-                if (res.data?.items) {
-                  res.data.items.forEach((s) => studentsMap.set(s.userId, s));
-                }
+                const items = Array.isArray(res.data?.items) ? res.data.items : [];
+                items.forEach((s) => studentsMap.set(s.userId, s));
               })
               .catch(() => {})
           );
@@ -115,9 +114,8 @@ export const userService = {
             axiosClient
               .get<PageResponse<BackendInstructorSummary>>('/instructors', { params: { size: 100 } })
               .then((res) => {
-                if (res.data?.items) {
-                  res.data.items.forEach((i) => instructorsMap.set(i.userId, i));
-                }
+                const items = Array.isArray(res.data?.items) ? res.data.items : [];
+                items.forEach((i) => instructorsMap.set(i.userId, i));
               })
               .catch(() => {})
           );

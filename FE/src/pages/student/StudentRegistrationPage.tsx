@@ -99,8 +99,6 @@ export default function StudentRegistrationPage() {
     }, 0);
   }, [registeredEnrollments, classesList]);
 
-  const [currentDate] = useState(() => new Date());
-
   const handleRegister = async (cls: OpenClass) => {
     if (
       !confirm(
@@ -129,24 +127,9 @@ export default function StudentRegistrationPage() {
     }
   };
 
-  const handleUnregister = async (target: OpenClass | string) => {
-    let enrollmentId: string | undefined;
-    let label = '';
-
-    if (typeof target === 'string') {
-      enrollmentId = target;
-      const enr = enrollments.find((e) => e.enrollmentId === target);
-      label = enr ? `[${enr.courseCode}] ${enr.courseName}` : '';
-    } else {
-      const enrollment = enrollments.find((e) => e.classId === target.id && e.status === 'ENROLLED');
-      if (!enrollment) {
-        toast.error('Không tìm thấy thông tin đăng ký của lớp này.');
-        return;
-      }
-      enrollmentId = enrollment.enrollmentId;
-      label = `[${target.courseCode}] ${target.courseName}`;
-    }
-
+  const handleUnregister = async (enrollmentId: string) => {
+    const enr = enrollments.find((e) => e.enrollmentId === enrollmentId);
+    const label = enr ? `[${enr.courseCode}] ${enr.courseName}` : '';
     const details = label ? `học phần ${label}` : 'lớp này';
     if (!confirm(`Bạn có chắc chắn muốn hủy đăng ký ${details} không? Chỗ ngồi của bạn sẽ được giải phóng.`)) return;
 
@@ -425,23 +408,10 @@ export default function StudentRegistrationPage() {
 
                           <td className="px-4 py-4 text-center">
                             {isEnrolled ? (
-                              <div className="flex flex-col items-center gap-1">
-                                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
-                                  <CheckCircle2 className="h-4 w-4" />
-                                  Đã đăng ký
-                                </span>
-                                {cls.cancelDeadline && new Date(cls.cancelDeadline) <= currentDate ? (
-                                  <span className="text-xs text-slate-400">Đã quá hạn hủy</span>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleUnregister(cls)}
-                                    className="text-xs font-medium text-rose-600 hover:text-rose-800 hover:underline transition"
-                                  >
-                                    Hủy môn
-                                  </button>
-                                )}
-                              </div>
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Đã đăng ký
+                              </span>
                             ) : (
                               <button
                                 type="button"
@@ -538,7 +508,10 @@ export default function StudentRegistrationPage() {
                     enrollments
                       .filter((e) => enrollmentStatusFilter === 'ALL' || e.status === enrollmentStatusFilter)
                       .map((enr) => {
-                        const isPastDeadline = Boolean(enr.cancelDeadline && currentTimestamp > new Date(enr.cancelDeadline).getTime());
+                        const isPastDeadline = Boolean(
+                          (enr.cancelDeadline && currentTimestamp > new Date(enr.cancelDeadline).getTime()) ||
+                          enr.classStatus === 'IN_PROGRESS'
+                        );
                         return (
                           <tr key={enr.enrollmentId} className="hover:bg-slate-50/70 transition">
                             <td className="px-4 py-4">

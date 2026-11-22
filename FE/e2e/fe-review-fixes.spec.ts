@@ -112,7 +112,7 @@ test.describe('Code Review Improvements TDD Suite', () => {
     expect(count).toBe(0);
   });
 
-  test('6. Spec: Student Registration open classes table disables cancel when cancelDeadline passed', async ({ page }) => {
+  test('6. Spec: Student Registration Section A displays enrolled status without inline unregister button', async ({ page }) => {
     await injectSession(page, STUDENT_USER);
     await setupDefaultMocks(page, STUDENT_USER);
 
@@ -132,7 +132,7 @@ test.describe('Code Review Improvements TDD Suite', () => {
               status: 'OPEN',
               capacity: 40,
               enrolledCount: 1,
-              cancelDeadline: '2020-01-01T23:59:59Z',
+              cancelDeadline: '2026-12-31T23:59:59Z',
             },
           ],
           totalElements: 1,
@@ -154,7 +154,8 @@ test.describe('Code Review Improvements TDD Suite', () => {
               courseName: 'Cơ sở dữ liệu nâng cao',
               semester: 'SUM2026',
               status: 'ENROLLED',
-              cancelDeadline: '2020-01-01T23:59:59Z',
+              classStatus: 'OPEN',
+              cancelDeadline: '2026-12-31T23:59:59Z',
             },
           ],
           totalElements: 1,
@@ -167,13 +168,72 @@ test.describe('Code Review Improvements TDD Suite', () => {
 
     const openRow = page.locator('tr:has-text("INT3110.O21")');
     await expect(openRow).toBeVisible();
+    await expect(openRow.getByText('Đã đăng ký')).toBeVisible();
     await expect(openRow.getByRole('button', { name: 'Hủy môn' })).not.toBeVisible();
-    await expect(openRow.getByText('Đã quá hạn hủy')).toBeVisible();
   });
 
-  test('7. Spec: Student Grades displays attendance progress bar and alert when below requirement', async ({ page }) => {
+  test('7. Spec: Student Registration Section B disables cancel when class is IN_PROGRESS', async ({ page }) => {
     await injectSession(page, STUDENT_USER);
     await setupDefaultMocks(page, STUDENT_USER);
+
+    await page.route('**/api/v1/students/me/enrollments**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: [
+            {
+              enrollmentId: 2,
+              classId: 102,
+              classCode: 'INT3115.O21',
+              courseCode: 'INT3115',
+              courseName: 'Lập trình Web nâng cao',
+              semester: 'SUM2026',
+              status: 'ENROLLED',
+              classStatus: 'IN_PROGRESS',
+              cancelDeadline: '2029-12-31T23:59:59Z',
+            },
+          ],
+          totalElements: 1,
+        }),
+      });
+    });
+
+    await page.goto('/student/registration');
+    await page.getByRole('button', { name: /lớp đã đăng ký/i }).click();
+
+    const enrolledRow = page.locator('tr:has-text("INT3115.O21")');
+    await expect(enrolledRow).toBeVisible();
+    await expect(enrolledRow.getByText('Đã quá hạn hủy')).toBeVisible();
+    await expect(enrolledRow.getByRole('button', { name: 'Hủy đăng ký' })).not.toBeVisible();
+  });
+
+  test('8. Spec: Student Grades displays attendance alert when below course minAttendancePct', async ({ page }) => {
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    await page.route('**/api/v1/courses**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: [
+            {
+              id: 1,
+              code: 'INT3110',
+              name: 'Cơ sở dữ liệu nâng cao',
+              credits: 3,
+              durationHours: 45,
+              minAttendancePct: 90.0,
+              passScore: 5.0,
+              midtermWeight: 0.3,
+              finalWeight: 0.7,
+              isActive: true,
+            },
+          ],
+        }),
+      });
+    });
 
     await page.route('**/api/v1/students/me/results**', async (route) => {
       await route.fulfill({
@@ -186,7 +246,7 @@ test.describe('Code Review Improvements TDD Suite', () => {
               courseName: 'Cơ sở dữ liệu nâng cao',
               classCode: 'INT3110.O21',
               semester: 'SUM2026',
-              attendanceRate: 70,
+              attendanceRate: 85,
               midtermScore: 8.0,
               finalScore: 7.5,
               totalScore: 7.7,
@@ -202,10 +262,10 @@ test.describe('Code Review Improvements TDD Suite', () => {
 
     const progressBar = page.locator('[role="progressbar"]');
     await expect(progressBar).toBeVisible();
-    await expect(page.getByText(/cảnh báo|chưa đạt chuẩn|không đủ điều kiện/i)).toBeVisible();
+    await expect(page.getByText('Cảnh báo')).toBeVisible();
   });
 
-  test('8. Spec: AttendanceSheetModal displays lockedAt formatted timestamp in locked status badge', async ({ page }) => {
+  test('9. Spec: AttendanceSheetModal displays lockedAt from sheet attendance response', async ({ page }) => {
     const INSTRUCTOR_USER: MockUserSession = {
       id: '2',
       name: 'Nguyễn Văn Giảng Viên',
@@ -228,10 +288,28 @@ test.describe('Code Review Improvements TDD Suite', () => {
             endTime: '11:30:00',
             roomCode: 'A101',
             attendanceLocked: true,
-            lockedAt: '2026-03-20T11:35:00Z',
             topic: 'Giới thiệu CSDL nâng cao',
           },
         ]),
+      });
+    });
+
+    await page.route('**/api/v1/sessions/201/attendance**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          sessionId: 201,
+          classId: 101,
+          classCode: 'INT3110.O21',
+          sessionDate: '2026-03-20',
+          startTime: '08:00:00',
+          endTime: '11:30:00',
+          attendanceLocked: true,
+          lockedAt: '2026-03-20T11:35:00Z',
+          version: 1,
+          items: [],
+        }),
       });
     });
 

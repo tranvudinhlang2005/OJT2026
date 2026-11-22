@@ -54,12 +54,17 @@ export default function StudentGradesPage() {
     return new Map<string, number>(courses.map((c) => [c.code, c.credits]));
   }, [courses]);
 
+  const courseMinAttendanceMap = useMemo(() => {
+    return new Map<string, number>(courses.map((c) => [c.code, c.minAttendancePct]));
+  }, [courses]);
+
   const resultsWithCredits = useMemo(() => {
     return results.map((r) => ({
       ...r,
       credits: courseCreditsMap.get(r.courseCode) || DEFAULT_COURSE_CREDITS,
+      minAttendancePct: courseMinAttendanceMap.get(r.courseCode) ?? DEFAULT_MIN_ATTENDANCE_PCT,
     }));
-  }, [results, courseCreditsMap]);
+  }, [results, courseCreditsMap, courseMinAttendanceMap]);
 
   const semesters = useMemo(() => {
     const set = new Set(results.map((g) => g.semester));
@@ -245,10 +250,10 @@ export default function StudentGradesPage() {
                         {item.attendanceRate !== null ? (
                           <div className="flex flex-col items-center gap-1 min-w-[90px]">
                             <div className="flex items-center gap-1.5 text-xs font-semibold">
-                              <span className={item.attendanceRate < DEFAULT_MIN_ATTENDANCE_PCT ? 'text-rose-600 font-bold' : 'text-slate-700'}>
+                              <span className={item.attendanceRate < item.minAttendancePct ? 'text-rose-600 font-bold' : 'text-slate-700'}>
                                 {item.attendanceRate}%
                               </span>
-                              {item.attendanceRate < DEFAULT_MIN_ATTENDANCE_PCT && (
+                              {item.attendanceRate < item.minAttendancePct && (
                                 <span className="inline-flex items-center text-[10px] text-rose-600 font-semibold bg-rose-50 px-1 py-0.5 rounded border border-rose-200">
                                   Cảnh báo
                                 </span>
@@ -263,7 +268,7 @@ export default function StudentGradesPage() {
                             >
                               <div
                                 className={`h-1.5 rounded-full ${
-                                  item.attendanceRate < DEFAULT_MIN_ATTENDANCE_PCT
+                                  item.attendanceRate < item.minAttendancePct
                                     ? 'bg-rose-500'
                                     : 'bg-emerald-500'
                                 }`}

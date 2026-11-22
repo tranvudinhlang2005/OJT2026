@@ -19,6 +19,7 @@ export interface AttendanceSheet {
   startTime: string;
   endTime: string;
   attendanceLocked: boolean;
+  lockedAt?: string | null;
   version: number;
   unlockReason?: string;
   items: AttendanceStudentItem[];
@@ -32,6 +33,7 @@ interface BackendAttendanceSheetResponse {
   startTime: string;
   endTime: string;
   attendanceLocked: boolean;
+  lockedAt?: string | null;
   version: number;
   unlockReason?: string;
   items: Array<{
@@ -57,6 +59,7 @@ export const attendanceService = {
       startTime: data.startTime.substring(0, 5),
       endTime: data.endTime.substring(0, 5),
       attendanceLocked: data.attendanceLocked,
+      lockedAt: data.lockedAt || undefined,
       version: data.version,
       unlockReason: data.unlockReason,
       items: (data.items || []).map((it) => ({
@@ -94,6 +97,7 @@ export const attendanceService = {
       startTime: data.startTime.substring(0, 5),
       endTime: data.endTime.substring(0, 5),
       attendanceLocked: data.attendanceLocked,
+      lockedAt: data.lockedAt || undefined,
       version: data.version,
       unlockReason: data.unlockReason,
       items: (data.items || []).map((it) => ({

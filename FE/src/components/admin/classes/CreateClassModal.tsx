@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, GraduationCap, ShieldAlert, Loader2 } from 'lucide-react';
 import type { CourseSummary, InstructorSummary, CreateClassPayload } from '../../../types/classOffering';
 import { getApiErrorDetails } from '../../../services/axiosClient';
-import { validateClassDateAndWeights } from '../../../utils/validation';
+import { validateClassDates } from '../../../utils/validation';
 
 interface CreateClassModalProps {
   isOpen: boolean;
@@ -156,13 +156,7 @@ export function CreateClassModal({
       return;
     }
 
-    const validationErr = validateClassDateAndWeights(
-      startDate,
-      endDate,
-      cancelDeadline,
-      midtermWeight,
-      finalWeight
-    );
+    const validationErr = validateClassDates(startDate, endDate, cancelDeadline);
     if (validationErr) {
       setError(validationErr);
       return;

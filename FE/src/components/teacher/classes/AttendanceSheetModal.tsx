@@ -81,7 +81,8 @@ export function AttendanceSheetModal({
 
   if (!session) return null;
 
-  const isLocked = session.attendanceLocked;
+  const isLocked = sheet?.attendanceLocked ?? session.attendanceLocked;
+  const lockedTime = sheet?.lockedAt || session.lockedAt;
 
   return (
     <Modal
@@ -101,7 +102,7 @@ export function AttendanceSheetModal({
             {isLocked && (
               <Badge variant="warning" size="sm" className="gap-1">
                 <Lock className="w-3 h-3" />
-                {session.lockedAt ? `Đã khóa lúc ${formatDateTime(session.lockedAt)}` : 'Chế độ chỉ đọc (Đã khóa)'}
+                {lockedTime ? `Đã khóa lúc ${formatDateTime(lockedTime)}` : 'Chế độ chỉ đọc (Đã khóa)'}
               </Badge>
             )}
           </div>
