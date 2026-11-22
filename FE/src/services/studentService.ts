@@ -90,6 +90,8 @@ export const studentService = {
       totalScore: number | null;
       attendanceRate: number | null;
       finalStatus: 'IN_PROGRESS' | 'PASSED' | 'FAILED';
+      minAttendancePct?: number;
+      credits?: number;
     }>>('/students/me/results', { params: { size: 100 } });
 
     const items = res.data?.items || [];
@@ -104,6 +106,8 @@ export const studentService = {
       totalScore: r.totalScore !== null ? Number(r.totalScore) : null,
       attendanceRate: r.attendanceRate !== null ? Number(r.attendanceRate) : null,
       finalStatus: r.finalStatus,
+      minAttendancePct: r.minAttendancePct !== undefined ? Number(r.minAttendancePct) : undefined,
+      credits: r.credits !== undefined ? Number(r.credits) : undefined,
     }));
   },
 

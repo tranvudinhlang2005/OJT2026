@@ -7,9 +7,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
-import { studentService, type StudentResult, type StudentProfile } from '../../services/studentService';
-import { courseService } from '../../services/courseService';
-import type { CourseItem } from '../../types/course';
+import { studentService, type StudentResult } from '../../services/studentService';
 import { toLetterGrade, calculateGpa4, calculateAccumulatedCredits, getAcademicClassification } from '../../utils/gradeUtils';
 import { DEFAULT_COURSE_CREDITS, DEFAULT_MIN_ATTENDANCE_PCT } from '../../constants/academic';
 
@@ -17,23 +15,15 @@ export default function StudentGradesPage() {
   const { toast } = useToast();
   const [selectedSemester, setSelectedSemester] = useState('ALL');
   const [results, setResults] = useState<StudentResult[]>([]);
-  const [courses, setCourses] = useState<CourseItem[]>([]);
-  const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
       try {
-        const [resList, prof, courseList] = await Promise.all([
-          studentService.getMyResults(),
-          studentService.getMyProfile().catch(() => null),
-          courseService.getCourses().catch(() => []),
-        ]);
+        const resList = await studentService.getMyResults();
         if (isMounted) {
           setResults(resList);
-          setProfile(prof);
-          setCourses(courseList);
         }
       } catch {
         if (isMounted) {
@@ -50,21 +40,13 @@ export default function StudentGradesPage() {
     };
   }, [toast]);
 
-  const courseCreditsMap = useMemo(() => {
-    return new Map<string, number>(courses.map((c) => [c.code, c.credits]));
-  }, [courses]);
-
-  const courseMinAttendanceMap = useMemo(() => {
-    return new Map<string, number>(courses.map((c) => [c.code, c.minAttendancePct]));
-  }, [courses]);
-
   const resultsWithCredits = useMemo(() => {
     return results.map((r) => ({
       ...r,
-      credits: courseCreditsMap.get(r.courseCode) || DEFAULT_COURSE_CREDITS,
-      minAttendancePct: courseMinAttendanceMap.get(r.courseCode) ?? DEFAULT_MIN_ATTENDANCE_PCT,
+      credits: r.credits ?? DEFAULT_COURSE_CREDITS,
+      minAttendancePct: r.minAttendancePct ?? DEFAULT_MIN_ATTENDANCE_PCT,
     }));
-  }, [results, courseCreditsMap, courseMinAttendanceMap]);
+  }, [results]);
 
   const semesters = useMemo(() => {
     const set = new Set(results.map((g) => g.semester));
@@ -96,11 +78,6 @@ export default function StudentGradesPage() {
             <span className="rounded-md bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
               Kết quả học tập cá nhân
             </span>
-            {profile?.studentCode && (
-              <span className="text-xs text-slate-500 font-mono">
-                MSSV: {profile.studentCode}
-              </span>
-            )}
           </div>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Bảng điểm & Kết quả học tập

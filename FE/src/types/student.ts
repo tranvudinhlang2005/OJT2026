@@ -57,4 +57,6 @@ export interface StudentResult {
   totalScore: number | null;
   attendanceRate: number | null;
   finalStatus: 'IN_PROGRESS' | 'PASSED' | 'FAILED';
+  minAttendancePct?: number;
+  credits?: number;
 }

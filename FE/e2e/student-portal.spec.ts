@@ -87,6 +87,10 @@ test.describe('Student Portal Suite', () => {
     const registerBtn = page.getByRole('button', { name: 'Đăng ký', exact: true }).first();
     await expect(registerBtn).toBeVisible();
     await registerBtn.click();
+    const regDialog = page.getByRole('dialog');
+    if (await regDialog.isVisible()) {
+      await regDialog.getByRole('button', { name: 'Xác nhận đăng ký' }).click();
+    }
     await expect(page.getByText(/Đăng ký thành công lớp/i).first()).toBeVisible();
     expect(enrollCalled).toBeTruthy();
   });

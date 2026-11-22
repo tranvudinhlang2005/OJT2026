@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, GraduationCap, ShieldAlert, Loader2 } from 'lucide-react';
 import type { CourseSummary, InstructorSummary, CreateClassPayload } from '../../../types/classOffering';
 import { getApiErrorDetails } from '../../../services/axiosClient';
-import { validateClassDates } from '../../../utils/validation';
+import { validateClassDates, validateGradeWeights } from '../../../utils/validation';
 
 interface CreateClassModalProps {
   isOpen: boolean;
@@ -162,6 +162,12 @@ export function CreateClassModal({
       return;
     }
 
+    const weightErr = validateGradeWeights(Number(midtermWeight), Number(finalWeight));
+    if (weightErr) {
+      setError(weightErr);
+      return;
+    }
+
     try {
       submittingRef.current = true;
       setIsSubmitting(true);
@@ -195,7 +201,11 @@ export function CreateClassModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs"
+    >
       <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2">

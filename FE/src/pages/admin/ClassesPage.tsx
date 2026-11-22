@@ -10,7 +10,6 @@ import { CancelClassModal } from '@/components/admin/classes/CancelClassModal';
 import { DeleteClassModal } from '@/components/admin/classes/DeleteClassModal';
 import { ChangeCapacityModal } from '@/components/admin/classes/ChangeCapacityModal';
 import { classService } from '@/services/classService';
-import { dashboardService } from '@/services/dashboardService';
 import { getApiErrorMessage } from '@/services/axiosClient';
 import type {
   ClassOffering,
@@ -36,7 +35,6 @@ export default function ClassesPage() {
   const [courses, setCourses] = useState<CourseSummary[]>([]);
   const [instructors, setInstructors] = useState<InstructorSummary[]>([]);
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
-  const [availableSemesters, setAvailableSemesters] = useState<string[]>([]);
 
   const [filter, setFilter] = useState<ClassFilter>({
     semester: 'ALL',
@@ -60,12 +58,8 @@ export default function ClassesPage() {
   useEffect(() => {
     async function loadMetadata() {
       try {
-        const [coursesRes, semsRes] = await Promise.allSettled([
-          classService.getCourses(),
-          dashboardService.getSemesters(),
-        ]);
-        if (coursesRes.status === 'fulfilled') setCourses(coursesRes.value);
-        if (semsRes.status === 'fulfilled') setAvailableSemesters(semsRes.value);
+        const coursesData = await classService.getCourses();
+        setCourses(coursesData);
       } catch {
         toast.error('Không thể tải danh mục dữ liệu bổ trợ.');
       }
@@ -146,15 +140,13 @@ export default function ClassesPage() {
   }, [loadClassesData]);
 
   const distinctSemesters = useMemo(
-    () => Array.from(new Set([...availableSemesters, ...allClasses.map((c) => c.semester)].filter(Boolean))),
-    [availableSemesters, allClasses]
+    () => Array.from(new Set(allClasses.map((c) => c.semester).filter(Boolean))),
+    [allClasses]
   );
 
   const handleCreateClass = async (payload: CreateClassPayload) => {
     try {
       const created = await classService.createClass(payload);
-      dashboardService.clearSemestersCache();
-      dashboardService.getSemesters(true).then((sems) => setAvailableSemesters(sems)).catch(() => {});
       toast.success(`Đã tạo thành công lớp học phần "${created.classCode}"`);
       await loadClassesData();
     } catch (err: unknown) {

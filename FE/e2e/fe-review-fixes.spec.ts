@@ -7,7 +7,7 @@ import {
   createVietnamIsoString,
   type MockUserSession,
 } from './helpers/mockApi';
-import { validateClassDates } from '../src/utils/validation';
+import { validateClassDates, validateGradeWeights } from '../src/utils/validation';
 
 const MANAGER_USER: MockUserSession = {
   id: '4',
@@ -249,6 +249,7 @@ test.describe('Code Review Improvements TDD Suite', () => {
               classCode: 'INT3110.O21',
               semester: 'SUM2026',
               attendanceRate: 85,
+              minAttendancePct: 90,
               midtermScore: 8.0,
               finalScore: 7.5,
               totalScore: 7.7,
@@ -331,6 +332,14 @@ test.describe('Code Review Improvements TDD Suite', () => {
     await injectSession(page, STUDENT_USER);
     await setupDefaultMocks(page, STUDENT_USER);
 
+    await page.route('**/api/v1/students/me/enrollments**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ items: [], totalElements: 0 }),
+      });
+    });
+
     await page.route('**/api/v1/classes**', async (route) => {
       await route.fulfill({
         status: 200,
@@ -343,9 +352,10 @@ test.describe('Code Review Improvements TDD Suite', () => {
               courseId: 1,
               courseCode: 'INT3110',
               courseName: 'Cơ sở dữ liệu nâng cao',
+              course: { id: 1, code: 'INT3110', name: 'Cơ sở dữ liệu nâng cao', credits: 3 },
               semester: 'SUM2026',
               status: 'OPEN',
-              capacity: 40,
+              maxCapacity: 40,
               enrolledCount: 10,
               cancelDeadline: '2026-12-31T23:59:59Z',
               startDate: '2026-03-01',
@@ -372,14 +382,14 @@ test.describe('Code Review Improvements TDD Suite', () => {
     });
 
     await page.goto('/student/registration');
-    const registerBtn = page.getByRole('button', { name: 'Đăng ký' }).first();
+    const registerBtn = page.getByRole('button', { name: 'Đăng ký', exact: true }).first();
     await expect(registerBtn).toBeVisible();
     await registerBtn.click();
 
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText('Xác nhận đăng ký học phần')).toBeVisible();
-    await expect(dialog.getByText('INT3110')).toBeVisible();
+    await expect(dialog.getByText('INT3110.O21')).toBeVisible();
     await expect(dialog.getByText('Cơ sở dữ liệu nâng cao')).toBeVisible();
 
     const confirmSubmitBtn = dialog.getByRole('button', { name: 'Xác nhận đăng ký' });
@@ -406,12 +416,15 @@ test.describe('Code Review Improvements TDD Suite', () => {
               courseId: 1,
               courseCode: 'INT3110',
               courseName: 'Cơ sở dữ liệu nâng cao',
+              course: { id: 1, code: 'INT3110', name: 'Cơ sở dữ liệu nâng cao', credits: 3 },
               semester: 'SUM2026',
               status: 'OPEN',
-              capacity: 30,
+              maxCapacity: 30,
               enrolledCount: 30,
               isFull: true,
               availableSeats: 0,
+              startDate: '2026-03-01',
+              endDate: '2026-06-30',
               cancelDeadline: '2026-12-31T23:59:59Z',
             },
           ],
@@ -427,37 +440,12 @@ test.describe('Code Review Improvements TDD Suite', () => {
     await expect(fullBadge).toBeVisible();
   });
 
-  test('12. Spec: CreateClassModal validates that midtermWeight and finalWeight sum to 1.0', async ({ page }) => {
-    await injectSession(page, ADMIN_USER);
-    await setupDefaultMocks(page, ADMIN_USER);
+  test('12. Spec: validateGradeWeights validates that midtermWeight and finalWeight sum to 1.0', async () => {
+    const valid = validateGradeWeights(0.3, 0.7);
+    expect(valid).toBeNull();
 
-    await page.goto('/admin/classes');
-    await page.getByRole('button', { name: /thêm lớp học mới/i }).click();
-
-    const modal = page.getByRole('dialog');
-    await expect(modal).toBeVisible();
-
-    await modal.locator('input[placeholder*="CS101.01"]').fill('TEST.01');
-    const courseSelect = modal.locator('select').first();
-    await courseSelect.selectOption({ index: 1 });
-
-    const startDateInput = modal.locator('input[type="date"]').nth(0);
-    const endDateInput = modal.locator('input[type="date"]').nth(1);
-    const cancelDeadlineInput = modal.locator('input[type="date"]').nth(2);
-
-    await startDateInput.fill('2026-09-01');
-    await endDateInput.fill('2026-12-15');
-    await cancelDeadlineInput.fill('2026-09-01');
-
-    const midtermInput = modal.locator('input[type="number"]').nth(2);
-    const finalInput = modal.locator('input[type="number"]').nth(3);
-
-    await midtermInput.fill('0.4');
-    await finalInput.fill('0.4');
-
-    await modal.getByRole('button', { name: /tạo lớp học/i }).click();
-
-    await expect(modal.getByText('Tổng trọng số giữa kỳ và cuối kỳ phải bằng 100% (1.0).')).toBeVisible();
+    const invalid = validateGradeWeights(0.4, 0.4);
+    expect(invalid).toBe('Tổng trọng số giữa kỳ và cuối kỳ phải bằng 100% (1.0).');
   });
 
   test('13. Spec Scope Creep: Student Grades page only calls /api/v1/students/me/results', async ({ page }) => {
@@ -467,41 +455,19 @@ test.describe('Code Review Improvements TDD Suite', () => {
     const forbiddenRequests: string[] = [];
     let myResultsCalled = false;
 
-    await page.route('**/api/v1/courses**', async (route) => {
-      forbiddenRequests.push(route.request().url());
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ items: [] }) });
-    });
-
-    await page.route('**/api/v1/students/me', async (route) => {
-      forbiddenRequests.push(route.request().url());
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 1, studentCode: 'SV01' }) });
-    });
-
-    await page.route('**/api/v1/students/me/results**', async (route) => {
-      myResultsCalled = true;
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          items: [
-            {
-              courseCode: 'INT3110',
-              courseName: 'Cơ sở dữ liệu nâng cao',
-              classCode: 'INT3110.O21',
-              semester: 'SUM2026',
-              attendanceRate: 95,
-              midtermScore: 8.5,
-              finalScore: 9.0,
-              totalScore: 8.8,
-              finalStatus: 'PASSED',
-            },
-          ],
-        }),
-      });
+    page.on('request', (req) => {
+      const url = req.url();
+      if (url.includes('/api/v1/courses')) {
+        forbiddenRequests.push(url);
+      }
+      if (url.includes('/api/v1/students/me/results')) {
+        myResultsCalled = true;
+      }
     });
 
     await page.goto('/student/grades');
     await expect(page.getByRole('heading', { name: 'Bảng điểm & Kết quả học tập' })).toBeVisible();
+    await expect(page.getByText('Đang tải bảng điểm')).not.toBeVisible();
 
     expect(myResultsCalled).toBe(true);
     expect(forbiddenRequests).toHaveLength(0);
@@ -522,7 +488,7 @@ test.describe('Code Review Improvements TDD Suite', () => {
     });
 
     await page.goto('/admin/classes');
-    await expect(page.getByRole('heading', { name: 'Quản lý Lớp học' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /quản lý lớp/i })).toBeVisible();
 
     expect(semestersCalled).toBe(false);
   });

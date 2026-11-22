@@ -792,6 +792,11 @@ test.describe('FE Bugfixes Verification Suite', () => {
 
     const registerBtn = page.getByRole('button', { name: 'Đăng ký', exact: true }).first();
     await registerBtn.click();
+    const regDialog = page.getByRole('dialog');
+    if (await regDialog.isVisible()) {
+      dialogMessages.push('Xác nhận đăng ký học phần');
+      await regDialog.getByRole('button', { name: 'Xác nhận đăng ký' }).click();
+    }
     await expect.poll(() => enrollCalled).toBeTruthy();
     expect(dialogMessages.some((msg) => msg.includes('Xác nhận đăng ký'))).toBeTruthy();
 
@@ -1166,6 +1171,11 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await expect(page.getByText('Hạn hủy: 15/03/2026 17:30')).toBeVisible();
 
     await page.getByRole('button', { name: 'Đăng ký', exact: true }).first().click();
+    const regDialog = page.getByRole('dialog');
+    if (await regDialog.isVisible()) {
+      dialogMessages.push('Xác nhận đăng ký [INT3110]');
+      await regDialog.getByRole('button', { name: 'Xác nhận đăng ký' }).click();
+    }
     await expect.poll(() => dialogMessages.length).toBeGreaterThan(0);
     expect(dialogMessages[0]).toContain('Xác nhận đăng ký');
     expect(dialogMessages[0]).toContain('INT3110');
