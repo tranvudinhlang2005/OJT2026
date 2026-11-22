@@ -17,6 +17,7 @@ import { studentService, type StudentEnrollment } from '../../services/studentSe
 import { classService } from '../../services/classService';
 import { formatDate, formatDateTime } from '../../utils/dateFormat';
 import { DEFAULT_COURSE_CREDITS } from '../../constants/academic';
+import { ENROLLMENT_STATUS_LABELS } from '../../constants/status';
 
 export default function StudentRegistrationPage() {
   const { toast } = useToast();
@@ -471,7 +472,7 @@ export default function StudentRegistrationPage() {
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
-              Đang đăng ký ({enrollments.filter((e) => e.status === 'ENROLLED').length})
+              {ENROLLMENT_STATUS_LABELS.ENROLLED} ({enrollments.filter((e) => e.status === 'ENROLLED').length})
             </button>
             <button
               type="button"
@@ -482,7 +483,7 @@ export default function StudentRegistrationPage() {
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
-              Đã hủy ({enrollments.filter((e) => e.status === 'CANCELLED').length})
+              {ENROLLMENT_STATUS_LABELS.CANCELLED} ({enrollments.filter((e) => e.status === 'CANCELLED').length})
             </button>
             <button
               type="button"
@@ -493,7 +494,7 @@ export default function StudentRegistrationPage() {
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
-              Đã hoàn thành ({enrollments.filter((e) => e.status === 'COMPLETED').length})
+              {ENROLLMENT_STATUS_LABELS.COMPLETED} ({enrollments.filter((e) => e.status === 'COMPLETED').length})
             </button>
           </div>
 
@@ -542,17 +543,17 @@ export default function StudentRegistrationPage() {
                               {enr.status === 'ENROLLED' && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
                                   <CheckCircle2 className="h-3 w-3" />
-                                  Đang đăng ký
+                                  {ENROLLMENT_STATUS_LABELS.ENROLLED}
                                 </span>
                               )}
                               {enr.status === 'CANCELLED' && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-semibold text-rose-700">
-                                  Đã hủy
+                                  {ENROLLMENT_STATUS_LABELS.CANCELLED}
                                 </span>
                               )}
                               {enr.status === 'COMPLETED' && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
-                                  Hoàn thành
+                                  {ENROLLMENT_STATUS_LABELS.COMPLETED}
                                 </span>
                               )}
                             </td>

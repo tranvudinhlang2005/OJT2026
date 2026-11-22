@@ -38,3 +38,17 @@ export const ATTENDANCE_MARKS = {
   LATE: 'LATE',
   ABSENT: 'ABSENT',
 } as const;
+
+export const ENROLLMENT_STATUS = {
+  ENROLLED: 'ENROLLED',
+  CANCELLED: 'CANCELLED',
+  COMPLETED: 'COMPLETED',
+} as const;
+
+export type EnrollmentStatusType = (typeof ENROLLMENT_STATUS)[keyof typeof ENROLLMENT_STATUS];
+
+export const ENROLLMENT_STATUS_LABELS: Record<EnrollmentStatusType, string> = {
+  ENROLLED: 'Đang đăng ký',
+  CANCELLED: 'Đã hủy',
+  COMPLETED: 'Đã hoàn thành',
+};
