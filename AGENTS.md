@@ -18,6 +18,7 @@ Single-context domain documentation (`GLOSSARY.md` + `docs/adr/` at repo root). 
 ### Environment & Shell Guidance (Windows)
 
 - Shell is Windows PowerShell.
+- Command chaining: Always use semicolon `;` to separate multiple commands (e.g., `cd FE; npm run verify`). Never use Bash operator `&&` (which causes `The token '&&' is not a valid statement separator` syntax error in Windows PowerShell 5.1).
 - Use PowerShell cmdlets (`Select-String`, `Get-ChildItem`) or Node.js scripts instead of Unix utilities (`grep`, `head`).
 - Unit testing: `npm run test:unit` in `FE/` (Vitest, sub-second).
 - End-to-end testing: `npx playwright test` in `FE/` (Playwright).
