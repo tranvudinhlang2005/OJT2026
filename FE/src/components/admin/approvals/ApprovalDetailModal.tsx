@@ -20,7 +20,6 @@ interface ApprovalDetailModalProps {
   onConfirm: () => Promise<void>;
   onOpenReturnModal: () => void;
   onOpenCompleteModal: () => void;
-  onQuickLockSessions?: () => Promise<void>;
 }
 
 export function ApprovalDetailModal({

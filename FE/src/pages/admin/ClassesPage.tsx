@@ -58,22 +58,30 @@ export default function ClassesPage() {
   useEffect(() => {
     async function loadMetadata() {
       try {
-        const [coursesRes, instRes, roomsRes, semsRes] = await Promise.allSettled([
+        const [coursesRes, semsRes] = await Promise.allSettled([
           classService.getCourses(),
-          canManage ? classService.getInstructors() : Promise.resolve([]),
-          canManage ? classService.getRooms() : Promise.resolve([]),
           dashboardService.getSemesters(),
         ]);
         if (coursesRes.status === 'fulfilled') setCourses(coursesRes.value);
-        if (instRes.status === 'fulfilled') setInstructors(instRes.value);
-        if (roomsRes.status === 'fulfilled') setRooms(roomsRes.value);
         if (semsRes.status === 'fulfilled') setAvailableSemesters(semsRes.value);
       } catch {
         toast.error('Không thể tải danh mục dữ liệu bổ trợ.');
       }
     }
     loadMetadata();
-  }, [canManage, toast]);
+  }, [toast]);
+
+  useEffect(() => {
+    if (!canManage) return;
+    if (createModal.isOpen || editModal.isOpen || assignModal.isOpen) {
+      if (instructors.length === 0) {
+        classService.getInstructors().then(setInstructors).catch(() => {});
+      }
+      if (rooms.length === 0 && (createModal.isOpen || editModal.isOpen)) {
+        classService.getRooms().then(setRooms).catch(() => {});
+      }
+    }
+  }, [canManage, createModal.isOpen, editModal.isOpen, assignModal.isOpen, instructors.length, rooms.length]);
 
   const detailClassRef = useRef(detailModal.data);
   useEffect(() => {

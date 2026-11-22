@@ -89,26 +89,42 @@ export const userService = {
     const usersRes = await axiosClient.get<PageResponse<BackendUserResponse>>('/users', { params });
     const users = usersRes.data?.items || [];
 
-    let studentsMap = new Map<number, BackendStudentResponse>();
-    let instructorsMap = new Map<number, BackendInstructorSummary>();
+    const studentsMap = new Map<number, BackendStudentResponse>();
+    const instructorsMap = new Map<number, BackendInstructorSummary>();
 
-    try {
-      const [stdRes, instRes] = await Promise.allSettled([
-        axiosClient.get<PageResponse<BackendStudentResponse>>('/students', { params: { size: 100 } }),
-        axiosClient.get<PageResponse<BackendInstructorSummary>>('/instructors', { params: { size: 100 } }),
-      ]);
+    const hasStudents = users.some((u) => u.role === 'STUDENT');
+    const hasInstructors = users.some((u) => u.role === 'INSTRUCTOR');
 
-      if (stdRes.status === 'fulfilled' && stdRes.value.data?.items) {
-        stdRes.value.data.items.forEach((s) => {
-          studentsMap.set(s.userId, s);
-        });
+    if (hasStudents || hasInstructors) {
+      try {
+        const fetchTasks: Promise<void>[] = [];
+        if (hasStudents) {
+          fetchTasks.push(
+            axiosClient
+              .get<PageResponse<BackendStudentResponse>>('/students', { params: { size: 100 } })
+              .then((res) => {
+                if (res.data?.items) {
+                  res.data.items.forEach((s) => studentsMap.set(s.userId, s));
+                }
+              })
+              .catch(() => {})
+          );
+        }
+        if (hasInstructors) {
+          fetchTasks.push(
+            axiosClient
+              .get<PageResponse<BackendInstructorSummary>>('/instructors', { params: { size: 100 } })
+              .then((res) => {
+                if (res.data?.items) {
+                  res.data.items.forEach((i) => instructorsMap.set(i.userId, i));
+                }
+              })
+              .catch(() => {})
+          );
+        }
+        await Promise.allSettled(fetchTasks);
+      } catch {
       }
-      if (instRes.status === 'fulfilled' && instRes.value.data?.items) {
-        instRes.value.data.items.forEach((i) => {
-          instructorsMap.set(i.userId, i);
-        });
-      }
-    } catch {
     }
 
     return users.map((u) => {

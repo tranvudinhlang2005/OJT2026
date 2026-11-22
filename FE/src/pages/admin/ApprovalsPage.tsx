@@ -194,22 +194,6 @@ export default function ApprovalsPage() {
     }
   };
 
-  const handleQuickLockSessions = async () => {
-    if (!selectedDetail) return;
-    try {
-      await approvalService.lockAllSessionsForClass(selectedDetail.classId);
-      const refreshed = await approvalService.getClassResults(selectedDetail.classId);
-      setSelectedDetail(refreshed);
-      toast.success('Đã chốt điểm danh tất cả các buổi học của lớp.');
-      await loadData();
-    } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } } };
-      toast.error(
-        axiosErr.response?.data?.message || 'Không thể chốt điểm danh. Thao tác này chỉ dành cho Giảng viên phụ trách lớp.'
-      );
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="border-b border-slate-200 pb-5">
@@ -263,7 +247,6 @@ export default function ApprovalsPage() {
         onConfirm={handleConfirmResult}
         onOpenReturnModal={handleOpenReturnModal}
         onOpenCompleteModal={handleOpenCompleteFromDetail}
-        onQuickLockSessions={handleQuickLockSessions}
       />
 
       <ReturnResultModal

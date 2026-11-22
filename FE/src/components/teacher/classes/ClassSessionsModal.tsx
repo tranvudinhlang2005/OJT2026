@@ -43,11 +43,6 @@ export function ClassSessionsModal({
           </p>
         </div>
       }
-      footer={
-        <Button variant="outline" size="sm" onClick={onClose}>
-          Đóng
-        </Button>
-      }
     >
       <div className="py-2">
         {isLoading ? (

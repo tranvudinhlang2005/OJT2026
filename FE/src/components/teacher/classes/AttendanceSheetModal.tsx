@@ -9,7 +9,7 @@ import type { AttendanceStudentItem, AttendanceMark } from '@/services/attendanc
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { formatDate } from '@/utils/dateFormat';
+import { formatDate, formatDateTime } from '@/utils/dateFormat';
 
 export interface AttendanceSheetModalProps {
   session: ClassSession | null;
@@ -101,7 +101,7 @@ export function AttendanceSheetModal({
             {isLocked && (
               <Badge variant="warning" size="sm" className="gap-1">
                 <Lock className="w-3 h-3" />
-                Chế độ chỉ đọc (Đã khóa)
+                {session.lockedAt ? `Đã khóa lúc ${formatDateTime(session.lockedAt)}` : 'Chế độ chỉ đọc (Đã khóa)'}
               </Badge>
             )}
           </div>

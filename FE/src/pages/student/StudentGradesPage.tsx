@@ -11,7 +11,7 @@ import { studentService, type StudentResult, type StudentProfile } from '../../s
 import { courseService } from '../../services/courseService';
 import type { CourseItem } from '../../types/course';
 import { toLetterGrade, calculateGpa4, calculateAccumulatedCredits, getAcademicClassification } from '../../utils/gradeUtils';
-import { DEFAULT_COURSE_CREDITS } from '../../constants/academic';
+import { DEFAULT_COURSE_CREDITS, DEFAULT_MIN_ATTENDANCE_PCT } from '../../constants/academic';
 
 export default function StudentGradesPage() {
   const { toast } = useToast();
@@ -242,7 +242,38 @@ export default function StudentGradesPage() {
                         </div>
                       </td>
                       <td className="px-3 py-3.5 text-center text-slate-700 font-mono">
-                        {item.attendanceRate !== null ? `${item.attendanceRate}%` : '-'}
+                        {item.attendanceRate !== null ? (
+                          <div className="flex flex-col items-center gap-1 min-w-[90px]">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold">
+                              <span className={item.attendanceRate < DEFAULT_MIN_ATTENDANCE_PCT ? 'text-rose-600 font-bold' : 'text-slate-700'}>
+                                {item.attendanceRate}%
+                              </span>
+                              {item.attendanceRate < DEFAULT_MIN_ATTENDANCE_PCT && (
+                                <span className="inline-flex items-center text-[10px] text-rose-600 font-semibold bg-rose-50 px-1 py-0.5 rounded border border-rose-200">
+                                  Cảnh báo
+                                </span>
+                              )}
+                            </div>
+                            <div
+                              role="progressbar"
+                              aria-valuenow={item.attendanceRate}
+                              aria-valuemin={0}
+                              aria-valuemax={100}
+                              className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden"
+                            >
+                              <div
+                                className={`h-1.5 rounded-full ${
+                                  item.attendanceRate < DEFAULT_MIN_ATTENDANCE_PCT
+                                    ? 'bg-rose-500'
+                                    : 'bg-emerald-500'
+                                }`}
+                                style={{ width: `${Math.min(Math.max(item.attendanceRate, 0), 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          '-'
+                        )}
                       </td>
                       <td className="px-3 py-3.5 text-center text-slate-700 font-mono">
                         {item.midtermScore !== null ? item.midtermScore.toFixed(1) : '-'}

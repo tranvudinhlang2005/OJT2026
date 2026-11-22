@@ -428,13 +428,17 @@ export default function StudentRegistrationPage() {
                                   <CheckCircle2 className="h-4 w-4" />
                                   Đã đăng ký
                                 </span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleUnregister(cls)}
-                                  className="text-xs font-medium text-rose-600 hover:text-rose-800 hover:underline transition"
-                                >
-                                  Hủy môn
-                                </button>
+                                {cls.cancelDeadline && new Date(cls.cancelDeadline) <= new Date() ? (
+                                  <span className="text-xs text-slate-400">Đã quá hạn hủy</span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUnregister(cls)}
+                                    className="text-xs font-medium text-rose-600 hover:text-rose-800 hover:underline transition"
+                                  >
+                                    Hủy môn
+                                  </button>
+                                )}
                               </div>
                             ) : (
                               <button

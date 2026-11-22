@@ -52,6 +52,7 @@ interface BackendSessionResponse {
   roomCode: string;
   topic: string | null;
   attendanceLocked: boolean;
+  lockedAt?: string | null;
 }
 
 interface PageResponse<T> {
@@ -138,6 +139,7 @@ function mapToSession(s: BackendSessionResponse): ClassSession {
     roomCode: s.roomCode,
     topic: s.topic || undefined,
     attendanceLocked: s.attendanceLocked,
+    lockedAt: s.lockedAt || undefined,
   };
 }
 

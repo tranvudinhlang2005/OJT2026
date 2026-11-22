@@ -77,10 +77,8 @@ test.describe('FE Bugfixes Verification Suite', () => {
 
     await expect(page.getByRole('heading', { name: /Bảng điểm:/i })).toBeVisible();
 
-    // Nút "Chốt nhanh buổi học" tuyệt đối không được xuất hiện trong modal
     await expect(page.getByRole('button', { name: 'Chốt nhanh buổi học' })).not.toBeVisible();
 
-    // Vẫn hiển thị cảnh báo cần giảng viên chốt điểm danh
     await expect(page.getByText(/Chưa đủ điều kiện phê duyệt/i)).toBeVisible();
   });
 
@@ -139,7 +137,6 @@ test.describe('FE Bugfixes Verification Suite', () => {
 
     await expect(page.getByRole('heading', { name: /Chỉnh sửa lớp/i })).toBeVisible();
 
-    // Kiểm tra input trọng số GK và CK đều bị disabled
     const midtermInput = page.locator('input[title*="Trọng số"]').first();
     await expect(midtermInput).toBeDisabled();
   });
@@ -201,7 +198,6 @@ test.describe('FE Bugfixes Verification Suite', () => {
 
     await expect(page.getByRole('heading', { name: 'Phân công Giảng viên' })).toBeVisible();
 
-    // Danh sách giảng viên chuyên môn không bị rỗng
     await expect(
       page.getByText(/Không tìm thấy giảng viên nào có chuyên môn/i)
     ).not.toBeVisible();
@@ -217,15 +213,12 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/admin/classes');
     await expect(page.getByRole('heading', { name: 'Quản lý Lớp & Lịch học' })).toBeVisible();
 
-    // Lớp mặc định trong mockApi là INT3110.O21 có status 'OPEN' ("Đang mở đăng ký")
     const openClassRow = page.locator('tr:has-text("INT3110.O21")').first();
     await expect(openClassRow).toBeVisible();
 
-    // Nút Sửa lớp và Phân công giảng viên tuyệt đối không được hiển thị cho lớp OPEN
     await expect(openClassRow.getByTitle('Phân công giảng viên')).not.toBeVisible();
     await expect(openClassRow.getByTitle('Sửa thông tin lớp')).not.toBeVisible();
 
-    // Nút điều chỉnh sĩ số vẫn hiển thị bình thường
     await expect(openClassRow.getByTitle('Điều chỉnh sĩ số tối đa')).toBeVisible();
   });
 
@@ -267,10 +260,8 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/student/registration');
     await expect(page.getByText('Cổng đăng ký tín chỉ học phần')).toBeVisible();
 
-    // Chuyển sang tab "Lớp đã đăng ký"
     await page.getByRole('button', { name: /Đã đăng ký/i }).click();
 
-    // Lớp đang học IN_PROGRESS vẫn hiển thị đầy đủ
     await expect(page.getByText('Cơ sở dữ liệu nâng cao')).toBeVisible();
     await expect(page.getByText(/CS202/)).toBeVisible();
   });
@@ -285,12 +276,10 @@ test.describe('FE Bugfixes Verification Suite', () => {
 
     await page.goto('/student/profile');
 
-    // Tuyệt đối không xuất hiện mã sinh viên và tên giả lập
     await expect(page.getByText('SEED-SV01')).not.toBeVisible();
     await expect(page.getByText('Nguyễn Hoàng Anh')).not.toBeVisible();
     await expect(page.getByText('seed.sv01@example.com')).not.toBeVisible();
 
-    // Hiển thị giao diện báo lỗi
     await expect(page.getByText('Lỗi tải dữ liệu hồ sơ')).toBeVisible();
   });
 
@@ -300,7 +289,6 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await injectSession(page, STUDENT_USER);
     await setupDefaultMocks(page, STUDENT_USER);
 
-    // Truy cập trang Bảng điểm cá nhân
     await page.goto('/student/grades');
     await expect(page.getByRole('heading', { name: 'Bảng điểm & Kết quả học tập' })).toBeVisible();
 
@@ -309,7 +297,6 @@ test.describe('FE Bugfixes Verification Suite', () => {
     const gradesGpaText = await gradesGpaLocator.textContent();
     expect(gradesGpaText).toBeTruthy();
 
-    // Truy cập trang Hồ sơ sinh viên
     await page.goto('/student/profile');
     await expect(page.getByText('Thông tin học vụ')).toBeVisible();
 
@@ -318,7 +305,6 @@ test.describe('FE Bugfixes Verification Suite', () => {
     const profileGpaText = await profileGpaLocator.textContent();
     expect(profileGpaText).toBeTruthy();
 
-    // Cả 2 trang đều dùng chung helper calculateGpa4 -> điểm hiển thị bằng nhau
     expect(profileGpaText?.trim()).toBe(gradesGpaText?.trim());
   });
 
@@ -346,15 +332,12 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/admin/classes');
     await expect(page.getByRole('heading', { name: 'Quản lý Lớp & Lịch học' })).toBeVisible();
 
-    // Mở modal chi tiết lớp
     const viewDetailBtn = page.getByRole('button', { name: 'Xem chi tiết' }).first();
     await viewDetailBtn.click();
     await expect(page.getByText('Lịch trình các buổi học')).toBeVisible();
 
-    // Tab học viên đăng ký bị ẩn đối với Manager
     await expect(page.getByRole('button', { name: /Học viên đăng ký/i })).not.toBeVisible();
 
-    // API /classes/{id}/students hoàn toàn không bị gọi
     expect(studentsApiCalled).toBe(false);
   });
 
@@ -379,17 +362,14 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/teacher/grades');
     await expect(page.getByRole('heading', { name: 'Quản lý kết quả & Nộp bảng điểm' })).toBeVisible();
 
-    // Mở sổ điểm
     const editGradeBtn = page.getByRole('button', { name: /Nhập điểm|Xem điểm/i }).first();
     await editGradeBtn.click();
     await expect(page.getByRole('heading', { name: /Sổ điểm:/i })).toBeVisible();
 
-    // Ô lý do sửa điểm hiển thị trong bảng
     const reasonInput = page.getByPlaceholder(/Bắt buộc khi sửa|Lý do/i).first();
     await expect(reasonInput).toBeVisible();
     await reasonInput.fill('Chấm phúc khảo bài thi giữa kỳ');
 
-    // Lưu bảng điểm và chờ request hoàn tất
     await Promise.all([
       page.waitForResponse((res) => res.url().includes('/results') && res.request().method() === 'PUT'),
       page.getByRole('button', { name: 'Lưu bảng điểm' }).click(),
@@ -401,7 +381,6 @@ test.describe('FE Bugfixes Verification Suite', () => {
   });
 
   test('Lỗi 1.1: Giảng viên chưa được phân công lớp hiển thị danh sách rỗng, không rò rỉ lớp của người khác', async ({ page }) => {
-    // Giảng viên GV002 không được phân công lớp nào
     const UNASSIGNED_INSTRUCTOR = {
       username: 'teacher_unassigned',
       role: 'INSTRUCTOR' as const,
@@ -432,7 +411,6 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/teacher/classes');
     await expect(page.getByRole('heading', { name: 'Lớp học phụ trách' })).toBeVisible();
 
-    // Không thấy lớp của giảng viên khác (INT3110.O21 hay SE101.O21 do GV001 dạy)
     await expect(page.getByText('INT3110.O21')).not.toBeVisible();
     await expect(page.getByText('Không tìm thấy lớp học nào phù hợp.')).toBeVisible();
   });
@@ -529,7 +507,6 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await injectSession(page, ADMIN_USER);
     await setupDefaultMocks(page, ADMIN_USER);
 
-    // Mock lớp ở trạng thái IN_PROGRESS
     await page.route('**/api/v1/classes**', async (route) => {
       if (route.request().method() === 'GET' && !route.request().url().includes('/sessions')) {
         await route.fulfill({
@@ -564,7 +541,6 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/admin/classes');
     await expect(page.getByText('INT3110.O21')).toBeVisible();
 
-    // Không được có nút "Đóng lớp" trên bảng lớp học của Admin
     const closeBtn = page.getByRole('button', { name: 'Đóng lớp' });
     await expect(closeBtn).not.toBeVisible();
   });
@@ -636,11 +612,9 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/admin/classes');
     await expect(page.getByText('INT3110.O21')).toBeVisible();
 
-    // Lớp INT3110.O21 (enrolledCount: 0) có nút "Rút về nháp"
     const unpublishBtn = page.getByRole('button', { name: /rút về nháp/i });
     await expect(unpublishBtn).toBeVisible();
 
-    // Bấm nút rút về nháp
     await unpublishBtn.click();
     await expect.poll(() => unpublishCalled).toBeTruthy();
     await expect(page.getByText(/Đã rút lớp.*về trạng thái nháp thành công/i)).toBeVisible();
@@ -653,20 +627,16 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/teacher/classes');
     await expect(page.getByText('INT3110.O21')).toBeVisible();
 
-    // Nút "Xem danh sách học viên"
     const rosterBtn = page.getByRole('button', { name: /danh sách học viên/i }).first();
     await expect(rosterBtn).toBeVisible();
     await rosterBtn.click();
 
-    // Modal danh sách học viên hiển thị
     await expect(page.getByRole('heading', { name: /danh sách học viên/i })).toBeVisible();
     await expect(page.getByText('SV2026001')).toBeVisible();
     await expect(page.getByText('Trần Văn Sinh')).toBeVisible();
 
-    // Nút đóng modal
     await page.getByRole('button', { name: 'Đóng' }).first().click();
 
-    // Nút "Quản lý điểm danh"
     const attendanceBtn = page.getByRole('button', { name: /điểm danh/i }).first();
     await expect(attendanceBtn).toBeVisible();
   });
@@ -720,21 +690,17 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/teacher/schedule');
     await page.getByRole('button', { name: 'Điểm danh ca này' }).first().click();
 
-    // Kiểm tra ô nhập ghi chú (remarks)
     const remarksInput = page.getByPlaceholder(/ghi chú/i).first();
     await expect(remarksInput).toBeVisible();
     await remarksInput.fill('Có phép');
 
-    // Lưu điểm danh và xác nhận gửi kèm remarks
     await page.getByRole('button', { name: 'Lưu điểm danh' }).click();
     await expect(page.getByText(/Đã lưu.*điểm danh/i)).toBeVisible();
     expect(sentPayload).toBeTruthy();
     expect(sentPayload.items[0]?.remarks).toBe('Có phép');
 
-    // Mở lại ca học để khóa
     await page.getByRole('button', { name: 'Xem / Sửa điểm danh' }).first().click();
 
-    // Bấm khóa và chốt ca học -> xuất hiện dialog xác nhận
     await page.getByRole('button', { name: 'Khóa & Chốt ca học' }).click();
     expect(dialogConfirmed).toBeTruthy();
     await expect.poll(() => lockCalled).toBeTruthy();
@@ -824,21 +790,17 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/student/registration');
     await expect(page.getByText('Cơ sở dữ liệu nâng cao').first()).toBeVisible();
 
-    // 1. Bấm đăng ký lớp học -> có dialog xác nhận
     const registerBtn = page.getByRole('button', { name: 'Đăng ký', exact: true }).first();
     await registerBtn.click();
     await expect.poll(() => enrollCalled).toBeTruthy();
     expect(dialogMessages.some((msg) => msg.includes('Xác nhận đăng ký'))).toBeTruthy();
 
-    // 2. Chuyển sang tab "Lớp đã đăng ký"
     await page.getByRole('button', { name: /lớp đã đăng ký/i }).click();
 
-    // Kiểm tra các nút lọc trạng thái
     await expect(page.getByRole('button', { name: /tất cả/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /đang học/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /đã hủy/i })).toBeVisible();
 
-    // 3. Bấm hủy đăng ký -> có dialog xác nhận
     const unregisterBtn = page.getByRole('button', { name: 'Hủy đăng ký' }).first();
     await unregisterBtn.click();
     await expect.poll(() => cancelCalled).toBeTruthy();
@@ -880,7 +842,6 @@ test.describe('FE Bugfixes Verification Suite', () => {
   });
 
   test('Lỗi 15: Kiểm tra tính ổn định Purity hạn hủy môn học (Student Registration)', async ({ page }) => {
-    // 1. Kiểm tra Purity & Logic hạn hủy môn học của học viên
     await injectSession(page, STUDENT_USER);
     await setupDefaultMocks(page, STUDENT_USER);
 
@@ -898,7 +859,7 @@ test.describe('FE Bugfixes Verification Suite', () => {
               courseName: 'Cơ sở dữ liệu nâng cao',
               status: 'ENROLLED',
               enrolledAt: '2026-01-01T08:00:00Z',
-              cancelDeadline: '2020-01-01T23:59:59Z', // Đã quá hạn
+              cancelDeadline: '2020-01-01T23:59:59Z',
             },
             {
               enrollmentId: '102',
@@ -908,7 +869,7 @@ test.describe('FE Bugfixes Verification Suite', () => {
               courseName: 'Lập trình Web hiện đại',
               status: 'ENROLLED',
               enrolledAt: '2026-01-01T08:00:00Z',
-              cancelDeadline: '2099-01-01T23:59:59Z', // Còn hạn hủy
+              cancelDeadline: '2099-01-01T23:59:59Z',
             },
           ],
           totalElements: 2,
@@ -920,12 +881,10 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/student/registration');
     await page.getByRole('button', { name: /lớp đã đăng ký/i }).click();
 
-    // Hàng 1 (hết hạn) hiển thị chữ 'Đã quá hạn hủy', không có nút Hủy đăng ký
     const pastRow = page.locator('tr', { hasText: 'INT3110.O21' });
     await expect(pastRow.getByText('Đã quá hạn hủy')).toBeVisible();
     await expect(pastRow.getByRole('button', { name: 'Hủy đăng ký' })).toHaveCount(0);
 
-    // Hàng 2 (còn hạn) hiển thị nút 'Hủy đăng ký'
     const futureRow = page.locator('tr', { hasText: 'INT3111.O21' });
     await expect(futureRow.getByRole('button', { name: 'Hủy đăng ký' })).toBeVisible();
   });
@@ -939,7 +898,6 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await expect(page.getByText('Tổng ghi danh')).toBeVisible();
     await expect(page.getByText('Tỷ lệ lấp đầy').first()).toBeVisible();
 
-    // Thay đổi bộ lọc để kích hoạt callback & effect
     const semesterSelect = page.locator('select').first();
     await semesterSelect.selectOption({ index: 0 });
     await expect(page.getByRole('heading', { name: /tổng quan hệ thống/i })).toBeVisible();
@@ -953,7 +911,6 @@ test.describe('FE Bugfixes Verification Suite', () => {
     let attendanceGetUrl: string | null = null;
     let attendancePutUrl: string | null = null;
 
-    // Mock danh sách buổi học của lớp với ID số nguyên thực tế 201
     await page.route('**/api/v1/classes/**/sessions', async (route) => {
       sessionsApiCalled = true;
       await route.fulfill({
@@ -975,7 +932,6 @@ test.describe('FE Bugfixes Verification Suite', () => {
       });
     });
 
-    // Intercept bắt request attendance để kiểm tra URL có chứa đúng ID số 201
     await page.route('**/api/v1/sessions/**/attendance', async (route) => {
       const url = route.request().url();
       if (route.request().method() === 'GET') {
@@ -1018,28 +974,22 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/teacher/classes');
     await expect(page.getByRole('heading', { name: 'Lớp học phụ trách' })).toBeVisible();
 
-    // Bấm nút 'Quản lý điểm danh'
     const attendanceManageBtn = page.getByRole('button', { name: /quản lý điểm danh/i }).first();
     await expect(attendanceManageBtn).toBeVisible();
     await attendanceManageBtn.click();
 
-    // 1. Phải gọi API lấy danh sách buổi học của lớp
     await expect.poll(() => sessionsApiCalled).toBeTruthy();
 
-    // 2. Phải hiển thị modal chọn buổi học kèm ngày và phòng học
     await expect(page.getByText('Danh sách buổi học: INT3110.O21')).toBeVisible();
     await expect(page.getByText('Giới thiệu CSDL nâng cao')).toBeVisible();
 
-    // 3. Bấm chọn buổi học để mở bảng điểm danh
     const sessionItemBtn = page.getByRole('button', { name: /điểm danh buổi này/i }).first();
     await sessionItemBtn.click();
 
-    // 4. Kiểm tra URL gọi API điểm danh: Phải là số nguyên /201/attendance, KHÔNG được chứa sched-
     await expect.poll(() => attendanceGetUrl).toBeTruthy();
     expect(attendanceGetUrl).toContain('/api/v1/sessions/201/attendance');
     expect(attendanceGetUrl).not.toContain('sched-');
 
-    // 5. Thao tác lưu điểm danh và kiểm tra PUT URL
     await expect(page.getByText('Trần Văn Sinh')).toBeVisible();
     await page.getByRole('button', { name: /lưu điểm danh/i }).click();
 
@@ -1109,10 +1059,8 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/student/profile');
     await expect(page.getByRole('heading', { name: 'Nguyễn Văn Sinh Viên' })).toBeVisible();
 
-    // 1. Phải format ngày sinh theo DD/MM/YYYY
     await expect(page.getByText('20/11/2004')).toBeVisible();
 
-    // 2. Không được hiển thị dữ liệu ngụy tạo theo quy chuẩn truthful-data.md
     await expect(page.getByText(/140 Tín chỉ/i)).not.toBeVisible();
     await expect(page.getByText('Kỹ thuật Phần mềm')).not.toBeVisible();
   });
@@ -1144,10 +1092,8 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/teacher/schedule');
     await expect(page.getByRole('heading', { name: /lịch giảng dạy & điểm danh/i })).toBeVisible();
 
-    // 1. Phải hiển thị chủ đề bài dạy topic theo spec
     await expect(page.getByText('Thiết kế chỉ mục B-Tree và Tối ưu truy vấn')).toBeVisible();
 
-    // 2. Buổi học attendanceLocked = true phải có badge 'Đã điểm danh'
     await expect(page.getByText('Đã điểm danh')).toBeVisible();
   });
 
@@ -1164,10 +1110,8 @@ test.describe('FE Bugfixes Verification Suite', () => {
 
     await expect(page.getByRole('heading', { name: /sổ điểm/i })).toBeVisible();
 
-    // 1. Phải hiển thị tỷ lệ chuyên cần tối thiểu theo spec
     await expect(page.getByText(/chuyên cần tối thiểu:/i)).toBeVisible();
 
-    // 2. Phải hiển thị điểm đạt chuẩn theo spec
     await expect(page.getByText(/điểm đạt:/i)).toBeVisible();
   });
 
@@ -1219,10 +1163,8 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.goto('/student/registration');
     await expect(page.getByRole('heading', { name: /đăng ký lớp học phần/i })).toBeVisible();
 
-    // 1. Hạn hủy môn phải hiển thị đầy đủ ngày và giờ phút theo spec
     await expect(page.getByText('Hạn hủy: 15/03/2026 17:30')).toBeVisible();
 
-    // 2. Dialog đăng ký phải chứa thông tin xác nhận và lịch học
     await page.getByRole('button', { name: 'Đăng ký', exact: true }).first().click();
     await expect.poll(() => dialogMessages.length).toBeGreaterThan(0);
     expect(dialogMessages[0]).toContain('Xác nhận đăng ký');
@@ -1239,10 +1181,8 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.getByRole('button', { name: /nhật ký sửa điểm/i }).click();
     await expect(page.getByText(/thanh tra tính toàn vẹn của điểm số/i)).toBeVisible();
 
-    // 1. Phải chứa nội dung giải thích lý do
     await expect(page.getByText(/bắt buộc giải trình lý do/i)).toBeVisible();
 
-    // 2. Tuyệt đối không được chứa mã đặc tả nội bộ (D18)
     await expect(page.getByText('(D18)')).not.toBeVisible();
   });
 });

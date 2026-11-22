@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Edit, ShieldAlert, Loader2 } from 'lucide-react';
 import type { ClassOffering, UpdateClassPayload } from '../../../types/classOffering';
 import { getApiErrorDetails } from '../../../services/axiosClient';
+import { validateClassDateAndWeights } from '../../../utils/validation';
 
 interface EditClassModalProps {
   isOpen: boolean;
@@ -92,18 +93,15 @@ export function EditClassModal({
     if (!classOffering || isSubmitting || submittingRef.current) return;
     setError(null);
 
-    if (new Date(endDate) <= new Date(startDate)) {
-      setError('Ngày kết thúc phải sau ngày bắt đầu.');
-      return;
-    }
-
-    if (new Date(cancelDeadline) > new Date(startDate)) {
-      setError('Hạn chót hủy đăng ký phải trước hoặc cùng ngày bắt đầu khóa học.');
-      return;
-    }
-
-    if (Math.abs(Number(midtermWeight) + Number(finalWeight) - 1.0) > 0.001) {
-      setError('Tổng trọng số điểm giữa kỳ và cuối kỳ phải bằng 1.0.');
+    const validationErr = validateClassDateAndWeights(
+      startDate,
+      endDate,
+      cancelDeadline,
+      midtermWeight,
+      finalWeight
+    );
+    if (validationErr) {
+      setError(validationErr);
       return;
     }
 

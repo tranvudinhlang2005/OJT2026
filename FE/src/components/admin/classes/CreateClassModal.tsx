@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, GraduationCap, ShieldAlert, Loader2 } from 'lucide-react';
 import type { CourseSummary, InstructorSummary, CreateClassPayload } from '../../../types/classOffering';
 import { getApiErrorDetails } from '../../../services/axiosClient';
+import { validateClassDateAndWeights } from '../../../utils/validation';
 
 interface CreateClassModalProps {
   isOpen: boolean;
@@ -11,6 +12,36 @@ interface CreateClassModalProps {
   onSubmit: (payload: CreateClassPayload) => Promise<void>;
 }
 
+interface CreateClassFormData {
+  classCode: string;
+  courseId: string;
+  semester: string;
+  startDate: string;
+  endDate: string;
+  instructorId: string;
+  maxCapacity: number;
+  cancelDeadline: string;
+  minAttendancePct: number;
+  passScore: number;
+  midtermWeight: number;
+  finalWeight: number;
+}
+
+const initialClassFormData: CreateClassFormData = {
+  classCode: '',
+  courseId: '',
+  semester: 'Học kỳ II (2026 - 2027)',
+  startDate: '',
+  endDate: '',
+  instructorId: '',
+  maxCapacity: 40,
+  cancelDeadline: '',
+  minAttendancePct: 80.0,
+  passScore: 5.0,
+  midtermWeight: 0.3,
+  finalWeight: 0.7,
+};
+
 export function CreateClassModal({
   isOpen,
   courses,
@@ -18,18 +49,28 @@ export function CreateClassModal({
   onClose,
   onSubmit,
 }: CreateClassModalProps) {
-  const [classCode, setClassCode] = useState('');
-  const [courseId, setCourseId] = useState('');
-  const [semester, setSemester] = useState('Học kỳ II (2026 - 2027)');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [instructorId, setInstructorId] = useState<string>('');
-  const [maxCapacity, setMaxCapacity] = useState(40);
-  const [cancelDeadline, setCancelDeadline] = useState('');
-  const [minAttendancePct, setMinAttendancePct] = useState(80.0);
-  const [passScore, setPassScore] = useState(5.0);
-  const [midtermWeight, setMidtermWeight] = useState(0.3);
-  const [finalWeight, setFinalWeight] = useState(0.7);
+  const [formData, setFormData] = useState<CreateClassFormData>(initialClassFormData);
+  const {
+    classCode,
+    courseId,
+    semester,
+    startDate,
+    endDate,
+    instructorId,
+    maxCapacity,
+    cancelDeadline,
+    minAttendancePct,
+    passScore,
+    midtermWeight,
+    finalWeight,
+  } = formData;
+
+  const setFormField = useCallback(
+    <K extends keyof CreateClassFormData>(key: K, value: CreateClassFormData[K]) => {
+      setFormData((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,18 +88,7 @@ export function CreateClassModal({
   };
 
   const resetForm = useCallback(() => {
-    setClassCode('');
-    setCourseId('');
-    setSemester('Học kỳ II (2026 - 2027)');
-    setStartDate('');
-    setEndDate('');
-    setInstructorId('');
-    setMaxCapacity(40);
-    setCancelDeadline('');
-    setMinAttendancePct(80.0);
-    setPassScore(5.0);
-    setMidtermWeight(0.3);
-    setFinalWeight(0.7);
+    setFormData(initialClassFormData);
     setError(null);
     setFieldErrors({});
     setIsSubmitting(false);
@@ -78,18 +108,19 @@ export function CreateClassModal({
 
   useEffect(() => {
     if (courseId) {
-      const selectedCourse = courses.find((c) => c.id === courseId);
-      if (selectedCourse) {
-        if (selectedCourse.passScore) setPassScore(selectedCourse.passScore);
-        if (selectedCourse.minAttendancePct) setMinAttendancePct(selectedCourse.minAttendancePct);
-        if (selectedCourse.midtermWeight) setMidtermWeight(selectedCourse.midtermWeight);
-        if (selectedCourse.finalWeight) setFinalWeight(selectedCourse.finalWeight);
-        if (!classCode) {
-          setClassCode(`${selectedCourse.code}.O21`);
-        }
+      const selected = courses.find((c) => c.id === courseId);
+      if (selected) {
+        setFormData((prev) => ({
+          ...prev,
+          passScore: selected.passScore ?? prev.passScore,
+          minAttendancePct: selected.minAttendancePct ?? prev.minAttendancePct,
+          midtermWeight: selected.midtermWeight ?? prev.midtermWeight,
+          finalWeight: selected.finalWeight ?? prev.finalWeight,
+          classCode: prev.classCode || `${selected.code}.O21`,
+        }));
       }
     }
-  }, [courseId, courses, classCode]);
+  }, [courseId, courses]);
 
   const selectedCourse = courses.find((c) => c.id === courseId);
   const qualifiedInstructors = instructors.filter(
@@ -120,23 +151,20 @@ export function CreateClassModal({
       return;
     }
 
-    if (new Date(endDate) <= new Date(startDate)) {
-      setError('Ngày kết thúc phải sau ngày bắt đầu.');
-      return;
-    }
-
     if (!cancelDeadline) {
       setError('Vui lòng chọn hạn chót hủy đăng ký.');
       return;
     }
 
-    if (new Date(cancelDeadline) > new Date(startDate)) {
-      setError('Hạn chót hủy đăng ký phải trước hoặc cùng ngày bắt đầu khóa học.');
-      return;
-    }
-
-    if (Math.abs(Number(midtermWeight) + Number(finalWeight) - 1.0) > 0.001) {
-      setError('Tổng trọng số điểm giữa kỳ và cuối kỳ phải bằng 1.0 (100%).');
+    const validationErr = validateClassDateAndWeights(
+      startDate,
+      endDate,
+      cancelDeadline,
+      midtermWeight,
+      finalWeight
+    );
+    if (validationErr) {
+      setError(validationErr);
       return;
     }
 
@@ -211,7 +239,7 @@ export function CreateClassModal({
                 required
                 value={courseId}
                 onChange={(e) => {
-                  setCourseId(e.target.value);
+                  setFormField('courseId', e.target.value);
                   clearFieldError('courseId');
                 }}
                 className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
@@ -242,7 +270,7 @@ export function CreateClassModal({
                 placeholder="VD: SE101.O21"
                 value={classCode}
                 onChange={(e) => {
-                  setClassCode(e.target.value);
+                  setFormField('classCode', e.target.value);
                   clearFieldError('classCode');
                 }}
                 className={`w-full rounded-lg border px-3 py-2 text-sm uppercase focus:outline-none focus:ring-1 ${
@@ -267,7 +295,7 @@ export function CreateClassModal({
                 required
                 value={semester}
                 onChange={(e) => {
-                  setSemester(e.target.value);
+                  setFormField('semester', e.target.value);
                   clearFieldError('semester');
                 }}
                 className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
@@ -292,7 +320,7 @@ export function CreateClassModal({
                 required
                 value={maxCapacity}
                 onChange={(e) => {
-                  setMaxCapacity(Number(e.target.value));
+                  setFormField('maxCapacity', Number(e.target.value));
                   clearFieldError('maxCapacity');
                 }}
                 className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
@@ -314,7 +342,7 @@ export function CreateClassModal({
             <select
               value={instructorId}
               onChange={(e) => {
-                setInstructorId(e.target.value);
+                setFormField('instructorId', e.target.value);
                 clearFieldError('instructorId');
               }}
               className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
@@ -345,7 +373,7 @@ export function CreateClassModal({
                 required
                 value={startDate}
                 onChange={(e) => {
-                  setStartDate(e.target.value);
+                  setFormField('startDate', e.target.value);
                   clearFieldError('startDate');
                 }}
                 className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
@@ -368,7 +396,7 @@ export function CreateClassModal({
                 required
                 value={endDate}
                 onChange={(e) => {
-                  setEndDate(e.target.value);
+                  setFormField('endDate', e.target.value);
                   clearFieldError('endDate');
                 }}
                 className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
@@ -391,7 +419,7 @@ export function CreateClassModal({
                 required
                 value={cancelDeadline}
                 onChange={(e) => {
-                  setCancelDeadline(e.target.value);
+                  setFormField('cancelDeadline', e.target.value);
                   clearFieldError('cancelDeadline');
                 }}
                 className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
@@ -421,7 +449,7 @@ export function CreateClassModal({
                   max="100"
                   step="1"
                   value={minAttendancePct}
-                  onChange={(e) => setMinAttendancePct(Number(e.target.value))}
+                  onChange={(e) => setFormField('minAttendancePct', Number(e.target.value))}
                   className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm"
                 />
               </div>
@@ -436,7 +464,7 @@ export function CreateClassModal({
                   max="10"
                   step="0.5"
                   value={passScore}
-                  onChange={(e) => setPassScore(Number(e.target.value))}
+                  onChange={(e) => setFormField('passScore', Number(e.target.value))}
                   className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm"
                 />
               </div>

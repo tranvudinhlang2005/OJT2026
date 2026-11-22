@@ -2,7 +2,6 @@ import type { ClassOffering } from '@/types/classOffering';
 import { useClassRoster } from '@/hooks/useTeacherClasses';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
 import { formatDate } from '@/utils/dateFormat';
 
 export interface ClassRosterModalProps {
@@ -33,11 +32,6 @@ export function ClassRosterModal({ classItem, isOpen, onClose }: ClassRosterModa
             {classItem.semester} • Sĩ số: {classItem.enrolledCount} sinh viên
           </p>
         </div>
-      }
-      footer={
-        <Button variant="outline" size="sm" onClick={onClose}>
-          Đóng
-        </Button>
       }
     >
       <div className="py-2">

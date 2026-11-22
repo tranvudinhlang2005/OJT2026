@@ -165,19 +165,4 @@ export const approvalService = {
   async unlockSession(sessionId: string, reason: string): Promise<void> {
     await axiosClient.post(`/sessions/${sessionId}/unlock`, { reason: reason.trim() });
   },
-
-  async lockAllSessionsForClass(classId: string): Promise<void> {
-    const sessions = await classService.getSessions(classId);
-    const unlockedSessions = sessions.filter((s) => !s.attendanceLocked);
-    if (unlockedSessions.length === 0) return;
-
-    const results = await Promise.allSettled(
-      unlockedSessions.map((s) => axiosClient.post(`/sessions/${s.id}/lock`))
-    );
-
-    const rejected = results.filter((r) => r.status === 'rejected');
-    if (rejected.length > 0) {
-      throw new Error(`Đã có ${rejected.length}/${unlockedSessions.length} buổi học không thể khóa do lỗi.`);
-    }
-  },
 };
