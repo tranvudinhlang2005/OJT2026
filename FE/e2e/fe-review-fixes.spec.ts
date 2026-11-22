@@ -3,6 +3,7 @@ import {
   setupDefaultMocks,
   injectSession,
   ADMIN_USER,
+  INSTRUCTOR_USER,
   STUDENT_USER,
   createVietnamIsoString,
   type MockUserSession,
@@ -33,7 +34,7 @@ test.describe('Code Review Improvements TDD Suite', () => {
     await expect(auditHeader).not.toContainText('D18');
   });
 
-  test('2. Spec TR18 Scope Creep: Dashboard KPIs contains exactly 4 standard KPI cards', async ({ page }) => {
+  test('2. Spec: Dashboard KPIs renders averageAttendanceRate card per admin-spec.md', async ({ page }) => {
     await injectSession(page, ADMIN_USER);
     await setupDefaultMocks(page, ADMIN_USER);
 
@@ -44,16 +45,16 @@ test.describe('Code Review Improvements TDD Suite', () => {
     await expect(page.getByText('Đang vận hành').first()).toBeVisible();
     await expect(page.getByText('Tổng ghi danh').first()).toBeVisible();
 
-    await expect(page.getByText('Tỷ lệ chuyên cần')).not.toBeVisible();
+    await expect(page.getByText('Tỷ lệ chuyên cần').first()).toBeVisible();
   });
 
-  test('3. Spec TR18 Scope Creep: Security Alerts card is hidden from TRAINING_MANAGER', async ({ page }) => {
+  test('3. Spec: Security Alerts card is visible to TRAINING_MANAGER per admin-spec.md and api-contracts', async ({ page }) => {
     await injectSession(page, MANAGER_USER);
     await setupDefaultMocks(page, MANAGER_USER);
 
     await page.goto('/admin');
     await expect(page.getByRole('heading', { name: /tổng quan/i })).toBeVisible();
-    await expect(page.getByText('Cảnh báo bảo mật hệ thống')).not.toBeVisible();
+    await expect(page.getByText('Cảnh báo bảo mật hệ thống')).toBeVisible();
   });
 
   test('4. Spec Ticket 05 / Lỗi 13: Cancellation confirm dialog displays course code & name', async ({ page }) => {
@@ -591,5 +592,57 @@ test.describe('Code Review Improvements TDD Suite', () => {
     const enrolledFilterBtn = page.getByRole('button', { name: /đang đăng ký/i });
     await expect(enrolledFilterBtn).toBeVisible();
     await expect(page.getByRole('button', { name: /đang học/i })).not.toBeVisible();
+  });
+
+  test('19. Spec: Teacher grades submission displays confirmation dialog per instructor-spec.md', async ({ page }) => {
+    await injectSession(page, INSTRUCTOR_USER);
+    await setupDefaultMocks(page, INSTRUCTOR_USER);
+
+    await page.goto('/teacher/grades');
+    await expect(page.getByRole('heading', { name: /quản lý kết quả & nộp bảng điểm/i })).toBeVisible();
+
+    const submitBtn = page.getByRole('button', { name: /nộp điểm/i }).first();
+    await expect(submitBtn).toBeVisible();
+    await submitBtn.click();
+
+    await expect(
+      page.getByText('Bảng điểm sẽ được gửi lên Ban Đào tạo xét duyệt và bạn sẽ không thể chỉnh sửa trong thời gian chờ duyệt. Tiếp tục?')
+    ).toBeVisible();
+  });
+
+  test('20. Spec Scope Creep: Student profile only calls /students/me and does not fetch results or courses', async ({ page }) => {
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    let requestedResults = false;
+    let requestedCourses = false;
+
+    await page.route('**/api/v1/students/me/results**', async (route) => {
+      requestedResults = true;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ items: [], totalElements: 0 }) });
+    });
+    await page.route('**/api/v1/courses**', async (route) => {
+      requestedCourses = true;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ items: [], totalElements: 0 }) });
+    });
+
+    await page.goto('/student/profile');
+    await expect(page.getByRole('heading', { name: 'Trần Văn Sinh' })).toBeVisible();
+
+    expect(requestedResults).toBe(false);
+    expect(requestedCourses).toBe(false);
+    await expect(page.getByText('GPA Tích lũy')).not.toBeVisible();
+  });
+
+  test('21. Spec Scope Creep: Student registration does not render synthetic department or day filters', async ({ page }) => {
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    await page.goto('/student/registration');
+    await expect(page.getByPlaceholder(/tìm mã lớp/i)).toBeVisible();
+    await expect(page.getByRole('combobox').first()).toBeVisible();
+
+    await expect(page.locator('option', { hasText: 'Tất cả khoa / bộ môn' })).not.toBeAttached();
+    await expect(page.locator('option', { hasText: 'Tất cả các ngày trong tuần' })).not.toBeAttached();
   });
 });
