@@ -355,6 +355,134 @@ async function drive(featureName) {
 
       summary.success = true;
       console.log(`[DRIVE] Feature '${featureName}' driven successfully! Evidence captured.`);
+    } else if (featureName === 'admin-dashboard') {
+      await page.addInitScript(() => {
+        window.localStorage.setItem('user', JSON.stringify({
+          id: '1',
+          name: 'Admin Đào tạo',
+          email: 'admin@edu.vn',
+          role: 'TRAINING_ADMIN',
+        }));
+        window.localStorage.setItem('role', 'TRAINING_ADMIN');
+        window.localStorage.setItem('token', 'active-session-token');
+        document.cookie = 'XSRF-TOKEN=test-csrf-token; path=/';
+      });
+
+      await page.route('**/api/v1/auth/me', (route) => {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            userId: 1,
+            fullName: 'Admin Đào tạo',
+            role: 'TRAINING_ADMIN',
+            email: 'admin@edu.vn',
+          }),
+        });
+      });
+
+      await page.route('**/api/v1/dashboard/summary', (route) => {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            totalCourses: 12,
+            activeClasses: 8,
+            totalInstructors: 15,
+            totalStudents: 120,
+            pendingApprovals: 3,
+            attendanceRate: 94.5,
+          }),
+        });
+      });
+
+      await page.route('**/api/v1/dashboard/classes**', (route) => {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            content: [],
+            totalElements: 0,
+          }),
+        });
+      });
+
+      console.log('  -> Step 1: Navigating to /admin');
+      await page.goto('http://localhost:5173/admin', { waitUntil: 'networkidle' });
+      const heading = page.getByRole('heading', { name: /Tổng quan hệ thống/i });
+      await heading.waitFor({ state: 'visible' });
+
+      await page.screenshot({ path: path.join(featureDir, '01-overview.png') });
+      summary.steps.push({ step: 'Open Admin Dashboard', url: page.url(), status: 'OK' });
+
+      const text = await page.locator('body').innerText();
+      fs.writeFileSync(path.join(featureDir, 'dashboard-aria.txt'), text, 'utf-8');
+
+      summary.success = true;
+      console.log(`[DRIVE] Feature '${featureName}' driven successfully! Evidence captured.`);
+    } else if (featureName === 'teacher-workflow') {
+      await page.addInitScript(() => {
+        window.localStorage.setItem('user', JSON.stringify({
+          id: '2',
+          name: 'Giảng viên Mẫu',
+          email: 'gv.mau@edu.vn',
+          role: 'INSTRUCTOR',
+        }));
+        window.localStorage.setItem('role', 'INSTRUCTOR');
+        window.localStorage.setItem('token', 'active-session-token');
+        document.cookie = 'XSRF-TOKEN=test-csrf-token; path=/';
+      });
+
+      await page.route('**/api/v1/auth/me', (route) => {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            userId: 2,
+            fullName: 'Giảng viên Mẫu',
+            role: 'INSTRUCTOR',
+            email: 'gv.mau@edu.vn',
+          }),
+        });
+      });
+
+      await page.route('**/api/v1/teacher/schedule**', (route) => {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([
+            {
+              id: 601,
+              courseName: 'Cơ sở dữ liệu nâng cao',
+              roomName: 'A1-201',
+              date: '2026-11-23',
+              shift: 'Ca 1 (07:30 - 09:30)',
+            },
+          ]),
+        });
+      });
+
+      await page.route('**/api/v1/teacher/classes**', (route) => {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            content: [],
+            totalElements: 0,
+          }),
+        });
+      });
+
+      console.log('  -> Step 1: Navigating to /teacher/schedule');
+      await page.goto('http://localhost:5173/teacher/schedule', { waitUntil: 'networkidle' });
+      await page.screenshot({ path: path.join(featureDir, '01-schedule.png') });
+      summary.steps.push({ step: 'Open Teacher Schedule', url: page.url(), status: 'OK' });
+
+      const text = await page.locator('body').innerText();
+      fs.writeFileSync(path.join(featureDir, 'schedule.txt'), text, 'utf-8');
+
+      summary.success = true;
+      console.log(`[DRIVE] Feature '${featureName}' driven successfully! Evidence captured.`);
     } else if (featureName === 'student-portal') {
       await page.addInitScript(() => {
         window.localStorage.setItem('user', JSON.stringify({

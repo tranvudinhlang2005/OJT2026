@@ -1,0 +1,46 @@
+Teacher Portal
+Giảng viên
+Hệ thống quản lý giảng dạy & học vụ
+Lịch giảng dạy
+Lớp học phụ trách
+Quản lý kết quả
+GV
+
+Giảng viên Mẫu
+
+gv.mau@edu.vn
+
+Lịch giảng dạy & Điểm danh
+Học kỳ II (2026 - 2027)
+CA DẠY HÔM NAY
+
+0 ca học
+
+✓ Đã hoàn tất điểm danh hôm nay
+
+TỔNG SỐ BUỔI TUẦN NÀY
+
+0 buổi dạy
+
+0 tiết giảng dạy
+
+TỈ LỆ HOÀN THÀNH ĐIỂM DANH
+
+100%
+
+Đạt chuẩn quy định học vụ
+
+Tuần trước
+Tuần này
+Tuần sau
+Tất cả các tuần
+16/11/2026 - 22/11/2026
+Danh sách các ca học sắp tới
+
+Thất bại
+
+Không thể tải lịch giảng dạy từ hệ thống.
+
+Thất bại
+
+Không thể tải lịch giảng dạy từ hệ thống.

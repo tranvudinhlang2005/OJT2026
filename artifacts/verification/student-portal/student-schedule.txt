@@ -1,0 +1,33 @@
+Student Portal
+Sinh viên
+Cổng thông tin & Dịch vụ đào tạo sinh viên
+Lớp mở & Đăng ký
+Thời khóa biểu
+Kết quả học tập
+SV
+
+Trần Văn Sinh
+
+Lịch học chính khóa
+Học kỳ hiện tại
+Thời khóa biểu cá nhân
+Dạng tuần
+Dạng danh sách
+Tuần trước
+Tuần này
+Tuần sau
+Tất cả các tuần
+16/11/2026 - 22/11/2026
+Hiện chưa có lịch học nào
+
+Thời khóa biểu của bạn đang trống. Hãy vào mục "Lớp mở & Đăng ký" để chọn học phần phù hợp.
+
+Đăng ký học phần ngay
+
+Thất bại
+
+Không thể tải dữ liệu thời khóa biểu từ hệ thống.
+
+Thất bại
+
+Không thể tải dữ liệu thời khóa biểu từ hệ thống.

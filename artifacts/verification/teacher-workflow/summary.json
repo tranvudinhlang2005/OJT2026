@@ -1,0 +1,12 @@
+{
+  "feature": "teacher-workflow",
+  "timestamp": "2026-11-22T14:07:27.828Z",
+  "steps": [
+    {
+      "step": "Open Teacher Schedule",
+      "url": "http://localhost:5173/teacher/schedule",
+      "status": "OK"
+    }
+  ],
+  "success": true
+}

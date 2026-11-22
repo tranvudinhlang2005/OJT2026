@@ -1,0 +1,12 @@
+{
+  "feature": "student-portal",
+  "timestamp": "2026-11-22T14:06:26.164Z",
+  "steps": [
+    {
+      "step": "Open Student Schedule",
+      "url": "http://localhost:5173/student/schedule",
+      "status": "OK"
+    }
+  ],
+  "success": true
+}

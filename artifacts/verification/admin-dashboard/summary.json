@@ -1,0 +1,12 @@
+{
+  "feature": "admin-dashboard",
+  "timestamp": "2026-11-22T14:07:07.514Z",
+  "steps": [
+    {
+      "step": "Open Admin Dashboard",
+      "url": "http://localhost:5173/admin",
+      "status": "OK"
+    }
+  ],
+  "success": true
+}
