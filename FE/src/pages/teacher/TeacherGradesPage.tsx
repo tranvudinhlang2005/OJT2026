@@ -16,6 +16,7 @@ import {
 } from '../../services/instructorService';
 import type { ClassOffering } from '../../types/classOffering';
 import { DEFAULT_MIN_ATTENDANCE_PCT, DEFAULT_PASS_SCORE } from '../../constants/academic';
+import { getGradingStatusLabel } from '../../constants/status';
 
 export default function TeacherGradesPage() {
   const { toast } = useToast();
@@ -170,35 +171,26 @@ export default function TeacherGradesPage() {
   };
 
   const getStatusBadge = (gradingStatus: string) => {
-    switch (gradingStatus) {
-      case 'CONFIRMED':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-            <CheckCircle className="h-3.5 w-3.5" />
-            Đã duyệt
-          </span>
-        );
-      case 'SUBMITTED':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
-            <Clock className="h-3.5 w-3.5" />
-            Chờ xét duyệt
-          </span>
-        );
-      case 'DRAFT':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 border border-blue-200">
-            <Edit3 className="h-3.5 w-3.5" />
-            Bản nháp
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-            Chưa bắt đầu
-          </span>
-        );
-    }
+    const label = getGradingStatusLabel(gradingStatus);
+    const variant =
+      gradingStatus === 'CONFIRMED'
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+        : gradingStatus === 'SUBMITTED'
+        ? 'bg-amber-50 text-amber-700 border-amber-200'
+        : 'bg-blue-50 text-blue-700 border-blue-200';
+
+    return (
+      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold border ${variant}`}>
+        {gradingStatus === 'CONFIRMED' ? (
+          <CheckCircle className="h-3.5 w-3.5" />
+        ) : gradingStatus === 'SUBMITTED' ? (
+          <Clock className="h-3.5 w-3.5" />
+        ) : (
+          <Edit3 className="h-3.5 w-3.5" />
+        )}
+        {label}
+      </span>
+    );
   };
 
   return (

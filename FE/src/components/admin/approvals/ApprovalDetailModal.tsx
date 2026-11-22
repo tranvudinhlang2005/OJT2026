@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { ClassResultDetail } from '../../../types/approval';
 import { formatDateTime } from '../../../utils/dateFormat';
+import { getGradingStatusLabel } from '../../../constants/status';
 
 interface ApprovalDetailModalProps {
   isOpen: boolean;
@@ -62,29 +63,24 @@ export function ApprovalDetailModal({
   };
 
   const getStatusBadge = () => {
-    switch (resultDetail.gradingStatus) {
-      case 'CONFIRMED':
-        return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
-            <CheckCircle className="h-3.5 w-3.5" />
-            Đã phê duyệt
-          </span>
-        );
-      case 'SUBMITTED':
-        return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-200">
-            <Clock className="h-3.5 w-3.5" />
-            Chờ xét duyệt
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-3 py-1 text-xs font-bold text-rose-700 border border-rose-200">
-            <AlertTriangle className="h-3.5 w-3.5" />
-            Yêu cầu chỉnh sửa
-          </span>
-        );
-    }
+    const label = getGradingStatusLabel(resultDetail.gradingStatus);
+    const variant =
+      resultDetail.gradingStatus === 'CONFIRMED'
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+        : resultDetail.gradingStatus === 'SUBMITTED'
+        ? 'bg-amber-50 text-amber-700 border-amber-200'
+        : 'bg-rose-50 text-rose-700 border-rose-200';
+
+    return (
+      <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold border ${variant}`}>
+        {resultDetail.gradingStatus === 'CONFIRMED' ? (
+          <CheckCircle className="h-3.5 w-3.5" />
+        ) : (
+          <Clock className="h-3.5 w-3.5" />
+        )}
+        {label}
+      </span>
+    );
   };
 
   return (

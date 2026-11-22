@@ -52,6 +52,16 @@ export const ATTENDANCE_MARKS = {
   ABSENT: 'ABSENT',
 } as const;
 
+export type AttendanceMarkType = (typeof ATTENDANCE_MARKS)[keyof typeof ATTENDANCE_MARKS];
+
+export function toCanonicalAttendanceMark(status: string | null | undefined): AttendanceMarkType {
+  const upper = (status || '').toUpperCase();
+  if (upper === 'PRESENT' || upper === 'LATE' || upper === 'ABSENT') {
+    return upper;
+  }
+  return 'PRESENT';
+}
+
 export const ENROLLMENT_STATUS = {
   ENROLLED: 'ENROLLED',
   CANCELLED: 'CANCELLED',

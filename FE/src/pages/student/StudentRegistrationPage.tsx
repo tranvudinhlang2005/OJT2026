@@ -68,7 +68,7 @@ export default function StudentRegistrationPage() {
           isFull: avail <= 0,
           cancelDeadline: cls.cancelDeadline,
           semester: cls.semester,
-          department: cls.course.department || 'Chưa cập nhật',
+          department: cls.course.department || '',
         };
       });
 
@@ -311,7 +311,9 @@ export default function StudentRegistrationPage() {
                                     {cls.classCode || cls.courseCode}
                                   </span>
                                 </div>
-                                <p className="text-xs text-slate-500 mt-0.5">{cls.department}</p>
+                                {cls.department ? (
+                                  <p className="text-xs text-slate-500 mt-0.5">{cls.department}</p>
+                                ) : null}
                                 {cls.cancelDeadline && (
                                   <p className="text-[11px] text-amber-700 font-medium mt-1">
                                     Hạn hủy: {formatDateTime(cls.cancelDeadline)}

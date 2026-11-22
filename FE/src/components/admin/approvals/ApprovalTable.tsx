@@ -1,7 +1,6 @@
 import {
   CheckCircle,
   Clock,
-  AlertTriangle,
   Lock,
   Eye,
   CheckSquare,
@@ -9,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { ApprovalSummaryItem } from '../../../types/approval';
 import { formatDateTime } from '../../../utils/dateFormat';
+import { getGradingStatusLabel } from '../../../constants/status';
 
 interface ApprovalTableProps {
   items: ApprovalSummaryItem[];
@@ -24,35 +24,24 @@ export function ApprovalTable({
   onOpenCompleteModal,
 }: ApprovalTableProps) {
   const getStatusBadge = (status: ApprovalSummaryItem['gradingStatus']) => {
-    switch (status) {
-      case 'CONFIRMED':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-            <CheckCircle className="h-3.5 w-3.5" />
-            Đã phê duyệt
-          </span>
-        );
-      case 'SUBMITTED':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
-            <Clock className="h-3.5 w-3.5" />
-            Chờ xét duyệt
-          </span>
-        );
-      case 'DRAFT':
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-semibold text-rose-700 border border-rose-200">
-            <AlertTriangle className="h-3.5 w-3.5" />
-            Yêu cầu chỉnh sửa
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-            Bản nháp
-          </span>
-        );
-    }
+    const label = getGradingStatusLabel(status);
+    const variant =
+      status === 'CONFIRMED'
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+        : status === 'SUBMITTED'
+        ? 'bg-amber-50 text-amber-700 border-amber-200'
+        : 'bg-rose-50 text-rose-700 border-rose-200';
+
+    return (
+      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold border ${variant}`}>
+        {status === 'CONFIRMED' ? (
+          <CheckCircle className="h-3.5 w-3.5" />
+        ) : (
+          <Clock className="h-3.5 w-3.5" />
+        )}
+        {label}
+      </span>
+    );
   };
 
   if (isLoading) {
