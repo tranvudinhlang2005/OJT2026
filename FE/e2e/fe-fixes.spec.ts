@@ -803,7 +803,7 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await page.getByRole('button', { name: /lớp đã đăng ký/i }).click();
 
     await expect(page.getByRole('button', { name: /tất cả/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /đang học/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /đang đăng ký/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /đã hủy/i })).toBeVisible();
 
     const unregisterBtn = page.getByRole('button', { name: 'Hủy đăng ký' }).first();
