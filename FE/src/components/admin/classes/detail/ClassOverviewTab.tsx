@@ -1,5 +1,6 @@
 import type { ClassOffering } from '@/types/classOffering';
 import { formatDate, formatDateTime } from '@/utils/dateFormat';
+import { getGradingStatusLabel } from '@/constants/status';
 
 export interface ClassOverviewTabProps {
   classOffering: ClassOffering;
@@ -79,7 +80,7 @@ export function ClassOverviewTab({ classOffering }: ClassOverviewTabProps) {
             </div>
             <div className="flex justify-between py-1">
               <dt className="text-slate-500">Trạng thái chấm điểm:</dt>
-              <dd className="font-medium text-slate-800">{classOffering.gradingStatus}</dd>
+              <dd className="font-medium text-slate-800">{getGradingStatusLabel(classOffering.gradingStatus)}</dd>
             </div>
           </dl>
         </div>

@@ -146,7 +146,7 @@ export const userService = {
         managed.instructorProfile = {
           id: String(inst.id),
           instructorCode: inst.instructorCode,
-          department: inst.department || 'Khoa Công nghệ Thông tin',
+          department: inst.department || 'Chưa cập nhật',
           phone: inst.phone || '',
           teachingActive: inst.isActive,
           teachableCourses: [],
@@ -271,7 +271,7 @@ export const userService = {
           instructorProfile = {
             id: String(matchedInst.id),
             instructorCode: matchedInst.instructorCode,
-            department: payload.department || 'Khoa CNTT',
+            department: payload.department || 'Chưa cập nhật',
             phone: payload.phone || '',
             teachingActive: true,
             teachableCourses: [],

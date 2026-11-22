@@ -33,6 +33,19 @@ export const GRADING_STATUS = {
   CONFIRMED: 'CONFIRMED',
 } as const;
 
+export type GradingStatusType = (typeof GRADING_STATUS)[keyof typeof GRADING_STATUS];
+
+export const GRADING_STATUS_LABELS: Record<string, string> = {
+  DRAFT: 'Bản nháp',
+  SUBMITTED: 'Chờ phê duyệt',
+  CONFIRMED: 'Đã phê duyệt',
+};
+
+export function getGradingStatusLabel(status: string | null | undefined): string {
+  if (!status) return 'Chưa cập nhật';
+  return GRADING_STATUS_LABELS[status] || status;
+}
+
 export const ATTENDANCE_MARKS = {
   PRESENT: 'PRESENT',
   LATE: 'LATE',
