@@ -46,6 +46,8 @@ export default function ClassesPage() {
   });
 
   const [isLoading, setIsLoading] = useState(true);
+  const instructorsFetchedRef = useRef(false);
+  const roomsFetchedRef = useRef(false);
 
   const createModal = useModal();
   const editModal = useModal<ClassOffering>();
@@ -74,14 +76,26 @@ export default function ClassesPage() {
   useEffect(() => {
     if (!canManage) return;
     if (createModal.isOpen || editModal.isOpen || assignModal.isOpen) {
-      if (instructors.length === 0) {
-        classService.getInstructors().then(setInstructors).catch(() => {});
+      if (!instructorsFetchedRef.current) {
+        instructorsFetchedRef.current = true;
+        classService
+          .getInstructors()
+          .then(setInstructors)
+          .catch(() => {
+            toast.error('Không thể tải danh sách giảng viên.');
+          });
       }
-      if (rooms.length === 0 && (createModal.isOpen || editModal.isOpen)) {
-        classService.getRooms().then(setRooms).catch(() => {});
+      if (!roomsFetchedRef.current && (createModal.isOpen || editModal.isOpen)) {
+        roomsFetchedRef.current = true;
+        classService
+          .getRooms()
+          .then(setRooms)
+          .catch(() => {
+            toast.error('Không thể tải danh sách phòng học.');
+          });
       }
     }
-  }, [canManage, createModal.isOpen, editModal.isOpen, assignModal.isOpen, instructors.length, rooms.length]);
+  }, [canManage, createModal.isOpen, editModal.isOpen, assignModal.isOpen, toast]);
 
   const detailClassRef = useRef(detailModal.data);
   useEffect(() => {

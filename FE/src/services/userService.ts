@@ -68,6 +68,18 @@ interface BackendInstructorDetailResponse {
   courses: Array<{ id: number; code: string; name: string; isActive: boolean }>;
 }
 
+async function fetchAuxiliaryUserMap<T extends { userId: number }>(
+  endpoint: string,
+  targetMap: Map<number, T>
+): Promise<void> {
+  try {
+    const res = await axiosClient.get<PageResponse<T>>(endpoint, { params: { size: 100 } });
+    const items = Array.isArray(res.data?.items) ? res.data.items : [];
+    items.forEach((item) => targetMap.set(item.userId, item));
+  } catch {
+  }
+}
+
 export const userService = {
   async getUsers(filter: UserFilter = {}): Promise<ManagedUser[]> {
     const params: Record<string, string | boolean | number> = {
@@ -96,33 +108,14 @@ export const userService = {
     const hasInstructors = users.some((u) => u.role === 'INSTRUCTOR');
 
     if (hasStudents || hasInstructors) {
-      try {
-        const fetchTasks: Promise<void>[] = [];
-        if (hasStudents) {
-          fetchTasks.push(
-            axiosClient
-              .get<PageResponse<BackendStudentResponse>>('/students', { params: { size: 100 } })
-              .then((res) => {
-                const items = Array.isArray(res.data?.items) ? res.data.items : [];
-                items.forEach((s) => studentsMap.set(s.userId, s));
-              })
-              .catch(() => {})
-          );
-        }
-        if (hasInstructors) {
-          fetchTasks.push(
-            axiosClient
-              .get<PageResponse<BackendInstructorSummary>>('/instructors', { params: { size: 100 } })
-              .then((res) => {
-                const items = Array.isArray(res.data?.items) ? res.data.items : [];
-                items.forEach((i) => instructorsMap.set(i.userId, i));
-              })
-              .catch(() => {})
-          );
-        }
-        await Promise.allSettled(fetchTasks);
-      } catch {
+      const fetchTasks: Promise<void>[] = [];
+      if (hasStudents) {
+        fetchTasks.push(fetchAuxiliaryUserMap('/students', studentsMap));
       }
+      if (hasInstructors) {
+        fetchTasks.push(fetchAuxiliaryUserMap('/instructors', instructorsMap));
+      }
+      await Promise.allSettled(fetchTasks);
     }
 
     return users.map((u) => {

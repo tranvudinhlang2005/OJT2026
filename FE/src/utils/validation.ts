@@ -1,8 +1,14 @@
-export function validateClassDates(
-  startDate: string,
-  endDate: string,
-  cancelDeadline?: string
-): string | null {
+export interface ClassDateRange {
+  startDate: string;
+  endDate: string;
+  cancelDeadline?: string;
+}
+
+export function validateClassDates({
+  startDate,
+  endDate,
+  cancelDeadline,
+}: ClassDateRange): string | null {
   if (new Date(endDate) <= new Date(startDate)) {
     return 'Ngày kết thúc phải sau ngày bắt đầu.';
   }

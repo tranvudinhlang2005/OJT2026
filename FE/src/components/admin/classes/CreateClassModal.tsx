@@ -156,7 +156,7 @@ export function CreateClassModal({
       return;
     }
 
-    const validationErr = validateClassDates(startDate, endDate, cancelDeadline);
+    const validationErr = validateClassDates({ startDate, endDate, cancelDeadline });
     if (validationErr) {
       setError(validationErr);
       return;

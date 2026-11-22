@@ -4,6 +4,7 @@ import {
   injectSession,
   ADMIN_USER,
   STUDENT_USER,
+  createVietnamIsoString,
   type MockUserSession,
 } from './helpers/mockApi';
 
@@ -306,7 +307,7 @@ test.describe('Code Review Improvements TDD Suite', () => {
           startTime: '08:00:00',
           endTime: '11:30:00',
           attendanceLocked: true,
-          lockedAt: '2026-03-20T11:35:00Z',
+          lockedAt: createVietnamIsoString(2026, 3, 20, 18, 35),
           version: 1,
           items: [],
         }),

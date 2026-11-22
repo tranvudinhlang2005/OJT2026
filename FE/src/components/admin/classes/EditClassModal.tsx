@@ -93,7 +93,7 @@ export function EditClassModal({
     if (!classOffering || isSubmitting || submittingRef.current) return;
     setError(null);
 
-    const validationErr = validateClassDates(startDate, endDate, cancelDeadline);
+    const validationErr = validateClassDates({ startDate, endDate, cancelDeadline });
     if (validationErr) {
       setError(validationErr);
       return;
