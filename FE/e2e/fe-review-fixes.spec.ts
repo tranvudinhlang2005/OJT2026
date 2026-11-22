@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { validateClassDates } from '../src/utils/validation';
 import {
   setupDefaultMocks,
   injectSession,
@@ -324,5 +325,165 @@ test.describe('Code Review Improvements TDD Suite', () => {
     await sessionItemBtn.click();
 
     await expect(page.getByText(/đã khóa lúc 20\/03\/2026 18:35/i)).toBeVisible();
+  });
+
+  test('10. Spec: Registration displays dedicated confirmation Dialog modal with timetable and room', async ({ page }) => {
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    await page.route('**/api/v1/students/me/enrollments**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ items: [] }),
+      });
+    });
+
+    await page.goto('/student/registration');
+    await expect(page.getByRole('heading', { name: /đăng ký lớp học phần/i })).toBeVisible();
+
+    const registerBtn = page.getByRole('button', { name: 'Đăng ký', exact: true }).first();
+    await registerBtn.click();
+
+    const dialogModal = page.getByRole('dialog');
+    await expect(dialogModal).toBeVisible();
+    await expect(dialogModal.getByRole('heading', { name: /xác nhận đăng ký học phần/i })).toBeVisible();
+    await expect(dialogModal.getByText(/lịch học/i)).toBeVisible();
+  });
+
+  test('11. Spec: Available Classes displays red badge Da day si so when class is full', async ({ page }) => {
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    await page.route('**/api/v1/classes**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: [
+            {
+              id: 88,
+              classCode: 'FULL101.O21',
+              courseCode: 'FULL101',
+              courseName: 'Lớp đầy sĩ số',
+              semester: 'SUM2026',
+              status: 'OPEN',
+              capacity: 30,
+              enrolledCount: 30,
+              availableSeats: 0,
+              isFull: true,
+              cancelDeadline: '2026-12-31T23:59:59Z',
+            },
+          ],
+          totalElements: 1,
+        }),
+      });
+    });
+
+    await page.goto('/student/registration');
+    await expect(page.getByText('Danh sách lớp mở đăng ký')).toBeVisible();
+
+    const row = page.locator('tr:has-text("FULL101.O21")');
+    await expect(row).toBeVisible();
+    await expect(row.getByText('Đã đầy sĩ số')).toBeVisible();
+  });
+
+  test('12. Spec: validateClassDates rejects weights not summing to 1.0', () => {
+    const result = (validateClassDates as unknown as (args: Record<string, unknown>) => string | null)({
+      startDate: '2026-09-01',
+      endDate: '2026-12-30',
+      cancelDeadline: '2026-08-30',
+      midtermWeight: 0.4,
+      finalWeight: 0.7,
+    });
+    expect(result).toBe('Tổng trọng số điểm giữa kỳ và cuối kỳ phải bằng 100% (1.0).');
+  });
+
+  test('13. Spec: Student Grades page does NOT request courses or profile endpoints', async ({ page }) => {
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    let coursesRequested = false;
+    let profileRequested = false;
+
+    await page.route('**/api/v1/courses**', async (route) => {
+      coursesRequested = true;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ items: [] }) });
+    });
+
+    await page.route('**/api/v1/students/me', async (route) => {
+      profileRequested = true;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 1 }) });
+    });
+
+    await page.goto('/student/grades');
+    await expect(page.getByRole('heading', { name: 'Bảng điểm & Kết quả học tập' })).toBeVisible();
+    await expect(page.locator('table')).toBeVisible();
+
+    expect(coursesRequested).toBe(false);
+    expect(profileRequested).toBe(false);
+  });
+
+  test('14. Spec: Classes Page does NOT request dashboard semesters endpoint', async ({ page }) => {
+    await injectSession(page, ADMIN_USER);
+    await setupDefaultMocks(page, ADMIN_USER);
+
+    let dashboardSemestersRequested = false;
+    await page.route('**/api/v1/dashboard/semesters**', async (route) => {
+      dashboardSemestersRequested = true;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+    });
+
+    await page.goto('/admin/classes');
+    await expect(page.getByRole('heading', { name: /quản lý lớp & lịch học/i })).toBeVisible();
+    await expect(page.locator('table')).toBeVisible();
+
+    expect(dashboardSemestersRequested).toBe(false);
+  });
+
+  test('15. Spec: My Enrollments tab displays Dang dang ky badge for ENROLLED status', async ({ page }) => {
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    await page.route('**/api/v1/students/me/enrollments**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: [
+            {
+              enrollmentId: 55,
+              classId: 101,
+              classCode: 'INT3110.O21',
+              courseCode: 'INT3110',
+              courseName: 'Cơ sở dữ liệu nâng cao',
+              semester: 'SUM2026',
+              status: 'ENROLLED',
+              classStatus: 'OPEN',
+              enrolledAt: '2026-02-01T08:00:00Z',
+              cancelDeadline: '2026-12-31T23:59:59Z',
+            },
+          ],
+          totalElements: 1,
+        }),
+      });
+    });
+
+    await page.goto('/student/registration');
+    await page.getByRole('button', { name: /lớp đã đăng ký/i }).click();
+
+    const enrolledRow = page.locator('tr:has-text("INT3110.O21")');
+    await expect(enrolledRow).toBeVisible();
+    await expect(enrolledRow.getByText('Đang đăng ký')).toBeVisible();
+    await expect(enrolledRow.getByText('Đang học')).not.toBeVisible();
+  });
+
+  test('16. Spec: Same-day cancel deadline is allowed in validateClassDates', () => {
+    const result = validateClassDates({
+      startDate: '2026-09-01',
+      endDate: '2026-12-30',
+      cancelDeadline: '2026-09-01T23:59:59Z',
+    });
+    expect(result).toBeNull();
   });
 });
