@@ -1,4 +1,4 @@
-import { Users, TrendingUp, Award, BookOpen, GraduationCap } from 'lucide-react';
+import { Users, TrendingUp, Award, BookOpen, GraduationCap, UserCheck } from 'lucide-react';
 import type { DashboardSummary, DashboardClassItem } from '../../../types/dashboard';
 
 interface DashboardKPIsProps {
@@ -7,12 +7,14 @@ interface DashboardKPIsProps {
 }
 
 export function DashboardKPIs({ summary, classes = [] }: DashboardKPIsProps) {
-  const fillRatePct =
-    summary.fillRate !== null ? (summary.fillRate * 100).toFixed(1) : null;
-  const completionRatePct =
-    summary.completionRate !== null
-      ? (summary.completionRate * 100).toFixed(1)
-      : null;
+  const formatPct = (val: number | null) => {
+    if (val === null) return null;
+    return (val <= 1 ? val * 100 : val).toFixed(1);
+  };
+
+  const fillRatePct = formatPct(summary.fillRate);
+  const completionRatePct = formatPct(summary.completionRate);
+  const attendanceRatePct = formatPct(summary.averageAttendanceRate);
 
   const activeClassesCount =
     (summary.classCountsByStatus.OPEN || 0) +
@@ -39,7 +41,7 @@ export function DashboardKPIs({ summary, classes = [] }: DashboardKPIsProps) {
       : 0;
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs transition hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>
@@ -118,6 +120,33 @@ export function DashboardKPIs({ summary, classes = [] }: DashboardKPIsProps) {
           </p>
           <p className="mt-1 text-[11px] text-slate-500">
             Tổng sinh viên ghi danh
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs transition hover:shadow-md">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Tỷ lệ chuyên cần
+            </p>
+            <p className="mt-2 text-3xl font-extrabold tracking-tight text-amber-600">
+              {attendanceRatePct !== null ? `${attendanceRatePct}%` : 'N/A'}
+            </p>
+          </div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+            <UserCheck className="h-6 w-6" />
+          </div>
+        </div>
+        <div className="mt-3">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-amber-500 transition-all duration-500"
+              style={{ width: `${Math.min(Number(attendanceRatePct || 0), 100)}%` }}
+            ></div>
+          </div>
+          <p className="mt-2 text-[11px] text-slate-500">
+            Toàn bộ các buổi điểm danh
           </p>
         </div>
       </div>

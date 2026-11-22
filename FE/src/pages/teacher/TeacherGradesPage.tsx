@@ -8,6 +8,7 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import {
   instructorService,
   type ClassResultSheet,
@@ -28,6 +29,8 @@ export default function TeacherGradesPage() {
     Record<string, { midtermScore?: number | null; finalScore?: number | null; reason?: string }>
   >({});
   const [submitting, setSubmitting] = useState(false);
+  const [classToSubmit, setClassToSubmit] = useState<ClassOffering | null>(null);
+  const [submittingApproval, setSubmittingApproval] = useState(false);
 
   const loadClasses = useCallback(async () => {
     try {
@@ -147,17 +150,22 @@ export default function TeacherGradesPage() {
     }
   };
 
-  const handleSubmitForApproval = async (cls: ClassOffering) => {
+  const handleConfirmSubmit = async () => {
+    if (!classToSubmit) return;
     try {
-      await instructorService.submitResults(cls.id);
-      toast.success(`Đã nộp bảng điểm lớp [${cls.classCode}] lên Phòng Đào tạo xét duyệt!`);
+      setSubmittingApproval(true);
+      await instructorService.submitResults(classToSubmit.id);
+      toast.success(`Đã nộp bảng điểm lớp [${classToSubmit.classCode}] lên Phòng Đào tạo xét duyệt!`);
       await loadClasses();
-      if (activeClass?.id === cls.id) {
+      if (activeClass?.id === classToSubmit.id) {
         setActiveClass(null);
       }
+      setClassToSubmit(null);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       toast.error(axiosErr.response?.data?.message || 'Không thể nộp bảng điểm.');
+    } finally {
+      setSubmittingApproval(false);
     }
   };
 
@@ -289,7 +297,7 @@ export default function TeacherGradesPage() {
                         {cls.gradingStatus === 'DRAFT' && (
                           <button
                             type="button"
-                            onClick={() => handleSubmitForApproval(cls)}
+                            onClick={() => setClassToSubmit(cls)}
                             className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 shadow-xs transition"
                           >
                             <Send className="h-3.5 w-3.5" />
@@ -492,6 +500,18 @@ export default function TeacherGradesPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(classToSubmit)}
+        onClose={() => setClassToSubmit(null)}
+        onConfirm={handleConfirmSubmit}
+        title="Xác nhận nộp bảng điểm"
+        description="Bảng điểm sẽ được gửi lên Ban Đào tạo xét duyệt và bạn sẽ không thể chỉnh sửa trong thời gian chờ duyệt. Tiếp tục?"
+        confirmLabel="Nộp bảng điểm"
+        cancelLabel="Hủy bỏ"
+        variant="warning"
+        isLoading={submittingApproval}
+      />
     </div>
   );
 }

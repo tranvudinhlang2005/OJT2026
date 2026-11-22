@@ -29,7 +29,8 @@ export default function DashboardPage() {
   const { toast } = useToast();
 
   const isAdmin = user?.role === 'TRAINING_ADMIN';
-  const canViewSecurityAlerts = isAdmin;
+  const isManager = user?.role === 'TRAINING_MANAGER';
+  const canViewSecurityAlerts = isAdmin || isManager;
   const canViewAudit = isAdmin;
 
   const [activeTab, setActiveTab] = useState<'overview' | 'audit'>('overview');

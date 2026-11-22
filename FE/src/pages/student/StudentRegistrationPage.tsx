@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Search,
-  Filter,
   CheckCircle2,
   Clock,
   MapPin,
@@ -26,8 +25,6 @@ export default function StudentRegistrationPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSemester, setSelectedSemester] = useState('ALL');
-  const [selectedDepartment, setSelectedDepartment] = useState('ALL');
-  const [selectedDay, setSelectedDay] = useState<number | 'ALL'>('ALL');
   const [activeTab, setActiveTab] = useState<'open' | 'registered'>('open');
   const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState<'ALL' | 'ENROLLED' | 'CANCELLED' | 'COMPLETED'>('ALL');
   const [currentTimestamp, setCurrentTimestamp] = useState(() => Date.now());
@@ -158,24 +155,17 @@ export default function StudentRegistrationPage() {
         c.teacherName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.id.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchDept = selectedDepartment === 'ALL' || c.department === selectedDepartment;
-      const matchDay = selectedDay === 'ALL' || c.dayOfWeek === selectedDay;
       const matchSemester = selectedSemester === 'ALL' || c.semester === selectedSemester;
 
-      return matchSearch && matchDept && matchDay && matchSemester;
+      return matchSearch && matchSemester;
     });
-  }, [classesList, searchTerm, selectedDepartment, selectedDay, selectedSemester]);
+  }, [classesList, searchTerm, selectedSemester]);
 
   const semesters = useMemo(() => {
     const fromClasses = classesList.map((c) => c.semester).filter(Boolean);
     const fromEnrollments = enrollments.map((e) => e.semester).filter(Boolean);
     return Array.from(new Set([...fromClasses, ...fromEnrollments]));
   }, [classesList, enrollments]);
-
-  const departments = useMemo(() => {
-    const set = new Set(classesList.map((c) => c.department));
-    return Array.from(set);
-  }, [classesList]);
 
   const getDayName = (day: number) => {
     if (day === 8) return 'Chủ Nhật';
@@ -253,7 +243,7 @@ export default function StudentRegistrationPage() {
         </div>
       ) : activeTab === 'open' ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-2xs sm:grid-cols-2">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
               <input
@@ -278,41 +268,6 @@ export default function StudentRegistrationPage() {
                     Học kỳ {sem}
                   </option>
                 ))}
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-slate-400 shrink-0" />
-              <select
-                value={selectedDepartment}
-                onChange={(e) => setSelectedDepartment(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 py-1.5 px-3 text-xs focus:border-blue-500 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="ALL">Tất cả khoa / bộ môn</option>
-                {departments.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-slate-400 shrink-0" />
-              <select
-                value={selectedDay}
-                onChange={(e) =>
-                  setSelectedDay(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))
-                }
-                className="w-full rounded-lg border border-slate-200 py-1.5 px-3 text-xs focus:border-blue-500 focus:outline-hidden focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="ALL">Tất cả các ngày trong tuần</option>
-                <option value="2">Thứ Hai</option>
-                <option value="3">Thứ Ba</option>
-                <option value="4">Thứ Tư</option>
-                <option value="5">Thứ Năm</option>
-                <option value="6">Thứ Sáu</option>
-                <option value="7">Thứ Bảy</option>
               </select>
             </div>
           </div>

@@ -54,7 +54,7 @@ test.describe('Code Review Improvements TDD Suite', () => {
 
     await page.goto('/admin');
     await expect(page.getByRole('heading', { name: /tổng quan/i })).toBeVisible();
-    await expect(page.getByText('Cảnh báo bảo mật hệ thống')).toBeVisible();
+    await expect(page.getByText('Giám sát & Cảnh báo an ninh')).toBeVisible();
   });
 
   test('4. Spec Ticket 05 / Lỗi 13: Cancellation confirm dialog displays course code & name', async ({ page }) => {

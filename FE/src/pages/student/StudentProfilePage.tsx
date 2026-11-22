@@ -13,15 +13,10 @@ import {
 import { useToast } from '../../contexts/ToastContext';
 import { authService } from '../../services/authService';
 import { studentService, type StudentProfile } from '../../services/studentService';
-import { courseService } from '../../services/courseService';
-import { calculateGpa4, calculateAccumulatedCredits } from '../../utils/gradeUtils';
 import { formatDate } from '../../utils/dateFormat';
-import { DEFAULT_COURSE_CREDITS } from '../../constants/academic';
 
 export default function StudentProfilePage() {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
-  const [accumulatedCredits, setAccumulatedCredits] = useState(0);
-  const [gpa4, setGpa4] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,28 +78,8 @@ export default function StudentProfilePage() {
     try {
       setLoading(true);
       setError(null);
-      const [prof, results, courses] = await Promise.all([
-        studentService.getMyProfile(),
-        studentService.getMyResults().catch(() => []),
-        courseService.getCourses().catch(() => []),
-      ]);
-
+      const prof = await studentService.getMyProfile();
       setProfile(prof);
-
-      const creditMap = new Map<string, number>(courses.map((c) => [c.code, c.credits]));
-      const itemsWithCredits = results.map((r) => ({
-        ...r,
-        credits: creditMap.get(r.courseCode) || DEFAULT_COURSE_CREDITS,
-      }));
-
-      setAccumulatedCredits(calculateAccumulatedCredits(itemsWithCredits));
-
-      const validWithScore = itemsWithCredits.filter((r) => r.totalScore !== null);
-      if (validWithScore.length > 0) {
-        setGpa4(calculateGpa4(validWithScore));
-      } else {
-        setGpa4(null);
-      }
     } catch {
       setError('Không thể tải thông tin hồ sơ sinh viên từ hệ thống.');
       setProfile(null);
@@ -170,19 +145,6 @@ export default function StudentProfilePage() {
               </p>
             </div>
           </div>
-
-          <div className="flex items-center gap-4 border-t pt-4 sm:border-t-0 sm:pt-0 border-slate-100">
-            <div className="rounded-xl bg-blue-50/70 p-3 text-center border border-blue-100 min-w-[100px]">
-              <span className="block text-[11px] font-semibold text-slate-500">GPA Tích lũy</span>
-              <span className="text-xl font-extrabold text-blue-700">
-                {gpa4 !== null ? gpa4.toFixed(2) : 'Chưa có'}
-              </span>
-            </div>
-            <div className="rounded-xl bg-emerald-50/70 p-3 text-center border border-emerald-100 min-w-[100px]">
-              <span className="block text-[11px] font-semibold text-slate-500">Tín chỉ đạt</span>
-              <span className="text-xl font-extrabold text-emerald-700">{accumulatedCredits} TC</span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -199,6 +161,10 @@ export default function StudentProfilePage() {
               <dd className="mt-1 font-mono font-bold text-slate-800 text-sm">{p.studentCode}</dd>
             </div>
             <div>
+              <dt className="text-slate-400">Họ và tên</dt>
+              <dd className="mt-1 font-semibold text-slate-800 text-sm">{p.fullName}</dd>
+            </div>
+            <div>
               <dt className="text-slate-400">Lớp sinh hoạt</dt>
               <dd className="mt-1 font-semibold text-slate-800 text-sm">{p.homeroomClass}</dd>
             </div>
@@ -206,12 +172,6 @@ export default function StudentProfilePage() {
               <dt className="text-slate-400">Trạng thái học vụ</dt>
               <dd className="mt-1 font-semibold text-slate-800 text-sm">
                 {p.status === 'ACTIVE' ? 'Đang theo học' : p.status}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-slate-400">Tổng tín chỉ tích lũy</dt>
-              <dd className="mt-1 font-semibold text-slate-800 text-sm">
-                {accumulatedCredits} Tín chỉ
               </dd>
             </div>
           </dl>
