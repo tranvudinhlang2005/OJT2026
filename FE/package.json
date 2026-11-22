@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "check": "oxlint && tsc -b",
     "check:comments": "node ../scripts/check-no-comments.mjs",
-    "verify": "npm run check && npm run check:comments",
+    "check:minimalist-ui": "node ../scripts/check-minimalist-ui.mjs",
+    "verify": "npm run check && npm run check:comments && npm run check:minimalist-ui",
     "preview": "vite preview",
     "test:e2e": "playwright test"
   },
