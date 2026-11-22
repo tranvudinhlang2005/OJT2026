@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "check": "oxlint && tsc -b",
+    "check:comments": "node ../scripts/check-no-comments.mjs",
+    "verify": "npm run check && npm run check:comments",
     "preview": "vite preview",
     "test:e2e": "playwright test"
   },
