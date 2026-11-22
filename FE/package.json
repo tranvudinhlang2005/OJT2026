@@ -10,7 +10,8 @@
     "check": "oxlint && tsc -b",
     "check:comments": "node ../scripts/check-no-comments.mjs",
     "check:minimalist-ui": "node ../scripts/check-minimalist-ui.mjs",
-    "verify": "npm run check && npm run check:comments && npm run check:minimalist-ui",
+    "test:unit": "vitest run src",
+    "verify": "npm run check && npm run check:comments && npm run check:minimalist-ui && npm run test:unit",
     "preview": "vite preview",
     "test:e2e": "playwright test"
   },
@@ -36,6 +37,7 @@
     "babel-plugin-react-compiler": "^1.0.0",
     "oxlint": "^1.90.0",
     "typescript": "~7.0.2",
-    "vite": "^8.3.6"
+    "vite": "^8.3.6",
+    "vitest": "^5.1.1"
   }
 }
