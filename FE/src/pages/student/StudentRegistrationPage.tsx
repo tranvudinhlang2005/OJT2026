@@ -99,6 +99,8 @@ export default function StudentRegistrationPage() {
     }, 0);
   }, [registeredEnrollments, classesList]);
 
+  const [currentDate] = useState(() => new Date());
+
   const handleRegister = async (cls: OpenClass) => {
     if (
       !confirm(
@@ -428,7 +430,7 @@ export default function StudentRegistrationPage() {
                                   <CheckCircle2 className="h-4 w-4" />
                                   Đã đăng ký
                                 </span>
-                                {cls.cancelDeadline && new Date(cls.cancelDeadline) <= new Date() ? (
+                                {cls.cancelDeadline && new Date(cls.cancelDeadline) <= currentDate ? (
                                   <span className="text-xs text-slate-400">Đã quá hạn hủy</span>
                                 ) : (
                                   <button

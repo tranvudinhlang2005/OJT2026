@@ -797,3 +797,15 @@ export async function setupDefaultMocks(page: Page, user: MockUserSession = ADMI
     });
   });
 }
+
+export function createVietnamIsoString(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second = 0
+): string {
+  const utcDate = new Date(Date.UTC(year, month - 1, day, hour - 7, minute, second));
+  return utcDate.toISOString();
+}
