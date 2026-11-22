@@ -198,9 +198,8 @@ export const router = createBrowserRouter([
     path: ROUTES.UNAUTHORIZED,
     element: (
       <div className="flex h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center">
-        <h1 className="text-4xl font-extrabold text-slate-800">403</h1>
-        <h2 className="mt-2 text-xl font-semibold text-slate-700">Truy cập bị từ chối</h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-2xl font-bold text-slate-800">Truy cập bị từ chối</h1>
+        <p className="mt-2 max-w-md text-sm text-slate-500">
           Bạn không có quyền truy cập vào phân hệ này.
         </p>
       </div>
@@ -211,9 +210,8 @@ export const router = createBrowserRouter([
     path: '*',
     element: (
       <div className="flex h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center">
-        <h1 className="text-5xl font-extrabold tracking-tight text-indigo-600">404</h1>
-        <h2 className="mt-2 text-2xl font-bold text-slate-800">Trang không tồn tại</h2>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-2xl font-bold text-slate-800">Trang không tồn tại</h1>
+        <p className="mt-2 max-w-md text-sm text-slate-500">
           Đường dẫn bạn yêu cầu không tồn tại hoặc đã được di chuyển.
         </p>
       </div>

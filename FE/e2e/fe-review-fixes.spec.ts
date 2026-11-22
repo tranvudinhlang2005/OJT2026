@@ -545,4 +545,51 @@ test.describe('Code Review Improvements TDD Suite', () => {
     });
     expect(invalidAfterStart).toBe('Hạn chót hủy đăng ký phải trước hoặc cùng ngày bắt đầu khóa học.');
   });
+
+  test('17. Standards: Error views do not display raw HTTP status codes in user headings', async ({ page }) => {
+    await page.goto('/non-existent-route-404');
+    await expect(page.getByRole('heading', { name: 'Trang không tồn tại' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '404' })).not.toBeVisible();
+
+    await page.goto('/unauthorized');
+    await expect(page.getByRole('heading', { name: 'Truy cập bị từ chối' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '403' })).not.toBeVisible();
+  });
+
+  test('18. Spec & Standards: Registration section B status filter displays Dang dang ky', async ({ page }) => {
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    await page.route('**/api/v1/students/me/enrollments', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          content: [
+            {
+              id: 'enr-1',
+              classId: 'class-1',
+              classCode: 'INT3110.O21',
+              courseCode: 'INT3110',
+              courseName: 'Lập trình mạng',
+              semester: 'HK1-2026',
+              credits: 3,
+              status: 'ENROLLED',
+              classStatus: 'OPEN',
+              enrolledAt: '2026-02-01T08:00:00Z',
+              cancelDeadline: '2026-12-31T23:59:59Z',
+            },
+          ],
+          totalElements: 1,
+        }),
+      });
+    });
+
+    await page.goto('/student/registration');
+    await page.getByRole('button', { name: /lớp đã đăng ký/i }).click();
+
+    const enrolledFilterBtn = page.getByRole('button', { name: /đang đăng ký/i });
+    await expect(enrolledFilterBtn).toBeVisible();
+    await expect(page.getByRole('button', { name: /đang học/i })).not.toBeVisible();
+  });
 });

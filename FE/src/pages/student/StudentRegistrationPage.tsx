@@ -471,7 +471,7 @@ export default function StudentRegistrationPage() {
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
-              Đang học ({enrollments.filter((e) => e.status === 'ENROLLED').length})
+              Đang đăng ký ({enrollments.filter((e) => e.status === 'ENROLLED').length})
             </button>
             <button
               type="button"

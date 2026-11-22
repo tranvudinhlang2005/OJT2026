@@ -6,10 +6,8 @@ export function RouteErrorBoundary() {
 
   let title = 'Đã xảy ra lỗi không mong muốn';
   let message = 'Vui lòng thử lại sau hoặc liên hệ quản trị viên.';
-  let statusCode: number | null = null;
 
   if (isRouteErrorResponse(error)) {
-    statusCode = error.status;
     if (error.status === 404) {
       title = 'Trang không tồn tại';
       message = 'Đường dẫn bạn truy cập có thể đã bị xóa hoặc không hợp lệ.';
@@ -29,13 +27,7 @@ export function RouteErrorBoundary() {
         <AlertTriangle className="h-8 w-8" />
       </div>
 
-      {statusCode && (
-        <span className="mt-4 text-xs font-bold uppercase tracking-wider text-rose-600">
-          Mã lỗi {statusCode}
-        </span>
-      )}
-
-      <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+      <h1 className="mt-4 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
         {title}
       </h1>
       <p className="mt-2 max-w-md text-sm text-slate-500">{message}</p>
