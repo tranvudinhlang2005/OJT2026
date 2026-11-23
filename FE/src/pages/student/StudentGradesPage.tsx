@@ -63,12 +63,12 @@ export default function StudentGradesPage() {
   }, [filteredGrades]);
 
   const passedCoursesCount = useMemo(() => {
-    return resultsWithCredits.filter((r) => r.finalStatus === 'PASSED').length;
-  }, [resultsWithCredits]);
+    return filteredGrades.filter((r) => r.finalStatus === 'PASSED').length;
+  }, [filteredGrades]);
 
   const inProgressCoursesCount = useMemo(() => {
-    return resultsWithCredits.filter((r) => r.finalStatus === 'IN_PROGRESS').length;
-  }, [resultsWithCredits]);
+    return filteredGrades.filter((r) => r.finalStatus === 'IN_PROGRESS').length;
+  }, [filteredGrades]);
 
   const totalCoursesCount = useMemo(() => {
     return filteredGrades.length;
@@ -117,7 +117,6 @@ export default function StudentGradesPage() {
             <span className="text-3xl font-extrabold text-emerald-600">{passedCoursesCount}</span>
             <span className="text-xs text-slate-400">học phần</span>
           </div>
-          <p className="mt-1 text-xs text-slate-500">Hoàn thành học phần thành công</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">
@@ -131,7 +130,6 @@ export default function StudentGradesPage() {
             <span className="text-3xl font-extrabold text-purple-700">{inProgressCoursesCount}</span>
             <span className="text-xs text-slate-400">học phần</span>
           </div>
-          <p className="mt-1 text-xs text-slate-500">Đang trong tiến trình học tập</p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs">

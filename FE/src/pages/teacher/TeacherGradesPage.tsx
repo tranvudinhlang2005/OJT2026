@@ -143,9 +143,11 @@ export default function TeacherGradesPage() {
       const updated = await instructorService.getClassResults(activeClass.id);
       setResultSheet(updated);
       await loadClasses();
+      return true;
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
       toast.error(axiosErr.response?.data?.message || 'Có lỗi khi lưu bảng điểm.');
+      return false;
     } finally {
       setSubmitting(false);
     }
@@ -168,6 +170,30 @@ export default function TeacherGradesPage() {
     } finally {
       setSubmittingApproval(false);
     }
+  };
+
+  const handleInitiateSubmit = async (cls: ClassOffering) => {
+    if (activeClass?.id === cls.id && resultSheet) {
+      const hasScoresDraft = Object.keys(scoresDraft).length > 0;
+      if (hasScoresDraft) {
+        const saved = await handleSaveDraft();
+        if (!saved) return;
+      }
+
+      const incomplete = resultSheet.items.some(
+        (it) =>
+          it.midtermScore === null ||
+          it.midtermScore === undefined ||
+          it.finalScore === null ||
+          it.finalScore === undefined
+      );
+
+      if (incomplete) {
+        toast.error('Vui lòng nhập đầy đủ điểm giữa kỳ và cuối kỳ cho toàn bộ học viên trước khi nộp.');
+        return;
+      }
+    }
+    setClassToSubmit(cls);
   };
 
   const getStatusBadge = (gradingStatus: string) => {
@@ -289,7 +315,7 @@ export default function TeacherGradesPage() {
                         {cls.gradingStatus === 'DRAFT' && (
                           <button
                             type="button"
-                            onClick={() => setClassToSubmit(cls)}
+                            onClick={() => handleInitiateSubmit(cls)}
                             className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 shadow-xs transition"
                           >
                             <Send className="h-3.5 w-3.5" />
@@ -490,7 +516,7 @@ export default function TeacherGradesPage() {
                     <button
                       type="button"
                       disabled={submitting || submittingApproval}
-                      onClick={() => setClassToSubmit(activeClass)}
+                      onClick={() => handleInitiateSubmit(activeClass)}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 shadow-xs"
                     >
                       <Send className="h-4 w-4" />

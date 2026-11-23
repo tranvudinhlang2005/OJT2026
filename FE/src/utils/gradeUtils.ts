@@ -54,8 +54,9 @@ export function getAcademicClassification(gpa4: number): string {
   return 'Yếu / Kém';
 }
 
-export function calculateAverageScore10(items: { totalScore: number | null }[]): number {
-  const scored = items.filter((it) => it.totalScore !== null && it.totalScore !== undefined);
+export function calculateAverageScore10(items?: { totalScore: number | null }[] | null): number {
+  const safeItems = Array.isArray(items) ? items : [];
+  const scored = safeItems.filter((it) => it && it.totalScore !== null && it.totalScore !== undefined);
   if (scored.length === 0) return 0;
   const sum = scored.reduce((acc, it) => acc + (it.totalScore ?? 0), 0);
   return Number((sum / scored.length).toFixed(2));
