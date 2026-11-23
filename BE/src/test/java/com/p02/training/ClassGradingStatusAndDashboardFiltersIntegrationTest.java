@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -20,11 +21,14 @@ import com.p02.training.entity.enums.UserRole;
 import com.p02.training.repository.TestData;
 import com.p02.training.security.AuthCookies;
 import com.p02.training.security.JwtService;
+import com.p02.training.security.SecurityConfig;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.Cookie;
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -55,6 +59,9 @@ class ClassGradingStatusAndDashboardFiltersIntegrationTest {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private Clock clock;
 
     private TestData testData;
     private String prefix;
@@ -160,6 +167,22 @@ class ClassGradingStatusAndDashboardFiltersIntegrationTest {
                 .andExpect(status().isForbidden());
         mockMvc.perform(get(ApiPaths.DASHBOARD + "/semesters").cookie(token(testData.instructor().getUser())))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void startsAnOpenClassOnItsBusinessStartDate() throws Exception {
+        ClassOffering offering = openClass(prefix + "-TODAY", "REVIEW", LocalDate.now(clock), classInstructor);
+        entityManager.flush();
+        String csrf = UUID.randomUUID().toString();
+
+        mockMvc.perform(post(ApiPaths.CLASSES + "/" + offering.getId() + "/start")
+                        .cookie(token(admin), new Cookie("XSRF-TOKEN", csrf)).header(SecurityConfig.CSRF_HEADER, csrf))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
+
+        mockMvc.perform(get(ApiPaths.CLASSES + "/" + offering.getId()).cookie(token(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
     }
 
     private ClassOffering openClass(String code, String semester, LocalDate start, Instructor instructor) {

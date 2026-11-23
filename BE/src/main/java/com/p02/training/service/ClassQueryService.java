@@ -38,8 +38,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * TR09 class list and detail for every role. The role's scope is added to the query by the backend
- * and cannot be widened by the client; filters can only narrow it (a Student or Manager sending
- * status=DRAFT gets an empty result, not an error). The total is counted after the scope.
+ * and cannot be widened by the client. A Student or Manager's status filter is ignored when the
+ * status is outside their scope. The total is counted after the scope and applicable filters.
  *
  * <ul>
  *   <li>Admin: every class that is not soft-deleted.</li>
@@ -101,7 +101,7 @@ public class ClassQueryService {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.isNull(root.get("deletedAt")));
             predicates.add(scope.toPredicate(root, cb));
-            addFilters(filter, root, cb, predicates);
+            addFilters(filter, scope, root, cb, predicates);
             return cb.and(predicates.toArray(Predicate[]::new));
         };
         PageRequest pageable = PageRequest.of(page, size, order.and(Sort.by("id")));
@@ -124,6 +124,14 @@ public class ClassQueryService {
 
     /** The role's scope, both as a query predicate and as an in-memory check, so list and detail agree. */
     private record Scope(UserRole role, Long ownInstructorId, LocalDate today) {
+
+        boolean acceptsStatusFilter(ClassStatus status) {
+            return switch (role) {
+                case STUDENT -> status == ClassStatus.OPEN;
+                case TRAINING_MANAGER -> PUBLISHED.contains(status);
+                case TRAINING_ADMIN, INSTRUCTOR -> true;
+            };
+        }
 
         Predicate toPredicate(Root<ClassOffering> root, CriteriaBuilder cb) {
             return switch (role) {
@@ -166,7 +174,7 @@ public class ClassQueryService {
 
     // --- filters, sort, mapping ------------------------------------------------------------------
 
-    private static void addFilters(ClassFilter filter, Root<ClassOffering> root, CriteriaBuilder cb,
+    private static void addFilters(ClassFilter filter, Scope scope, Root<ClassOffering> root, CriteriaBuilder cb,
             List<Predicate> predicates) {
         if (filter.courseId() != null) {
             predicates.add(cb.equal(root.get("course").get("id"), filter.courseId()));
@@ -174,7 +182,7 @@ public class ClassQueryService {
         if (filter.semester() != null && !filter.semester().isBlank()) {
             predicates.add(cb.equal(root.get("semester"), filter.semester().trim()));
         }
-        if (filter.status() != null) {
+        if (filter.status() != null && scope.acceptsStatusFilter(filter.status())) {
             predicates.add(cb.equal(root.get("status"), filter.status()));
         }
         if (filter.gradingStatus() != null) {

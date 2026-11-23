@@ -11,8 +11,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.p02.training.common.ApiPaths;
 import com.p02.training.entity.ClassOffering;
 import com.p02.training.entity.Course;
+import com.p02.training.entity.Instructor;
 import com.p02.training.entity.Room;
 import com.p02.training.entity.User;
+import com.p02.training.entity.enums.ClassStatus;
 import com.p02.training.entity.enums.GradingStatus;
 import com.p02.training.entity.enums.UserRole;
 import com.p02.training.security.AuthCookies;
@@ -25,6 +27,8 @@ import java.time.ZoneOffset;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -148,6 +152,43 @@ class ListingFieldsAndFiltersIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.items", hasSize(1)))
                 .andExpect(jsonPath("$.items[0].semester").value("2031-1"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = UserRole.class, names = {"STUDENT", "TRAINING_MANAGER"})
+    void classesIgnoreStatusOutsideTheViewerScope(UserRole role) throws Exception {
+        Course course = persist(new Course(prefix + "S", "Course " + prefix, 3, 45));
+        ClassOffering draft = classOffering(prefix + "-DRAFT", course);
+        ClassOffering open = classOffering(prefix + "-OPEN", course);
+        User teacher = persist(new User(prefix + ".teacher", prefix + ".teacher@test.local", "x".repeat(60),
+                "Instructor", UserRole.INSTRUCTOR));
+        open.setInstructor(persist(new Instructor(teacher, prefix + "-IN")));
+        open.setStatus(ClassStatus.OPEN);
+        open.setMinAttendancePct(course.getMinAttendancePct());
+        open.setPassScore(course.getPassScore());
+        open.setMidtermWeight(course.getMidtermWeight());
+        open.setFinalWeight(course.getFinalWeight());
+        User viewer = persist(new User(prefix + ".viewer", prefix + ".viewer@test.local", "x".repeat(60),
+                "Viewer", role));
+        entityManager.flush();
+        Cookie viewerToken = new Cookie(AuthCookies.ACCESS_TOKEN, jwtService.issue(viewer.getId(),
+                viewer.getTokenVersion()));
+
+        mockMvc.perform(get(ApiPaths.CLASSES).param("keyword", prefix).param("status", "DRAFT").cookie(viewerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.items[*].classCode", contains(open.getClassCode())));
+
+        mockMvc.perform(get(ApiPaths.CLASSES).param("keyword", prefix).param("status", "DRAFT").cookie(adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[*].classCode", contains(draft.getClassCode())));
+
+        if (role == UserRole.TRAINING_MANAGER) {
+            mockMvc.perform(get(ApiPaths.CLASSES).param("keyword", prefix).param("status", "IN_PROGRESS")
+                            .cookie(viewerToken))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalElements").value(0));
+        }
     }
 
     private ClassOffering classOffering(String code, Course course) {
