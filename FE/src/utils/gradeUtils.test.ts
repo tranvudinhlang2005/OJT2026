@@ -124,6 +124,11 @@ describe('gradeUtils', () => {
       expect(calculateAverageScore10([{ totalScore: null }])).toBe(0);
     });
 
+    it('returns 0 when items is nullish or contains undefined elements', () => {
+      expect(calculateAverageScore10(null as any)).toBe(0);
+      expect(calculateAverageScore10(undefined as any)).toBe(0);
+    });
+
     it('calculates average score accurately on 10-point scale', () => {
       const items = [
         { totalScore: 8.5 },
