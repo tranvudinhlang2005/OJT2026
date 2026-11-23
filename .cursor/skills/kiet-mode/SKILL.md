@@ -33,7 +33,7 @@ Working conventions and engineering standards tailored for Kiet (`akiet84`).
    - Spec: check requirement coverage and ensure no scope creep occurred.
    - Standards: check that code smells and repo conventions were completely resolved.
    - If violations remain, repeat steps 1, 2, and 3. When clean, proceed to step 5.
-5. **Audit.** Maintain the verification harness and live proof with `/maintain-verification-skill`.
+5. **Mandatory live verification gate.** You must execute `/maintain-verification-skill` before shipping. Run `node scripts/control-app.mjs doctor`, drive every mapped feature live with `node scripts/control-app.mjs drive <feature>`, verify that screenshots and ARIA tree proofs are refreshed in `artifacts/verification/`, and run cleanup. Do not skip or simulate this step. Proceeding to step 6 requires live verification proof.
 6. **Ship.** Confirm the branch is clean, commit all changes, and push to remote.
 
 ## Communication style
