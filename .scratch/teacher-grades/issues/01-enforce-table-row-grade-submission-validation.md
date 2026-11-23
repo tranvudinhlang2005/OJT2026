@@ -5,9 +5,9 @@ When an Instructor clicks the "Nộp điểm" action button directly on a class 
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Clicking "Nộp điểm" on a table row for a class with incomplete student grades halts submission, displays an informative error toast, and does not show the confirmation modal.
-- [ ] Clicking "Nộp điểm" on a table row for a class with all student scores completed opens the confirmation dialog and enables submitting results.
-- [ ] TDD test suite covers both table-row submission validation and modal-based submission validation with zero regression.
-- [ ] Passes full verification pipeline: `npm run verify` and Playwright E2E suite.
+- [x] Clicking "Nộp điểm" on a table row for a class with incomplete student grades halts submission, displays an informative error toast, and does not show the confirmation modal.
+- [x] Clicking "Nộp điểm" on a table row for a class with all student scores completed opens the confirmation dialog and enables submitting results.
+- [x] TDD test suite covers both table-row submission validation and modal-based submission validation with zero regression.
+- [x] Passes full verification pipeline: `npm run verify` and Playwright E2E suite.

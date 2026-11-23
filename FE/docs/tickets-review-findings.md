@@ -19,3 +19,9 @@
 - **File**: `FE/src/utils/gradeUtils.ts`
 - **Description**:
   Ensure `calculateAverageScore10` safely accepts nullish `items` parameter with fallback `(items || []).filter(...)` per `.agents/rules/fe-guidelines.md`.
+
+## Ticket 4: Enforce Grade Completeness Validation for Table-Row Grade Submission
+- **Axis**: Spec
+- **File**: `FE/src/pages/teacher/TeacherGradesPage.tsx`
+- **Description**:
+  Ensure clicking "Nộp điểm" directly on a class row in the main Teacher Grades table checks target class results completeness via `instructorService.getClassResults(cls.id)`, preventing submission if any student is missing scores.

@@ -173,27 +173,40 @@ export default function TeacherGradesPage() {
   };
 
   const handleInitiateSubmit = async (cls: ClassOffering) => {
-    if (activeClass?.id === cls.id && resultSheet) {
-      const hasScoresDraft = Object.keys(scoresDraft).length > 0;
-      if (hasScoresDraft) {
-        const saved = await handleSaveDraft();
-        if (!saved) return;
+    try {
+      let targetSheet = resultSheet;
+      if (activeClass?.id === cls.id && targetSheet) {
+        const hasScoresDraft = Object.keys(scoresDraft).length > 0;
+        if (hasScoresDraft) {
+          const saved = await handleSaveDraft();
+          if (!saved) return;
+          targetSheet = await instructorService.getClassResults(cls.id);
+        }
+      } else {
+        targetSheet = await instructorService.getClassResults(cls.id);
       }
 
-      const incomplete = resultSheet.items.some(
-        (it) =>
-          it.midtermScore === null ||
-          it.midtermScore === undefined ||
-          it.finalScore === null ||
-          it.finalScore === undefined
-      );
+      const incomplete =
+        !targetSheet ||
+        targetSheet.items.length === 0 ||
+        targetSheet.items.some(
+          (it) =>
+            it.midtermScore === null ||
+            it.midtermScore === undefined ||
+            it.finalScore === null ||
+            it.finalScore === undefined
+        );
 
       if (incomplete) {
         toast.error('Vui lòng nhập đầy đủ điểm giữa kỳ và cuối kỳ cho toàn bộ học viên trước khi nộp.');
         return;
       }
+
+      setClassToSubmit(cls);
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosErr.response?.data?.message || 'Không thể kiểm tra dữ liệu điểm trước khi nộp.');
     }
-    setClassToSubmit(cls);
   };
 
   const getStatusBadge = (gradingStatus: string) => {

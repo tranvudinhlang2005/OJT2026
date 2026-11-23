@@ -766,4 +766,41 @@ test.describe('Code Review Improvements TDD Suite', () => {
     await expect(page.getByText('Vui lòng nhập đầy đủ điểm giữa kỳ và cuối kỳ cho toàn bộ học viên trước khi nộp.')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Xác nhận nộp bảng điểm' })).not.toBeVisible();
   });
+
+  test('27. Spec: Teacher grades table row submit button proceeds to confirm dialog when grades are complete', async ({ page }) => {
+    await injectSession(page, INSTRUCTOR_USER);
+    await setupDefaultMocks(page, INSTRUCTOR_USER);
+
+    await page.route('**/api/v1/classes/101/results', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          classId: 101,
+          version: 1,
+          items: [
+            {
+              studentId: 1,
+              studentCode: 'SV001',
+              studentName: 'Nguyen Van A',
+              midtermScore: 8.5,
+              finalScore: 9.0,
+              totalScore: 8.8,
+              attendanceRate: 100,
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.goto('/teacher/grades');
+    await expect(page.getByRole('heading', { name: /quản lý kết quả & nộp bảng điểm/i })).toBeVisible();
+
+    const tableSubmitBtn = page.locator('table').getByRole('button', { name: 'Nộp điểm' }).first();
+    await expect(tableSubmitBtn).toBeVisible();
+    await tableSubmitBtn.click();
+
+    await expect(page.getByRole('heading', { name: 'Xác nhận nộp bảng điểm' })).toBeVisible();
+    await expect(page.getByText('Vui lòng nhập đầy đủ điểm giữa kỳ và cuối kỳ cho toàn bộ học viên trước khi nộp.')).not.toBeVisible();
+  });
 });
