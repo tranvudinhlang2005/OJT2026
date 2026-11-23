@@ -21,7 +21,6 @@ export interface TeachingSession {
   studentsCount?: number;
   topic?: string;
   attendanceLocked?: boolean;
-  isLocked?: boolean;
 }
 
 export interface ScheduleState {

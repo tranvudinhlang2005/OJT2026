@@ -51,8 +51,7 @@ export default function TeacherSchedulePage() {
             totalSessions: items.length,
             attendanceStatus: it.attendanceLocked ? 'completed' : 'in_progress',
             topic: it.topic,
-            attendanceLocked: it.attendanceLocked,
-            isLocked: Boolean(it.attendanceLocked),
+            attendanceLocked: Boolean(it.attendanceLocked),
           }));
           dispatch({ type: 'SET_SESSIONS', payload: mapped });
         }
@@ -99,7 +98,6 @@ export default function TeacherSchedulePage() {
               ...session,
               id: activeSessionId,
               attendanceLocked: true,
-              isLocked: true,
             },
           });
         }

@@ -8,10 +8,7 @@ export function formatPercentage(pct: number | null | undefined): string | null 
   return pct.toFixed(1);
 }
 
-export function formatPct(val: number | null | undefined, isRatio?: boolean): string | null {
+export function formatPct(val: number | null | undefined): string | null {
   if (val === null || val === undefined) return null;
-  if (isRatio !== undefined) {
-    return isRatio ? (val * 100).toFixed(1) : val.toFixed(1);
-  }
   return (val <= 1 ? val * 100 : val).toFixed(1);
 }

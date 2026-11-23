@@ -24,31 +24,33 @@ interface BackendAttendanceSheetResponse {
   }>;
 }
 
+function mapBackendAttendanceSheet(data: BackendAttendanceSheetResponse): AttendanceSheet {
+  return {
+    sessionId: String(data.sessionId),
+    classId: String(data.classId),
+    classCode: data.classCode || '',
+    sessionDate: data.sessionDate || '',
+    startTime: data.startTime ? data.startTime.substring(0, 5) : '',
+    endTime: data.endTime ? data.endTime.substring(0, 5) : '',
+    attendanceLocked: Boolean(data.attendanceLocked),
+    lockedAt: data.lockedAt || undefined,
+    version: data.version,
+    unlockReason: data.unlockReason,
+    items: (data.items || []).map((it) => ({
+      studentId: String(it.studentId),
+      studentCode: it.studentCode,
+      fullName: it.fullName,
+      enrollmentStatus: it.enrollmentStatus,
+      status: it.status,
+      remarks: it.remarks,
+    })),
+  };
+}
+
 export const attendanceService = {
   async getAttendance(sessionId: string | number): Promise<AttendanceSheet> {
     const res = await axiosClient.get<BackendAttendanceSheetResponse>(`/sessions/${sessionId}/attendance`);
-    const data = res.data;
-
-    return {
-      sessionId: String(data.sessionId),
-      classId: String(data.classId),
-      classCode: data.classCode || '',
-      sessionDate: data.sessionDate || '',
-      startTime: data.startTime ? data.startTime.substring(0, 5) : '',
-      endTime: data.endTime ? data.endTime.substring(0, 5) : '',
-      attendanceLocked: Boolean(data.attendanceLocked),
-      lockedAt: data.lockedAt || undefined,
-      version: data.version,
-      unlockReason: data.unlockReason,
-      items: (data.items || []).map((it) => ({
-        studentId: String(it.studentId),
-        studentCode: it.studentCode,
-        fullName: it.fullName,
-        enrollmentStatus: it.enrollmentStatus,
-        status: it.status,
-        remarks: it.remarks,
-      })),
-    };
+    return mapBackendAttendanceSheet(res.data);
   },
 
   async updateAttendance(
@@ -66,27 +68,7 @@ export const attendanceService = {
     };
 
     const res = await axiosClient.put<BackendAttendanceSheetResponse>(`/sessions/${sessionId}/attendance`, body);
-    const data = res.data;
-    return {
-      sessionId: String(data.sessionId),
-      classId: String(data.classId),
-      classCode: data.classCode || '',
-      sessionDate: data.sessionDate || '',
-      startTime: data.startTime ? data.startTime.substring(0, 5) : '',
-      endTime: data.endTime ? data.endTime.substring(0, 5) : '',
-      attendanceLocked: Boolean(data.attendanceLocked),
-      lockedAt: data.lockedAt || undefined,
-      version: data.version,
-      unlockReason: data.unlockReason,
-      items: (data.items || []).map((it) => ({
-        studentId: String(it.studentId),
-        studentCode: it.studentCode,
-        fullName: it.fullName,
-        enrollmentStatus: it.enrollmentStatus,
-        status: it.status,
-        remarks: it.remarks,
-      })),
-    };
+    return mapBackendAttendanceSheet(res.data);
   },
 
   async lockAttendance(sessionId: string | number): Promise<void> {

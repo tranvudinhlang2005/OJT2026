@@ -59,8 +59,8 @@ export default function StudentGradesPage() {
   }, [resultsWithCredits, selectedSemester]);
 
   const averageScore10 = useMemo(() => {
-    return calculateAverageScore10(resultsWithCredits).toFixed(2);
-  }, [resultsWithCredits]);
+    return calculateAverageScore10(filteredGrades).toFixed(2);
+  }, [filteredGrades]);
 
   const passedCoursesCount = useMemo(() => {
     return resultsWithCredits.filter((r) => r.finalStatus === 'PASSED').length;

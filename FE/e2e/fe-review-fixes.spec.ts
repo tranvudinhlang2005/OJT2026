@@ -686,7 +686,7 @@ test.describe('Code Review Improvements TDD Suite', () => {
           startTime: '08:00:00',
           endTime: '11:30:00',
           attendanceLocked: true,
-          lockedAt: '2026-03-01T10:00:00Z',
+          lockedAt: createVietnamIsoString(2026, 3, 1, 10, 0),
           version: 1,
           items: [
             {
