@@ -4,5 +4,6 @@ test-results/
 playwright-report/
 .verification-server.pid
 decisions.tsv
+.agents/
 
 
