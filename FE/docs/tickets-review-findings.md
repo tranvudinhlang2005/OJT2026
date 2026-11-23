@@ -12,10 +12,10 @@
 - **File**: `FE/src/pages/student/StudentGradesPage.tsx`
 - **Description**:
   1. Synchronize all semester-dependent KPI counters (`passedCoursesCount`, `inProgressCoursesCount`) with the selected semester filter instead of calculating them globally.
-  2. Remove redundant subtitle text (`Hoàn thành học phần thành công`) per Minimalist UI standard (`.agents/rules/minimalist-ui.md`).
+  2. Remove redundant subtitle text (`Hoàn thành học phần thành công`) per Minimalist UI standard (`.agents/rules/fe-guidelines.md`).
 
 ## Ticket 3: Safe Type Validation & Defensive Guards
 - **Axis**: Standards
 - **File**: `FE/src/utils/gradeUtils.ts`
 - **Description**:
-  Ensure `calculateAverageScore10` safely accepts nullish `items` parameter with fallback `(items || []).filter(...)` per `.agents/rules/data-shape-resilience.md`.
+  Ensure `calculateAverageScore10` safely accepts nullish `items` parameter with fallback `(items || []).filter(...)` per `.agents/rules/fe-guidelines.md`.
