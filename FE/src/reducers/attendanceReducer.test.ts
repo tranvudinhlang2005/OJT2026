@@ -84,4 +84,57 @@ describe('scheduleReducer', () => {
     expect(savedState.sessions[0].attendanceStatus).toBe('completed');
     expect(savedState.isModalOpen).toBe(false);
   });
+
+  it('handles SAVE_ATTENDANCE when session had synthetic id but matches selectedSession', () => {
+    const syntheticSession: TeachingSession = {
+      ...dummySession,
+      id: 'sched-0-2026-11-23-07:30',
+      attendanceStatus: 'in_progress',
+    };
+    const activeState = {
+      ...initialScheduleState,
+      sessions: [syntheticSession],
+      selectedSession: {
+        ...dummySession,
+        id: '201',
+      },
+      isModalOpen: true,
+    };
+
+    const savedState = scheduleReducer(activeState, {
+      type: 'SAVE_ATTENDANCE',
+      payload: { sessionId: '201', attendanceLocked: true },
+    });
+    expect(savedState.sessions[0].id).toBe('201');
+    expect(savedState.sessions[0].attendanceStatus).toBe('completed');
+    expect(savedState.sessions[0].attendanceLocked).toBe(true);
+    expect(savedState.isModalOpen).toBe(false);
+  });
+
+  it('handles UPDATE_SESSION to update session properties and lock status', () => {
+    const syntheticSession: TeachingSession = {
+      ...dummySession,
+      id: 'sched-0-2026-11-23-07:30',
+      attendanceStatus: 'in_progress',
+    };
+    const activeState = {
+      ...initialScheduleState,
+      sessions: [syntheticSession],
+    };
+
+    const updatedState = scheduleReducer(activeState, {
+      type: 'UPDATE_SESSION',
+      payload: {
+        targetId: 'sched-0-2026-11-23-07:30',
+        updatedSession: {
+          id: '201',
+          attendanceLocked: true,
+          attendanceStatus: 'completed',
+        },
+      },
+    });
+    expect(updatedState.sessions[0].id).toBe('201');
+    expect(updatedState.sessions[0].attendanceLocked).toBe(true);
+    expect(updatedState.sessions[0].attendanceStatus).toBe('completed');
+  });
 });

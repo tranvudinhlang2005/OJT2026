@@ -161,6 +161,52 @@ test.describe('Classes & Sessions Management Suite', () => {
 
     await page.getByRole('button', { name: 'Lưu điểm danh buổi học' }).click();
     await expect(page.getByText(/Điểm danh: SE101.O21/i)).not.toBeVisible();
+    await expect(page.getByRole('button', { name: 'Xem / Sửa điểm danh' }).first()).toBeVisible();
+    await expect(page.getByText('Đã điểm danh').first()).toBeVisible();
+  });
+
+  test('Giảng viên xem buổi học đã khóa điểm danh và thoát modal thì lịch hiển thị Đã điểm danh', async ({ page }) => {
+    await injectSession(page, INSTRUCTOR_USER);
+    await setupDefaultMocks(page, INSTRUCTOR_USER);
+
+    await page.route('**/api/v1/sessions/**/attendance', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          sessionId: 201,
+          classId: 101,
+          classCode: 'INT3110.O21',
+          sessionDate: '2026-03-01',
+          startTime: '08:00:00',
+          endTime: '11:30:00',
+          attendanceLocked: true,
+          lockedAt: '2026-03-01T11:30:00Z',
+          version: 1,
+          items: [
+            {
+              studentId: 1,
+              studentCode: 'SV001',
+              fullName: 'Nguyen Van A',
+              enrollmentStatus: 'ENROLLED',
+              status: 'PRESENT',
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.goto('/teacher/schedule');
+    await expect(page.getByText('INT3110.O21').first()).toBeVisible();
+
+    const attendanceBtn = page.getByRole('button', { name: /Điểm danh ca này|Xem \/ Sửa điểm danh/ }).last();
+    await attendanceBtn.click();
+
+    await expect(page.getByText('Đã khóa điểm danh')).toBeVisible();
+    await page.getByRole('button', { name: 'Đóng' }).click();
+
+    await expect(page.getByText('Đã khóa điểm danh')).not.toBeVisible();
+    await expect(page.getByRole('button', { name: 'Xem / Sửa điểm danh' }).last()).toBeVisible();
   });
 
   test('Quản trị viên mở khóa điểm danh buổi học kèm lý do (POST /sessions/{id}/unlock)', async ({ page }) => {

@@ -36,7 +36,8 @@ export type ScheduleAction =
   | { type: 'SET_STUDENT_STATUS'; payload: { studentId: string; status: AttendanceStatus } }
   | { type: 'SET_STUDENT_REMARKS'; payload: { studentId: string; remarks: string } }
   | { type: 'MARK_ALL_PRESENT' }
-  | { type: 'SAVE_ATTENDANCE'; payload: { sessionId: string } }
+  | { type: 'SAVE_ATTENDANCE'; payload: { sessionId: string; attendanceLocked?: boolean } }
+  | { type: 'UPDATE_SESSION'; payload: { targetId: string; updatedSession: Partial<TeachingSession> } }
   | { type: 'SET_STUDENTS'; payload: StudentAttendanceRecord[] }
   | { type: 'SET_SESSIONS'; payload: TeachingSession[] };
 
@@ -95,12 +96,52 @@ export function scheduleReducer(state: ScheduleState, action: ScheduleAction): S
     case 'SAVE_ATTENDANCE':
       return {
         ...state,
-        sessions: state.sessions.map((session) =>
-          session.id === action.payload.sessionId
-            ? { ...session, attendanceStatus: 'completed' }
-            : session
-        ),
+        sessions: state.sessions.map((session) => {
+          const isTarget =
+            session.id === action.payload.sessionId ||
+            (state.selectedSession && (
+              session.id === state.selectedSession.id ||
+              (session.className.split(' - ')[0].trim().toLowerCase() ===
+                state.selectedSession.className.split(' - ')[0].trim().toLowerCase() &&
+                session.date === state.selectedSession.date &&
+                session.time === state.selectedSession.time)
+            ));
+
+          if (isTarget) {
+            return {
+              ...session,
+              id: action.payload.sessionId || session.id,
+              attendanceStatus: 'completed',
+              attendanceLocked: action.payload.attendanceLocked ?? session.attendanceLocked ?? false,
+            };
+          }
+          return session;
+        }),
         isModalOpen: false,
+      };
+
+    case 'UPDATE_SESSION':
+      return {
+        ...state,
+        sessions: state.sessions.map((session) => {
+          const isTarget =
+            session.id === action.payload.targetId ||
+            (action.payload.updatedSession.date &&
+              action.payload.updatedSession.className &&
+              action.payload.updatedSession.time &&
+              session.className.split(' - ')[0].trim().toLowerCase() ===
+                action.payload.updatedSession.className.split(' - ')[0].trim().toLowerCase() &&
+              session.date === action.payload.updatedSession.date &&
+              session.time === action.payload.updatedSession.time);
+
+          if (isTarget) {
+            return {
+              ...session,
+              ...action.payload.updatedSession,
+            };
+          }
+          return session;
+        }),
       };
 
     case 'SET_STUDENTS':

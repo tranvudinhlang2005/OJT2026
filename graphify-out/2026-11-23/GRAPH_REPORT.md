@@ -1,30 +1,30 @@
 # Graph Report - OJT2026 - Copy  (2026-11-23)
 
 ## Corpus Check
-- 384 files · ~199,417 words
+- 385 files · ~200,843 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2939 nodes · 7672 edges · 166 communities (136 shown, 30 thin omitted)
+- 2924 nodes · 7658 edges · 162 communities (129 shown, 33 thin omitted)
 - Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 758 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `05dae710`
+- Built from commit: `11c0b03d`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- UserService
+- UserController.java
 - GlobalExceptionHandler
-- CourseService
-- ListingFieldsAndFiltersIntegrationTest.java
+- CourseController.java
+- JwtService
 - react
 - AdminProvisioningIntegrationTest
-- EntityPersistenceMappingTest
-- SecurityErrorHandler
-- useToast
-- ClassOfferingRepository
+- StudentRegistrationPage.tsx
+- ApiPaths
+- AuthContext.tsx
+- SecurityAuditLogger
 - ClassOffering
 - Room
 - P02 Training Management: Database Design
@@ -36,49 +36,49 @@
 - SessionService
 - EnrollmentAndResultRepositoryTest
 - OpenApiSchemaTest
-- features/README.md
+- GradeAuditLog
 - CoursesRoomsPage.tsx
 - Phần 4 – Đặc tả 18 chức năng
 - DashboardService
 - User
 - Course
-- ResultService.java
+- .updateResults
 - AssessmentResult
-- ClassAndSessionRepositoryTest
+- ClassStatus
 - ApprovalsPage.tsx
-- ClassDetailModal.tsx
+- .confirm
 - Attendance
-- StudentRepository
-- ClassQueryService.java
+- ResultService.java
+- ClassQueryService
 - .conflict
-- TeacherSchedulePage.tsx
+- useToast
 - PasswordService
-- EntitySchemaMappingTest.java
+- EntitySchemaMappingTest
 - AuthWebSecurityTest
 - StudentController.java
-- Enrollment
+- Session
 - Decided
 - compilerOptions
 - AuthController.java
-- InstructorService.java
-- Session
-- AuthContext.tsx
-- ScheduleService
-- AccountAndCatalogRepositoryTest
+- InstructorService
+- .unlockSession
+- OutcomeTotals
+- AuthUserResponse
+- AccountAndCatalogRepositoryTest.java
 - 3. Checklist Công việc Chi tiết theo Từng Phân hệ
-- EnrollmentService
+- Enrollment
 - EnrollmentStatus
 - Student
 - ClassGradingStatusAndDashboardFiltersIntegrationTest.java
 - TestDatabaseGuardTest
 - Instructor
-- EnrollmentAndResultRepositoryTest.java
+- SecurityConfig.java
 - compilerOptions
-- 5. Table definitions
+- axiosClient.ts
 - 3. Đặc tả Chi tiết từng Màn hình
 - 3.3. Màn hình Nhập điểm & Nộp điểm (`/teacher/grades`)
 - AuthenticatedUser
-- AssessmentResultRepository
+- status.ts
 - TestData
 - SecurityFoundationTest
 - 3. Đặc tả Chi tiết từng Màn hình
@@ -87,51 +87,48 @@
 - devDependencies
 - plugins
 - P02 Database: Final Review Checklist
-- ClassStatus
-- SessionRepository
-- .createUser
+- .cancel
+- .lockSession
+- UserService
 - 4. Table definitions
 - .login
 - classOffering.ts
-- SecurityAuditLogger
-- 16. Implementation status
-- UserRepository
-- JwtService
-- ScheduleConflictService
+- Query
+- OpenApiDocsIntegrationTest.java
+- AuthService
+- TraceIdFilter.java
+- Tickets: Code Review Findings Resolution
 - Foreign keys (21)
 - AccessTokenAuthenticator
 - control-app.mjs
 - P02 Database: Decision Package
-- ClassAndSessionRepositoryTest.java
+- .updateAttendance
 - 2. Priority decisions
 - DatabaseFoundationIntegrationTest
 - P02 Database: Schema Analysis
 - mvnw
-- JwtServiceTest
-- InstructorCourseId
+- AppProperties
+- Badge.tsx
 - RepositoryTestSupport
-- ClassRosterService.java
+- PageResponse
 - StudentRepository.java
 - TestDatabaseConfigurationTest
 - check-no-comments.mjs
 - InstructorRepository.java
-- Badge.tsx
-- Verify Course Management
-- PageResponse
+- 01-enforce-table-row-grade-submission-validation.md
 - UserRole
 - Hướng Dẫn Sử Dụng Docker Cho Dự Án
 - .resolve
-- database-ambiguities.md
+- P02 Database: Decisions and Remaining Questions
 - AttendanceRepository.java
 - Domain Docs
 - Issue tracker: Local Markdown
 - scripts
-- AppSecurityLog
+- AccountAndCatalogRepositoryTest
 - Agent skills
 - AuditedEntity
 - package.json
 - @types/babel__core
-- ApiException
 - React + TypeScript + Vite
 - DashboardFilter
 - ClassCard.tsx
@@ -141,19 +138,17 @@
 - OJT2026 - Training Management System
 - seed-demo.sh script
 - triage-labels.md
-- EnrollmentController.java
-- ScheduleEntry
-- DatabaseConnectionVerifier
-- GradingStatus
+- ApiException
+- ClassCapacityService
+- TrainingManagementApplication
 - com.p02:training-management-backend
 - OpenApiConfig.java
 - AuthCookies
-- GradeAuditLogRepository
-- GradeCalculator
+- Ticket 01: Fix Balanced Visualization and Approvals Default Scope
+- Ticket 02: Eliminate Scope Creep in Student Grades
 - check-minimalist-ui.mjs
-- Technical defaults applied
-- Kiet mode
-- Button.tsx
+- Ticket 03: Enforce Attendance Lockout in Schedule Attendance Modal
+- Ticket 04: Validate Grade Completeness and Streamline Submission Flow
 - Đặc tả Rà soát và Giải quyết Triệt để Lỗi Tồn đọng (Final Resolution Spec)
 - babel-plugin-react-compiler
 - @types/node
@@ -184,105 +179,109 @@
 10. `Session` - 57 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `ClassTable()` --calls--> `formatDate()`  [EXTRACTED]
-  FE/src/components/admin/classes/ClassTable.tsx → FE/src/utils/dateFormat.ts
-- `UnlockAttendanceModalProps` --references--> `ClassSession`  [EXTRACTED]
-  FE/src/components/admin/classes/UnlockAttendanceModal.tsx → FE/src/types/classOffering.ts
+- `ClassTableProps` --references--> `ClassOffering`  [EXTRACTED]
+  FE/src/components/admin/classes/ClassTable.tsx → FE/src/types/classOffering.ts
 - `AssignCoursesModalProps` --references--> `ManagedUser`  [EXTRACTED]
   FE/src/components/admin/users/AssignCoursesModal.tsx → FE/src/types/user.ts
+- `SecurityAuditLogger` --references--> `AppSecurityLogRepository`  [EXTRACTED]
+  BE/src/main/java/com/p02/training/audit/SecurityAuditLogger.java → BE/src/main/java/com/p02/training/repository/AppSecurityLogRepository.java
 - `SecurityErrorHandler` --references--> `SecurityAuditLogger`  [EXTRACTED]
   BE/src/main/java/com/p02/training/security/SecurityErrorHandler.java → BE/src/main/java/com/p02/training/audit/SecurityAuditLogger.java
-- `AttendanceService` --references--> `SecurityAuditLogger`  [EXTRACTED]
-  BE/src/main/java/com/p02/training/service/AttendanceService.java → BE/src/main/java/com/p02/training/audit/SecurityAuditLogger.java
+- `AuthService` --references--> `SecurityAuditLogger`  [EXTRACTED]
+  BE/src/main/java/com/p02/training/service/AuthService.java → BE/src/main/java/com/p02/training/audit/SecurityAuditLogger.java
 
 ## Import Cycles
 - None detected.
 
-## Communities (166 total, 30 thin omitted)
+## Communities (162 total, 33 thin omitted)
 
-### Community 0 - "UserService"
-Cohesion: 0.15
-Nodes (13): PatchMapping, PostMapping, RequestMapping, ResponseEntity, RestController, UserController, Override, ResetPasswordRequest (+5 more)
+### Community 0 - "UserController.java"
+Cohesion: 0.21
+Nodes (8): GetMapping, PatchMapping, PostMapping, RequestMapping, ResponseEntity, RestController, UserController, ChangeStatusRequest
 
 ### Community 1 - "GlobalExceptionHandler"
 Cohesion: 0.07
 Nodes (28): ApiErrorResponse, GlobalExceptionHandler, AccessDeniedException, AuthenticationException, Logger, Override, ResponseEntity, GlobalExceptionHandlerTest (+20 more)
 
-### Community 2 - "CourseService"
-Cohesion: 0.12
-Nodes (14): CourseController, DeleteMapping, GetMapping, PatchMapping, PostMapping, PutMapping, RequestMapping, ResponseEntity (+6 more)
+### Community 2 - "CourseController.java"
+Cohesion: 0.16
+Nodes (11): CourseController, DeleteMapping, GetMapping, PatchMapping, PostMapping, PutMapping, RequestMapping, ResponseEntity (+3 more)
 
-### Community 3 - "ListingFieldsAndFiltersIntegrationTest.java"
-Cohesion: 0.20
-Nodes (12): AutoConfigureMockMvc, BeforeEach, ClassOffering, Cookie, EnabledIfEnvironmentVariable, EntityManager, MockMvc, SpringBootTest (+4 more)
+### Community 3 - "JwtService"
+Cohesion: 0.07
+Nodes (26): ConfigurationProperties, Override, Validated, JwtProperties, AccessTokenClaims, Component, ObjectMapper, JwtService (+18 more)
 
 ### Community 4 - "react"
 Cohesion: 0.07
-Nodes (34): ChangeRoleModal(), ChangeRoleModalProps, CreateUserModal(), CreateUserModalProps, EditUserModal(), EditUserModalProps, ResetPasswordModal(), ResetPasswordModalProps (+26 more)
+Nodes (33): ChangeRoleModal(), ChangeRoleModalProps, EditUserModal(), EditUserModalProps, ResetPasswordModal(), ResetPasswordModalProps, UserFilters(), UserFiltersProps (+25 more)
 
 ### Community 5 - "AdminProvisioningIntegrationTest"
+Cohesion: 0.07
+Nodes (32): ApplicationRunner, ActiveAdminStartupCheck, ApplicationArguments, Component, Logger, Override, DatabaseConnectionVerifier, ApplicationArguments (+24 more)
+
+### Community 6 - "StudentRegistrationPage.tsx"
+Cohesion: 0.14
+Nodes (19): DEFAULT_COURSE_CREDITS, DEFAULT_FALLBACK_CAPACITY, DEFAULT_MIN_ATTENDANCE_PCT, DEFAULT_PASS_SCORE, StudentGradesPage(), PageResponse, studentService, OpenClass (+11 more)
+
+### Community 7 - "ApiPaths"
 Cohesion: 0.05
-Nodes (46): ActiveProfiles, AppProperties, Cors, ConfigurationProperties, Validated, ClockConfig, Bean, Configuration (+38 more)
+Nodes (29): AccessDeniedHandler, AuthenticationEntryPoint, ApiPaths, GetMapping, RestController, ScheduleController, ScheduleItemResponse, ScheduleEntry (+21 more)
 
-### Community 6 - "EntityPersistenceMappingTest"
-Cohesion: 0.34
-Nodes (4): EntityPersistenceMappingTest, ClassOffering, Test, User
+### Community 8 - "AuthContext.tsx"
+Cohesion: 0.07
+Nodes (43): App(), queryClient, AdminSidebar(), LoadingSpinner(), RouteErrorBoundary(), navItems, StudentHeader(), navItems (+35 more)
 
-### Community 7 - "SecurityErrorHandler"
+### Community 9 - "SecurityAuditLogger"
 Cohesion: 0.08
-Nodes (23): AccessDeniedHandler, AuthenticationEntryPoint, Decision, Component, LoginRateLimiter, Window, FilterChain, HttpServletRequest (+15 more)
-
-### Community 8 - "useToast"
-Cohesion: 0.08
-Nodes (39): AdminSidebar(), RouteErrorBoundary(), WeekNavigator(), WeekNavigatorProps, navItems, StudentHeader(), navItems, TeacherHeader() (+31 more)
-
-### Community 9 - "ClassOfferingRepository"
-Cohesion: 0.11
-Nodes (13): AttendanceRepository, ClassOfferingRepository, CourseRepository, InstructorCourseRepository, InstructorRepository, ClassInstructorService, Service, Transactional (+5 more)
+Nodes (29): SecurityAuditLogger, AttendanceRepository, ClassOfferingRepository, CourseRepository, GradeAuditLogRepository, InstructorCourseRepository, InstructorRepository, RoomRepository (+21 more)
 
 ### Community 10 - "ClassOffering"
-Cohesion: 0.05
+Cohesion: 0.04
 Nodes (3): ClassOffering, Entity, Table
 
 ### Community 11 - "Room"
-Cohesion: 0.09
-Nodes (18): GetMapping, PatchMapping, PostMapping, PutMapping, RequestMapping, ResponseEntity, RestController, RoomController (+10 more)
+Cohesion: 0.06
+Nodes (23): GetMapping, PatchMapping, PostMapping, PutMapping, RequestMapping, ResponseEntity, RestController, RoomController (+15 more)
 
 ### Community 12 - "P02 Training Management: Database Design"
-Cohesion: 0.08
-Nodes (25): 10. Version fields, 11. `created_at` and `updated_at`, 12. First Admin and Admin promotion, 13. Decisions applied, 14. Compatibility review, 15. Remaining limitations, 17. JPA entities, 1. How to read this design (+17 more)
+Cohesion: 0.04
+Nodes (45): 10. Version fields, 11. `created_at` and `updated_at`, 12. First Admin and Admin promotion, 13. Decisions applied, 14. Compatibility review, 15. Remaining limitations, 16. Implementation status, 17. JPA entities (+37 more)
 
 ### Community 13 - "DashboardPage.tsx"
 Cohesion: 0.10
-Nodes (32): ClassFiltersProps, DashboardCapacityChart(), DashboardCapacityChartProps, DashboardClassTable(), DashboardClassTableProps, DashboardFilters(), DashboardFiltersProps, DashboardKPIs() (+24 more)
+Nodes (33): DashboardCapacityChart(), DashboardCapacityChartProps, DashboardClassTable(), DashboardClassTableProps, DashboardFilters(), DashboardFiltersProps, DashboardKPIs(), DashboardKPIsProps (+25 more)
 
 ### Community 14 - "SecurityAction"
-Cohesion: 0.07
-Nodes (29): Event, SecurityAlertsResponse, SecurityAction, ACCESS_DENIED, ACCOUNT_LOCKED, ASSIGN_INSTRUCTOR, ATTENDANCE_UPDATE, CANCEL_ENROLL (+21 more)
+Cohesion: 0.05
+Nodes (37): Component, Logger, Transactional, Event, SecurityAlertsResponse, SecurityAction, ACCESS_DENIED, ACCOUNT_LOCKED (+29 more)
 
 ### Community 15 - "3. Danh mục API Chi tiết theo Phân hệ"
 Cohesion: 0.05
 Nodes (42): 1.1. Base URL & Môi trường, 1.2. Xác thực (Authentication) & CSRF, 1.3. Cấu trúc Phản hồi Chuẩn, 1. Danh sách Khóa học, 1. Giảng viên nhập & nộp điểm (TR15), 1. Lấy mã Token CSRF, 1. Quy ước chung & Hạ tầng giao tiếp, 1. Sinh viên Đăng ký học (TR10) (+34 more)
 
 ### Community 16 - "ErrorCode"
-Cohesion: 0.10
-Nodes (17): ErrorCode, CSRF_INVALID, FORBIDDEN, INTERNAL_ERROR, INVALID_CREDENTIALS, METHOD_NOT_ALLOWED, NOT_ACCEPTABLE, NOT_FOUND (+9 more)
+Cohesion: 0.13
+Nodes (16): SearchPatterns, ErrorCode, CSRF_INVALID, FORBIDDEN, INTERNAL_ERROR, INVALID_CREDENTIALS, METHOD_NOT_ALLOWED, NOT_ACCEPTABLE (+8 more)
 
 ### Community 17 - "TeacherGradesPage.tsx"
-Cohesion: 0.12
-Nodes (22): ConfirmDialog(), ConfirmDialogProps, variantConfig, maxWidthClassMap, Modal(), ModalProps, DEFAULT_COURSE_CREDITS, DEFAULT_FALLBACK_CAPACITY (+14 more)
+Cohesion: 0.20
+Nodes (10): ConfirmDialog(), ConfirmDialogProps, variantConfig, maxWidthClassMap, Modal(), ModalProps, ClassResultEntryItem, ClassResultSheet (+2 more)
 
 ### Community 18 - "SessionService"
-Cohesion: 0.11
-Nodes (11): DeleteMapping, PutMapping, RequestMapping, ResponseEntity, RestController, SessionController, SessionRequest, SessionResponse (+3 more)
+Cohesion: 0.12
+Nodes (12): DeleteMapping, PutMapping, RequestMapping, ResponseEntity, RestController, SessionController, SessionRequest, SessionResponse (+4 more)
+
+### Community 19 - "EnrollmentAndResultRepositoryTest"
+Cohesion: 0.19
+Nodes (3): EnrollmentAndResultRepositoryTest, BeforeEach, Test
 
 ### Community 20 - "OpenApiSchemaTest"
 Cohesion: 0.45
 Nodes (3): SuppressWarnings, Test, OpenApiSchemaTest
 
-### Community 21 - "features/README.md"
-Cohesion: 0.05
-Nodes (31): Admin Dashboard, Driving it with control-app, Gotchas, How to get to it (user POV), Sub-features, Authentication & Role Routing, Driving it with control-app, Gotchas (+23 more)
+### Community 21 - "GradeAuditLog"
+Cohesion: 0.15
+Nodes (9): GradeAuditLog, Entity, Immutable, Table, EntityGraph, Override, Page, Pageable (+1 more)
 
 ### Community 22 - "CoursesRoomsPage.tsx"
 Cohesion: 0.11
@@ -293,72 +292,76 @@ Cohesion: 0.05
 Nodes (36): 0.1. Kiến trúc & API, 0.2. Phiên đăng nhập [Chốt], 0.3. Thứ tự kiểm tra trong mọi API, 0.4. Mã lỗi chung [Chốt], 0.5. Transaction & khóa dòng [Chốt], 0.6. AppSecurityLog – danh sách action, 2.1. Field cần thêm, 2.2. ClassOffering.status (+28 more)
 
 ### Community 24 - "DashboardService"
-Cohesion: 0.14
-Nodes (9): ApiPaths, DashboardController, GetMapping, RestController, DashboardClassResponse, DashboardSummaryResponse, DashboardService, Service (+1 more)
+Cohesion: 0.12
+Nodes (10): DashboardController, GetMapping, RestController, DashboardSummaryResponse, GradeAuditLogResponse, Query, ClassOutcomeCount, DashboardService (+2 more)
 
 ### Community 25 - "User"
-Cohesion: 0.07
+Cohesion: 0.06
 Nodes (3): Entity, Table, User
 
 ### Community 26 - "Course"
 Cohesion: 0.11
-Nodes (3): Course, Entity, Table
+Nodes (6): Course, Entity, Table, CourseService, Service, Transactional
 
-### Community 27 - "ResultService.java"
-Cohesion: 0.15
-Nodes (14): GetMapping, PutMapping, RequestMapping, RestController, ResultController, ResultItemRequest, UpdateResultsRequest, ClassResultsResponse (+6 more)
+### Community 27 - ".updateResults"
+Cohesion: 0.14
+Nodes (9): GetMapping, PutMapping, RequestMapping, RestController, ResultController, ResultItemRequest, UpdateResultsRequest, ClassResultsResponse (+1 more)
 
 ### Community 28 - "AssessmentResult"
-Cohesion: 0.15
-Nodes (8): MyResultResponse, AssessmentResult, Entity, Table, FinalStatus, FAILED, IN_PROGRESS, PASSED
+Cohesion: 0.09
+Nodes (15): AppSecurityLog, Entity, Immutable, Table, AssessmentResult, Entity, Table, EntityPersistenceMappingTest (+7 more)
+
+### Community 29 - "ClassStatus"
+Cohesion: 0.06
+Nodes (18): DashboardClassResponse, ClassStatus, CANCELLED, CLOSED, DRAFT, IN_PROGRESS, OPEN, EntityGraph (+10 more)
 
 ### Community 30 - "ApprovalsPage.tsx"
-Cohesion: 0.08
-Nodes (35): ApprovalDetailModal(), ApprovalDetailModalProps, ApprovalFilters(), ApprovalFiltersProps, ApprovalStatsCards(), ApprovalStatsCardsProps, ApprovalTable(), ApprovalTableProps (+27 more)
+Cohesion: 0.13
+Nodes (23): ApprovalDetailModal(), ApprovalDetailModalProps, ApprovalFilters(), ApprovalFiltersProps, ApprovalStatsCards(), ApprovalStatsCardsProps, ApprovalTable(), ApprovalTableProps (+15 more)
 
-### Community 31 - "ClassDetailModal.tsx"
-Cohesion: 0.15
-Nodes (11): AddSessionModal(), ClassDetailModalProps, ClassOverviewTab(), ClassOverviewTabProps, ClassRosterTab(), ClassRosterTabProps, StudentRosterItem, ClassSessionsTab() (+3 more)
+### Community 31 - ".confirm"
+Cohesion: 0.23
+Nodes (3): GradeCalculator, Transactional, RoundingMode
 
 ### Community 32 - "Attendance"
-Cohesion: 0.11
-Nodes (10): Item, Schema, Attendance, Entity, Table, AttendanceStatus, ABSENT, LATE (+2 more)
+Cohesion: 0.13
+Nodes (8): Attendance, Entity, Table, AttendanceStatus, ABSENT, LATE, PRESENT, Item
 
-### Community 33 - "StudentRepository"
-Cohesion: 0.17
-Nodes (5): SearchPatterns, StudentRepository, Service, Transactional, StudentService
+### Community 33 - "ResultService.java"
+Cohesion: 0.13
+Nodes (17): Item, Schema, FinalStatus, FAILED, IN_PROGRESS, PASSED, GradingStatus, CONFIRMED (+9 more)
 
-### Community 34 - "ClassQueryService.java"
-Cohesion: 0.21
-Nodes (10): ClassView, Schema, ClassFilter, ClassQueryService, Service, Sort, Transactional, Scope (+2 more)
+### Community 34 - "ClassQueryService"
+Cohesion: 0.19
+Nodes (9): GetMapping, ClassView, Schema, ClassFilter, ClassQueryService, Transactional, Scope, CriteriaBuilder (+1 more)
 
 ### Community 35 - ".conflict"
-Cohesion: 0.13
-Nodes (9): PostMapping, ChangeCapacityRequest, ClassRequest, ClassResponse, ClassService, ClassOffering, Service, Transactional (+1 more)
+Cohesion: 0.19
+Nodes (5): ClassRequest, ClassService, ClassOffering, Service, Transactional
 
-### Community 36 - "TeacherSchedulePage.tsx"
+### Community 36 - "useToast"
 Cohesion: 0.13
-Nodes (20): ScheduleAttendanceModal(), ScheduleAttendanceModalProps, toCanonicalAttendanceMark(), TeacherSchedulePage(), AttendanceStatus, initialScheduleState, ScheduleAction, scheduleReducer() (+12 more)
+Nodes (24): ClassTable(), ClassTableProps, WeekNavigator(), WeekNavigatorProps, ScheduleAttendanceModal(), ScheduleAttendanceModalProps, toCanonicalAttendanceMark(), useToast() (+16 more)
 
 ### Community 37 - "PasswordService"
 Cohesion: 0.21
 Nodes (5): PasswordEncoder, Service, PasswordService, Test, PasswordServiceTest
 
-### Community 38 - "EntitySchemaMappingTest.java"
-Cohesion: 0.14
+### Community 38 - "EntitySchemaMappingTest"
+Cohesion: 0.13
 Nodes (9): EntitySchemaMappingTest, EnabledIfEnvironmentVariable, JdbcTemplate, ParameterizedTest, SpringBootTest, Test, EntityManagerFactory, Field (+1 more)
 
 ### Community 39 - "AuthWebSecurityTest"
-Cohesion: 0.19
-Nodes (9): AuthWebSecurityTest, Cookie, EnableConfigurationProperties, Import, MockHttpServletRequestBuilder, MockMvc, Test, TestPropertySource (+1 more)
+Cohesion: 0.17
+Nodes (10): AuthWebSecurityTest, BeforeEach, Cookie, EnableConfigurationProperties, Import, MockHttpServletRequestBuilder, MockMvc, Test (+2 more)
 
 ### Community 40 - "StudentController.java"
-Cohesion: 0.13
-Nodes (14): GetMapping, PatchMapping, PutMapping, RequestMapping, RestController, StudentController, ChangeStudentStatusRequest, UpdateStudentRequest (+6 more)
+Cohesion: 0.10
+Nodes (17): GetMapping, PatchMapping, PutMapping, RequestMapping, RestController, StudentController, ChangeStudentStatusRequest, UpdateStudentRequest (+9 more)
 
-### Community 41 - "Enrollment"
-Cohesion: 0.26
-Nodes (3): Enrollment, Entity, Table
+### Community 41 - "Session"
+Cohesion: 0.17
+Nodes (3): Entity, Table, Session
 
 ### Community 42 - "Decided"
 Cohesion: 0.08
@@ -369,47 +372,43 @@ Cohesion: 0.08
 Nodes (24): compilerOptions, allowArbitraryExtensions, allowImportingTsExtensions, erasableSyntaxOnly, jsx, lib, module, moduleDetection (+16 more)
 
 ### Community 44 - "AuthController.java"
-Cohesion: 0.18
-Nodes (10): AuthController, GetMapping, PatchMapping, PostMapping, RequestMapping, ResponseEntity, RestController, ChangePasswordRequest (+2 more)
-
-### Community 45 - "InstructorService.java"
-Cohesion: 0.10
-Nodes (16): InstructorController, GetMapping, PatchMapping, PutMapping, RequestMapping, RestController, AssignCoursesRequest, ChangeStatusRequest (+8 more)
-
-### Community 46 - "Session"
-Cohesion: 0.08
-Nodes (16): AttendanceController, GetMapping, PostMapping, PutMapping, RequestMapping, RestController, AttendanceItemRequest, ReasonRequest (+8 more)
-
-### Community 47 - "AuthContext.tsx"
-Cohesion: 0.13
-Nodes (21): App(), queryClient, LoadingSpinner(), AuthContext, AuthContextValue, AuthProvider(), ToastProvider(), SEED_ACCOUNTS (+13 more)
-
-### Community 48 - "ScheduleService"
 Cohesion: 0.20
-Nodes (7): GetMapping, RestController, ScheduleController, ScheduleItemResponse, Service, Transactional, ScheduleService
+Nodes (10): AuthController, GetMapping, PatchMapping, PostMapping, RequestMapping, ResponseEntity, RestController, Override (+2 more)
 
-### Community 49 - "AccountAndCatalogRepositoryTest"
+### Community 45 - "InstructorService"
+Cohesion: 0.10
+Nodes (14): InstructorController, GetMapping, PatchMapping, PutMapping, RequestMapping, RestController, AssignCoursesRequest, UpdateInstructorRequest (+6 more)
+
+### Community 46 - ".unlockSession"
 Cohesion: 0.17
-Nodes (6): InstructorCourse, Entity, Table, EntityGraph, AccountAndCatalogRepositoryTest, Test
+Nodes (10): AttendanceController, GetMapping, PostMapping, PutMapping, RequestMapping, RestController, ReasonRequest, AttendanceSheetResponse (+2 more)
+
+### Community 48 - "AuthUserResponse"
+Cohesion: 0.33
+Nodes (3): AuthUserResponse, Override, LoginResult
+
+### Community 49 - "AccountAndCatalogRepositoryTest.java"
+Cohesion: 0.16
+Nodes (7): InstructorCourse, Entity, Table, InstructorCourseId, Override, ApplicationContext, Embeddable
 
 ### Community 50 - "3. Checklist Công việc Chi tiết theo Từng Phân hệ"
 Cohesion: 0.09
 Nodes (22): 1. Đánh giá Hiện trạng Frontend (As-Is Assessment), 2.1. Quản lý Người dùng & Tài khoản (`/admin/users` - TR01), 2.2. Quản lý Khóa học & Phòng học (TR02, TR06), 2.3. Quản lý Lớp học & Vòng đời Lớp (`/admin/classes` - TR05, TR06, TR07, TR09, TR13), 2.4. Xét duyệt Kết quả & Hoàn tất Lớp (`/admin/approvals` - TR16), 2.5. Dashboard & Cảnh báo An ninh (`/admin` - TR18), 2. Lộ trình Triển khai Tổng thể (Phases Roadmap), 3.1. Thời khóa biểu Giảng dạy (`/teacher/schedule` - TR17) (+14 more)
 
-### Community 51 - "EnrollmentService"
-Cohesion: 0.11
-Nodes (8): EnrollmentKeys, Query, ClassCapacityService, Service, Transactional, EnrollmentService, Service, Transactional
+### Community 51 - "Enrollment"
+Cohesion: 0.17
+Nodes (3): Enrollment, Entity, Table
 
 ### Community 52 - "EnrollmentStatus"
-Cohesion: 0.17
-Nodes (11): EnrollmentResponse, EnrollmentStatus, CANCELLED, COMPLETED, ENROLLED, EnrollmentRepository, EntityGraph, Lock (+3 more)
+Cohesion: 0.16
+Nodes (9): EnrollmentStatus, CANCELLED, COMPLETED, ENROLLED, EnrollmentRepository, Query, ClassRosterService, Service (+1 more)
 
 ### Community 53 - "Student"
 Cohesion: 0.23
 Nodes (3): Entity, Table, Student
 
 ### Community 54 - "ClassGradingStatusAndDashboardFiltersIntegrationTest.java"
-Cohesion: 0.21
+Cohesion: 0.20
 Nodes (12): ClassGradingStatusAndDashboardFiltersIntegrationTest, AutoConfigureMockMvc, BeforeEach, ClassOffering, Cookie, EnabledIfEnvironmentVariable, EntityManager, MockMvc (+4 more)
 
 ### Community 55 - "TestDatabaseGuardTest"
@@ -417,20 +416,20 @@ Cohesion: 0.23
 Nodes (9): ApplicationContextInitializer, Override, TestDatabaseGuard, ParameterizedTest, Test, TestDatabaseGuardTest, ConfigurableApplicationContext, MockEnvironment (+1 more)
 
 ### Community 56 - "Instructor"
-Cohesion: 0.17
-Nodes (5): ClassSummaryResponse, Instructor, Entity, Table, ApplicationContext
+Cohesion: 0.13
+Nodes (8): ClassSummaryResponse, CourseSummaryResponse, MyInstructorProfileResponse, Instructor, Entity, Table, Service, Sort
 
-### Community 57 - "EnrollmentAndResultRepositoryTest.java"
-Cohesion: 0.11
-Nodes (13): GradeAuditLogResponse, ScoreType, FINAL, MIDTERM, GradeAuditLog, Entity, Immutable, Table (+5 more)
+### Community 57 - "SecurityConfig.java"
+Cohesion: 0.26
+Nodes (9): Bean, Configuration, Environment, PasswordEncoder, SecurityConfig, CookieCsrfTokenRepository, CorsConfigurationSource, HttpSecurity (+1 more)
 
 ### Community 58 - "compilerOptions"
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, lib, module, moduleDetection, noEmit, noFallthroughCasesInSwitch (+11 more)
 
-### Community 59 - "5. Table definitions"
-Cohesion: 0.14
-Nodes (14): 5.10 `attendance`, 5.11 `assessment_result`, 5.12 `grade_audit_log`, 5.13 `app_security_log`, 5.1 `users`, 5.2 `student`, 5.3 `instructor`, 5.4 `course` (+6 more)
+### Community 59 - "axiosClient.ts"
+Cohesion: 0.10
+Nodes (25): CreateClassFormData, CreateClassModal(), initialClassFormData, EditClassModal(), EditClassModalProps, CreateUserModal(), CreateUserModalProps, attendanceService (+17 more)
 
 ### Community 60 - "3. Đặc tả Chi tiết từng Màn hình"
 Cohesion: 0.11
@@ -441,20 +440,20 @@ Cohesion: 0.11
 Nodes (18): 1. Tổng quan Quyền hạn (Permissions), 2. Bản đồ Màn hình & Routes, 3.1. Màn hình Thời khóa biểu Giảng dạy (`/teacher/schedule`), 3.2. Màn hình Lớp học phụ trách & Điểm danh (`/teacher/classes`), 3.3. Màn hình Nhập điểm & Nộp điểm (`/teacher/grades`), 3. Đặc tả Chi tiết từng Màn hình, A. Danh sách Lớp học phụ trách, A. Giao diện & Dữ liệu hiển thị (+10 more)
 
 ### Community 62 - "AuthenticatedUser"
-Cohesion: 0.12
-Nodes (15): ClassController, DeleteMapping, GetMapping, PatchMapping, PostMapping, PutMapping, RequestMapping, ResponseEntity (+7 more)
+Cohesion: 0.11
+Nodes (18): ClassController, DeleteMapping, PatchMapping, PostMapping, PutMapping, RequestMapping, ResponseEntity, RestController (+10 more)
 
-### Community 63 - "AssessmentResultRepository"
-Cohesion: 0.14
-Nodes (7): AssessmentResultRepository, EntityGraph, Page, Pageable, Query, ClassOutcomeCount, OutcomeTotals
+### Community 63 - "status.ts"
+Cohesion: 0.18
+Nodes (12): ATTENDANCE_MARKS, AttendanceMarkType, CLASS_STATUS, CLASS_STATUS_LABELS, CLASS_STATUS_VARIANTS, ClassStatusType, ENROLLMENT_STATUS, ENROLLMENT_STATUS_LABELS (+4 more)
 
 ### Community 64 - "TestData"
-Cohesion: 0.30
-Nodes (3): ClassOffering, User, TestData
+Cohesion: 0.22
+Nodes (4): ClassOffering, EntityManager, User, TestData
 
 ### Community 65 - "SecurityFoundationTest"
-Cohesion: 0.09
-Nodes (18): Component, FilterChain, HttpServletRequest, HttpServletResponse, Override, TraceIdFilter, TrainingManagementApplication, EnableConfigurationProperties (+10 more)
+Cohesion: 0.15
+Nodes (8): EnableConfigurationProperties, Import, MockMvc, PasswordEncoder, Test, TestPropertySource, WebMvcTest, SecurityFoundationTest
 
 ### Community 66 - "3. Đặc tả Chi tiết từng Màn hình"
 Cohesion: 0.11
@@ -480,57 +479,45 @@ Nodes (8): plugins, rules, react/only-export-components, react/rules-of-hooks, r
 Cohesion: 0.12
 Nodes (16): 10. JPA entities, 11. Test results, 12. Next, 1. D01-D22 against the design, 2. Decision status, 3. Tables, 4. Column justification, 5. Schema review (+8 more)
 
-### Community 72 - "ClassStatus"
-Cohesion: 0.08
-Nodes (15): ClassStatus, CANCELLED, CLOSED, DRAFT, IN_PROGRESS, OPEN, EntityGraph, Lock (+7 more)
-
-### Community 73 - "SessionRepository"
+### Community 72 - ".cancel"
 Cohesion: 0.18
-Nodes (4): EntityGraph, Lock, Query, SessionRepository
+Nodes (6): Lock, EntityGraph, Lock, Page, Pageable, EnrollmentKeys
 
-### Community 74 - ".createUser"
+### Community 74 - "UserService"
 Cohesion: 0.16
-Nodes (3): Lock, Query, User
+Nodes (8): Override, ResetPasswordRequest, UpdateUserRequest, UserResponse, Service, Transactional, User, UserService
 
 ### Community 75 - "4. Table definitions"
 Cohesion: 0.14
 Nodes (14): 4.10 `attendance` (spec: Attendance). No change stated, 4.11 `assessment_result` (spec: AssessmentResult). No change stated, 4.12 `grade_audit_log` (spec: GradeAuditLog). No change stated, 4.13 `app_security_log` (spec: AppSecurityLog). No change stated, 4.1 `users` (spec: User). Modified: 1 new column, 4.2 `student` (spec: Student). No change stated, 4.3 `instructor` (spec: Instructor). No change stated, 4.4 `course` (spec: Course). Modified: 2 new columns, 1 stated CHECK (+6 more)
 
-### Community 76 - ".login"
-Cohesion: 0.13
-Nodes (7): Override, LoginRequest, AuthUserResponse, Override, LoginResult, Transactional, LoginSuccess
-
 ### Community 77 - "classOffering.ts"
-Cohesion: 0.07
-Nodes (33): AddSessionModalProps, AssignInstructorModalProps, CancelClassModalProps, ChangeCapacityModalProps, ClassStatsCardsProps, ClassTable(), ClassTableProps, CreateClassFormData (+25 more)
+Cohesion: 0.06
+Nodes (33): AddSessionModal(), AddSessionModalProps, AssignInstructorModalProps, CancelClassModalProps, ChangeCapacityModalProps, ClassDetailModalProps, ClassFiltersProps, ClassStatsCardsProps (+25 more)
 
-### Community 78 - "SecurityAuditLogger"
-Cohesion: 0.15
-Nodes (10): Component, Logger, Transactional, SecurityAuditLogger, AppSecurityLogRepository, ClientIp, HttpServletRequest, ClassAccessGuard (+2 more)
+### Community 79 - "OpenApiDocsIntegrationTest.java"
+Cohesion: 0.32
+Nodes (10): ActiveProfiles, DevProfile, AutoConfigureMockMvc, EnabledIfEnvironmentVariable, MockMvc, SpringBootTest, Test, OpenApiDocsIntegrationTest (+2 more)
 
-### Community 79 - "16. Implementation status"
+### Community 80 - "AuthService"
+Cohesion: 0.19
+Nodes (6): ChangePasswordRequest, Override, Lock, AuthService, Service, Transactional
+
+### Community 81 - "TraceIdFilter.java"
+Cohesion: 0.29
+Nodes (7): Component, FilterChain, HttpServletRequest, HttpServletResponse, Override, TraceIdFilter, Order
+
+### Community 82 - "Tickets: Code Review Findings Resolution"
 Cohesion: 0.33
-Nodes (6): 16. Implementation status, Main database: `p02_training`, Rules for schema changes, Test baseline, Test data cleanup policy, Test database: `p02_training_test`
-
-### Community 80 - "UserRepository"
-Cohesion: 0.20
-Nodes (10): ActiveAdminStartupCheck, ApplicationArguments, Component, Logger, Override, UserRepository, AuthService, Service (+2 more)
-
-### Community 81 - "JwtService"
-Cohesion: 0.18
-Nodes (11): ConfigurationProperties, Override, Validated, JwtProperties, AccessTokenClaims, Component, ObjectMapper, JwtService (+3 more)
-
-### Community 82 - "ScheduleConflictService"
-Cohesion: 0.39
-Nodes (3): Conflict, ScheduleConflictService, Slot
+Nodes (5): Ticket 1: Instructor Grade Submission Safeguards & Auto-save, Ticket 2: Student Grades KPI Consistency & Scope Alignment, Ticket 3: Safe Type Validation & Defensive Guards, Ticket 4: Enforce Grade Completeness Validation for Table-Row Grade Submission, Tickets: Code Review Findings Resolution
 
 ### Community 83 - "Foreign keys (21)"
 Cohesion: 0.15
 Nodes (13): Accounts and profiles, Catalog and qualification, Classes and schedule, Concurrency, Effects of the spec's physical deletes, Foreign keys (21), How confirmed decisions shape relationships, P02 Database: Relationships (+5 more)
 
 ### Community 84 - "AccessTokenAuthenticator"
-Cohesion: 0.17
-Nodes (10): AccessTokenAuthenticator, Component, Transactional, FilterChain, HttpServletRequest, HttpServletResponse, Override, JwtAuthenticationFilter (+2 more)
+Cohesion: 0.20
+Nodes (9): AccessTokenAuthenticator, Component, Transactional, FilterChain, HttpServletRequest, HttpServletResponse, Override, JwtAuthenticationFilter (+1 more)
 
 ### Community 85 - "control-app.mjs"
 Cohesion: 0.22
@@ -539,10 +526,6 @@ Nodes (11): ARTIFACTS_ROOT, __dirname, doctor(), drive(), FE_DIR, __filename, is
 ### Community 86 - "P02 Database: Decision Package"
 Cohesion: 0.17
 Nodes (12): 1. Decision matrix, 3. Other business decisions, 4. Other technical decisions, 5. Safe technical defaults, 6. What can be deferred, 7. Applied, and what remains, A-16. Initial values, A-22. Columns not in the spec (+4 more)
-
-### Community 87 - "ClassAndSessionRepositoryTest.java"
-Cohesion: 0.17
-Nodes (4): SessionSlot, Service, Transactional, BeforeEach
 
 ### Community 88 - "2. Priority decisions"
 Cohesion: 0.18
@@ -560,24 +543,24 @@ Nodes (10): 1. Read this first, 2. Classification, 3. Confirmed changes (spec Pa
 Cohesion: 0.33
 Nodes (6): mvnw script, clean(), die(), exec_maven(), set_java_home(), verbose()
 
-### Community 92 - "JwtServiceTest"
-Cohesion: 0.30
-Nodes (3): ObjectMapper, Test, JwtServiceTest
+### Community 92 - "AppProperties"
+Cohesion: 0.29
+Nodes (7): AppProperties, Cors, ConfigurationProperties, Validated, ClockConfig, Bean, Configuration
 
-### Community 93 - "InstructorCourseId"
-Cohesion: 0.24
-Nodes (3): InstructorCourseId, Override, Embeddable
+### Community 93 - "Badge.tsx"
+Cohesion: 0.33
+Nodes (4): BadgeProps, BadgeVariant, sizeClasses, variantClasses
 
 ### Community 94 - "RepositoryTestSupport"
 Cohesion: 0.43
 Nodes (6): BeforeEach, EnabledIfEnvironmentVariable, EntityManager, SpringBootTest, Transactional, RepositoryTestSupport
 
-### Community 95 - "ClassRosterService.java"
-Cohesion: 0.24
-Nodes (5): ClassStudentResponse, ClassRosterService, Service, Sort, Transactional
+### Community 95 - "PageResponse"
+Cohesion: 0.20
+Nodes (5): ClassStudentResponse, MyResultResponse, Page, PageResponse, Transactional
 
 ### Community 96 - "StudentRepository.java"
-Cohesion: 0.27
+Cohesion: 0.36
 Nodes (6): EntityGraph, Lock, Override, Page, Pageable, Specification
 
 ### Community 97 - "TestDatabaseConfigurationTest"
@@ -589,23 +572,11 @@ Cohesion: 0.33
 Nodes (5): allFiles, checkFile(), EXTENSIONS, stripStringLiterals(), TARGET_DIRS
 
 ### Community 99 - "InstructorRepository.java"
-Cohesion: 0.31
+Cohesion: 0.36
 Nodes (6): EntityGraph, Lock, Override, Page, Pageable, Specification
 
-### Community 100 - "Badge.tsx"
-Cohesion: 0.33
-Nodes (4): BadgeProps, BadgeVariant, sizeClasses, variantClasses
-
-### Community 101 - "Verify Course Management"
-Cohesion: 0.25
-Nodes (7): Cleanup, Doctor, Drive, Evidence, Helpers, Launch, Verify Course Management
-
-### Community 102 - "PageResponse"
-Cohesion: 0.36
-Nodes (3): GetMapping, Page, PageResponse
-
 ### Community 103 - "UserRole"
-Cohesion: 0.14
+Cohesion: 0.17
 Nodes (10): ChangeRoleRequest, CreateUserRequest, Override, UserRole, INSTRUCTOR, STUDENT, TRAINING_ADMIN, TRAINING_MANAGER (+2 more)
 
 ### Community 104 - "Hướng Dẫn Sử Dụng Docker Cho Dự Án"
@@ -616,12 +587,12 @@ Nodes (6): 1. Lệnh Khởi Chạy & Lệnh Tắt (Nhanh), 2. Đường Dẫn Tr
 Cohesion: 0.29
 Nodes (9): AnnotatedType, Component, Override, Schema, SuppressWarnings, RecordSchemaConverter, Method, ModelConverter (+1 more)
 
-### Community 106 - "database-ambiguities.md"
-Cohesion: 0.22
-Nodes (7): A-08. Cancellation deadline, A-14. Columns the spec describes without naming, A-15. Missing lengths and types, Default applied, business question remains, P02 Database: Decisions and Remaining Questions, Summary, Unresolved, following the literal spec
+### Community 106 - "P02 Database: Decisions and Remaining Questions"
+Cohesion: 0.15
+Nodes (13): A-08. Cancellation deadline, A-11. Surrogate or composite keys, A-12. Target of `*_by` columns, A-14. Columns the spec describes without naming, A-15. Missing lengths and types, A-18. Deleting a course instructors can teach, A-19. `score_type` values, A-20. IP address type (+5 more)
 
 ### Community 107 - "AttendanceRepository.java"
-Cohesion: 0.29
+Cohesion: 0.25
 Nodes (3): EntityGraph, Query, StudentAttendanceCount
 
 ### Community 108 - "Domain Docs"
@@ -636,10 +607,6 @@ Nodes (5): Conventions, Issue tracker: Local Markdown, Wayfinding operations, Wh
 Cohesion: 0.18
 Nodes (11): scripts, build, check, check:comments, check:minimalist-ui, dev, lint, preview (+3 more)
 
-### Community 111 - "AppSecurityLog"
-Cohesion: 0.24
-Nodes (4): AppSecurityLog, Entity, Immutable, Table
-
 ### Community 113 - "Agent skills"
 Cohesion: 0.33
 Nodes (5): Agent skills, Domain docs, Environment & Shell Guidance (Windows), Specifications and Contracts, Triage labels
@@ -648,25 +615,21 @@ Nodes (5): Agent skills, Domain docs, Environment & Shell Guidance (Windows), Sp
 Cohesion: 0.40
 Nodes (4): name, private, type, version
 
-### Community 117 - "ApiException"
-Cohesion: 0.23
-Nodes (3): ApiException, HttpStatus, Transactional
-
 ### Community 118 - "React + TypeScript + Vite"
 Cohesion: 0.50
 Nodes (3): Expanding the Oxlint configuration, React Compiler, React + TypeScript + Vite
 
-### Community 127 - "EnrollmentController.java"
-Cohesion: 0.29
-Nodes (6): EnrollmentController, PostMapping, RequestMapping, ResponseEntity, RestController, EnrollRequest
+### Community 127 - "ApiException"
+Cohesion: 0.08
+Nodes (17): EnrollmentController, PostMapping, RequestMapping, ResponseEntity, RestController, EnrollRequest, EnrollmentResponse, ApiException (+9 more)
 
-### Community 129 - "DatabaseConnectionVerifier"
-Cohesion: 0.33
-Nodes (7): ApplicationRunner, DatabaseConnectionVerifier, ApplicationArguments, Component, Logger, Override, DataSource
+### Community 128 - "ClassCapacityService"
+Cohesion: 0.47
+Nodes (3): ClassCapacityService, Service, Transactional
 
-### Community 130 - "GradingStatus"
-Cohesion: 0.22
-Nodes (5): GradingStatus, CONFIRMED, DRAFT, SUBMITTED, EntityManager
+### Community 129 - "TrainingManagementApplication"
+Cohesion: 0.60
+Nodes (3): TrainingManagementApplication, ConfigurationPropertiesScan, SpringBootApplication
 
 ### Community 142 - "OpenApiConfig.java"
 Cohesion: 0.31
@@ -676,49 +639,49 @@ Nodes (5): Bean, Configuration, OpenApiConfig, BeforeAll, OpenAPI
 Cohesion: 0.39
 Nodes (3): AuthCookies, HttpServletRequest, ResponseCookie
 
-### Community 144 - "GradeAuditLogRepository"
-Cohesion: 0.39
-Nodes (6): GradeAuditLogRepository, EntityGraph, Override, Page, Pageable, Specification
+### Community 144 - "Ticket 01: Fix Balanced Visualization and Approvals Default Scope"
+Cohesion: 0.40
+Nodes (4): Context & Problem, Deliverables, Status: READY, Ticket 01: Fix Balanced Visualization and Approvals Default Scope
+
+### Community 145 - "Ticket 02: Eliminate Scope Creep in Student Grades"
+Cohesion: 0.40
+Nodes (4): Context & Problem, Deliverables, Status: READY, Ticket 02: Eliminate Scope Creep in Student Grades
 
 ### Community 146 - "check-minimalist-ui.mjs"
 Cohesion: 0.29
 Nodes (4): allFiles, BANNED_PATTERNS, EXTENSIONS, TARGET_DIR
 
-### Community 147 - "Technical defaults applied"
-Cohesion: 0.33
-Nodes (6): A-11. Surrogate or composite keys, A-12. Target of `*_by` columns, A-18. Deleting a course instructors can teach, A-19. `score_type` values, A-20. IP address type, Technical defaults applied
-
-### Community 148 - "Kiet mode"
-Cohesion: 0.33
-Nodes (5): Communication style, Execution workflow, Kiet mode, Non-negotiables, Verification posture
-
-### Community 149 - "Button.tsx"
+### Community 147 - "Ticket 03: Enforce Attendance Lockout in Schedule Attendance Modal"
 Cohesion: 0.40
-Nodes (3): ButtonProps, sizeClasses, variantClasses
+Nodes (4): Context & Problem, Deliverables, Status: READY, Ticket 03: Enforce Attendance Lockout in Schedule Attendance Modal
+
+### Community 149 - "Ticket 04: Validate Grade Completeness and Streamline Submission Flow"
+Cohesion: 0.40
+Nodes (4): Context & Problem, Deliverables, Status: READY, Ticket 04: Validate Grade Completeness and Streamline Submission Flow
 
 ### Community 150 - "Đặc tả Rà soát và Giải quyết Triệt để Lỗi Tồn đọng (Final Resolution Spec)"
 Cohesion: 0.50
 Nodes (3): Các vấn đề phát hiện, Mục tiêu, Đặc tả Rà soát và Giải quyết Triệt để Lỗi Tồn đọng (Final Resolution Spec)
 
 ## Knowledge Gaps
-- **555 isolated node(s):** `com.p02:training-management-backend`, `seed-demo.sh script`, `Cors`, `PRESENT`, `ABSENT` (+550 more)
+- **538 isolated node(s):** `com.p02:training-management-backend`, `seed-demo.sh script`, `Cors`, `PRESENT`, `ABSENT` (+533 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **30 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **33 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `AuthenticatedUser` connect `AuthenticatedUser` to `UserService`, `CourseService`, `ClassOfferingRepository`, `Room`, `SecurityAction`, `ErrorCode`, `SessionService`, `DashboardService`, `Course`, `ResultService.java`, `AssessmentResult`, `StudentRepository`, `ClassQueryService.java`, `.conflict`, `StudentController.java`, `AuthController.java`, `InstructorService.java`, `Session`, `ScheduleService`, `EnrollmentService`, `EnrollmentStatus`, `Student`, `Instructor`, `.createUser`, `.login`, `SecurityAuditLogger`, `UserRepository`, `AccessTokenAuthenticator`, `ClassRosterService.java`, `UserRole`, `ApiException`, `EnrollmentController.java`?**
-  _High betweenness centrality (0.067) - this node is a cross-community bridge._
-- **Why does `ClassOffering` connect `ClassOffering` to `GradingStatus`, `ListingFieldsAndFiltersIntegrationTest.java`, `EntityPersistenceMappingTest`, `ClassOfferingRepository`, `Room`, `ErrorCode`, `SessionService`, `EnrollmentAndResultRepositoryTest`, `User`, `Course`, `ResultService.java`, `AssessmentResult`, `ClassAndSessionRepositoryTest`, `ClassQueryService.java`, `.conflict`, `Enrollment`, `Session`, `EnrollmentService`, `EnrollmentStatus`, `Student`, `ClassGradingStatusAndDashboardFiltersIntegrationTest.java`, `Instructor`, `EnrollmentAndResultRepositoryTest.java`, `TestData`, `ClassStatus`, `SecurityAuditLogger`, `ScheduleConflictService`, `ClassAndSessionRepositoryTest.java`, `ClassRosterService.java`, `AuditedEntity`?**
-  _High betweenness centrality (0.045) - this node is a cross-community bridge._
-- **Why does `User` connect `User` to `UserService`, `GradingStatus`, `ListingFieldsAndFiltersIntegrationTest.java`, `AdminProvisioningIntegrationTest`, `EntityPersistenceMappingTest`, `ClassOffering`, `EnrollmentAndResultRepositoryTest`, `Course`, `ResultService.java`, `ClassAndSessionRepositoryTest`, `Attendance`, `StudentRepository`, `.conflict`, `StudentController.java`, `Enrollment`, `InstructorService.java`, `Session`, `Student`, `ClassGradingStatusAndDashboardFiltersIntegrationTest.java`, `Instructor`, `EnrollmentAndResultRepositoryTest.java`, `AuthenticatedUser`, `TestData`, `.createUser`, `.login`, `UserRepository`, `ClassAndSessionRepositoryTest.java`, `UserRole`, `AuditedEntity`, `ApiException`?**
-  _High betweenness centrality (0.043) - this node is a cross-community bridge._
+- **Why does `AuthenticatedUser` connect `AuthenticatedUser` to `UserController.java`, `CourseController.java`, `ApiPaths`, `SecurityAuditLogger`, `Room`, `SecurityAction`, `ErrorCode`, `SessionService`, `DashboardService`, `Course`, `.updateResults`, `.confirm`, `ResultService.java`, `ClassQueryService`, `.conflict`, `AuthWebSecurityTest`, `StudentController.java`, `Session`, `AuthController.java`, `InstructorService`, `.unlockSession`, `AuthUserResponse`, `Enrollment`, `EnrollmentStatus`, `Student`, `Instructor`, `.cancel`, `.lockSession`, `UserService`, `.login`, `AuthService`, `AccessTokenAuthenticator`, `.updateAttendance`, `PageResponse`, `UserRole`, `ApiException`?**
+  _High betweenness centrality (0.068) - this node is a cross-community bridge._
+- **Why does `ClassOffering` connect `ClassOffering` to `ClassCapacityService`, `JwtService`, `SecurityAuditLogger`, `Room`, `SessionService`, `EnrollmentAndResultRepositoryTest`, `GradeAuditLog`, `User`, `Course`, `.updateResults`, `AssessmentResult`, `ClassStatus`, `.confirm`, `ResultService.java`, `ClassQueryService`, `.conflict`, `Session`, `AccountAndCatalogRepositoryTest.java`, `Enrollment`, `EnrollmentStatus`, `Student`, `ClassGradingStatusAndDashboardFiltersIntegrationTest.java`, `Instructor`, `TestData`, `.cancel`, `.lockSession`, `PageResponse`, `AuditedEntity`, `ApiException`?**
+  _High betweenness centrality (0.046) - this node is a cross-community bridge._
+- **Why does `User` connect `User` to `JwtService`, `AdminProvisioningIntegrationTest`, `SecurityAuditLogger`, `ClassOffering`, `ErrorCode`, `EnrollmentAndResultRepositoryTest`, `GradeAuditLog`, `AssessmentResult`, `ClassStatus`, `Attendance`, `ResultService.java`, `StudentController.java`, `Session`, `InstructorService`, `AccountAndCatalogRepositoryTest.java`, `Enrollment`, `EnrollmentStatus`, `Student`, `ClassGradingStatusAndDashboardFiltersIntegrationTest.java`, `Instructor`, `AuthenticatedUser`, `TestData`, `.lockSession`, `UserService`, `.login`, `Query`, `AuthService`, `UserRole`, `AuditedEntity`?**
+  _High betweenness centrality (0.044) - this node is a cross-community bridge._
 - **What connects `com.p02:training-management-backend`, `seed-demo.sh script`, `Cors` to the rest of the system?**
-  _555 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `UserService` be split into smaller, more focused modules?**
-  _Cohesion score 0.14962121212121213 - nodes in this community are weakly interconnected._
+  _538 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `GlobalExceptionHandler` be split into smaller, more focused modules?**
   _Cohesion score 0.07330618289522399 - nodes in this community are weakly interconnected._
-- **Should `CourseService` be split into smaller, more focused modules?**
-  _Cohesion score 0.11666666666666667 - nodes in this community are weakly interconnected._
+- **Should `JwtService` be split into smaller, more focused modules?**
+  _Cohesion score 0.07467532467532467 - nodes in this community are weakly interconnected._
+- **Should `react` be split into smaller, more focused modules?**
+  _Cohesion score 0.06594071385359952 - nodes in this community are weakly interconnected._

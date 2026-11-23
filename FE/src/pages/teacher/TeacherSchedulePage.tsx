@@ -34,38 +34,75 @@ export default function TeacherSchedulePage() {
   const { weekOffset, setWeekOffset, weekRange } = useWeekNavigation();
 
   useEffect(() => {
+    let isCancelled = false;
     const from = weekRange?.from;
     const to = weekRange?.to;
     scheduleService
       .getMySchedule(from, to)
-      .then((items) => {
-        if (items) {
-          const mapped: TeachingSession[] = items.map((it, idx) => ({
-            id: it.id || String(idx + 1),
-            className: it.classCode,
-            subject: it.courseName,
-            room: it.roomCode,
-            date: it.sessionDate,
-            time: `${it.startTime} - ${it.endTime}`,
-            sessionIndex: idx + 1,
-            totalSessions: items.length,
-            attendanceStatus: it.attendanceLocked ? 'completed' : 'in_progress',
-            topic: it.topic,
-            attendanceLocked: Boolean(it.attendanceLocked),
-          }));
-          dispatch({ type: 'SET_SESSIONS', payload: mapped });
+      .then(async (items) => {
+        if (!items || isCancelled) return;
+        const mapped: TeachingSession[] = items.map((it, idx) => ({
+          id: it.id || String(idx + 1),
+          className: it.classCode,
+          subject: it.courseName,
+          room: it.roomCode,
+          date: it.sessionDate,
+          time: `${it.startTime} - ${it.endTime}`,
+          sessionIndex: idx + 1,
+          totalSessions: items.length,
+          attendanceStatus: it.attendanceLocked ? 'completed' : 'in_progress',
+          topic: it.topic,
+          attendanceLocked: Boolean(it.attendanceLocked),
+        }));
+        dispatch({ type: 'SET_SESSIONS', payload: mapped });
+
+        try {
+          const classCodes = Array.from(new Set(items.map((it) => it.classCode.split(' - ')[0].trim())));
+          const classPromises = classCodes.map((code) =>
+            classService.getClasses({ keyword: code }).then((classes) => {
+              return classes.find((c) => c.classCode.toLowerCase() === code.toLowerCase());
+            })
+          );
+          const classes = (await Promise.all(classPromises)).filter(Boolean);
+          const sessionsPromises = classes.map((c) => (c ? classService.getSessions(c.id) : []));
+          const allSessions = (await Promise.all(sessionsPromises)).flat();
+
+          if (!isCancelled && allSessions.length > 0) {
+            const enriched = mapped.map((sess) => {
+              const matched = allSessions.find(
+                (s) => s.sessionDate === sess.date && sess.time.startsWith(s.startTime.substring(0, 5))
+              );
+              if (matched) {
+                return {
+                  ...sess,
+                  id: matched.id,
+                  attendanceLocked: Boolean(matched.attendanceLocked),
+                  attendanceStatus: (matched.attendanceLocked ? 'completed' : 'in_progress') as 'completed' | 'in_progress',
+                };
+              }
+              return sess;
+            });
+            dispatch({ type: 'SET_SESSIONS', payload: enriched });
+          }
+        } catch {
         }
       })
       .catch(() => {
-        toast.error('Không thể tải lịch giảng dạy từ hệ thống.');
+        if (!isCancelled) {
+          toast.error('Không thể tải lịch giảng dạy từ hệ thống.');
+        }
       });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [toast, weekRange]);
 
   const handleOpenAttendance = async (session: TeachingSession) => {
     dispatch({ type: 'OPEN_ATTENDANCE_MODAL', payload: session });
     dispatch({ type: 'SET_STUDENTS', payload: [] });
-    let activeSessionId = session.id.startsWith('s-')
-      ? session.id.replace('s-', '')
+    let activeSessionId = session.id.startsWith('sched-') || session.id.startsWith('s-')
+      ? ''
       : session.id;
 
     try {
@@ -81,23 +118,64 @@ export default function TeacherSchedulePage() {
         );
         if (matchedSession) {
           activeSessionId = matchedSession.id;
-          dispatch({ type: 'OPEN_ATTENDANCE_MODAL', payload: { ...session, id: activeSessionId } });
+          const isLocked = Boolean(matchedSession.attendanceLocked);
+          dispatch({
+            type: 'OPEN_ATTENDANCE_MODAL',
+            payload: {
+              ...session,
+              id: activeSessionId,
+              attendanceLocked: isLocked,
+              attendanceStatus: isLocked ? 'completed' : session.attendanceStatus,
+            },
+          });
+          if (isLocked) {
+            dispatch({
+              type: 'UPDATE_SESSION',
+              payload: {
+                targetId: session.id,
+                updatedSession: {
+                  ...session,
+                  id: activeSessionId,
+                  attendanceLocked: true,
+                  attendanceStatus: 'completed',
+                },
+              },
+            });
+          }
         }
       }
     } catch {
+    }
+
+    if (!activeSessionId) {
+      activeSessionId = session.id.startsWith('s-') ? session.id.replace('s-', '') : session.id;
     }
 
     try {
       const sheet = await attendanceService.getAttendance(activeSessionId);
       if (sheet) {
         setSessionVersion(sheet.version ?? 0);
-        if (sheet.attendanceLocked) {
+        const isLocked = Boolean(sheet.attendanceLocked);
+        if (isLocked) {
           dispatch({
             type: 'OPEN_ATTENDANCE_MODAL',
             payload: {
               ...session,
               id: activeSessionId,
               attendanceLocked: true,
+              attendanceStatus: 'completed',
+            },
+          });
+          dispatch({
+            type: 'UPDATE_SESSION',
+            payload: {
+              targetId: session.id,
+              updatedSession: {
+                ...session,
+                id: activeSessionId,
+                attendanceLocked: true,
+                attendanceStatus: 'completed',
+              },
             },
           });
         }
@@ -120,6 +198,15 @@ export default function TeacherSchedulePage() {
   };
 
   const handleCloseAttendance = () => {
+    if (selectedSession && (selectedSession.attendanceLocked || selectedSession.attendanceStatus === 'completed')) {
+      dispatch({
+        type: 'SAVE_ATTENDANCE',
+        payload: {
+          sessionId: selectedSession.id,
+          attendanceLocked: selectedSession.attendanceLocked,
+        },
+      });
+    }
     dispatch({ type: 'CLOSE_ATTENDANCE_MODAL' });
   };
 
@@ -177,7 +264,7 @@ export default function TeacherSchedulePage() {
       }
       dispatch({
         type: 'SAVE_ATTENDANCE',
-        payload: { sessionId: selectedSession.id },
+        payload: { sessionId: selectedSession.id, attendanceLocked: false },
       });
       toast.success(
         `Đã lưu dữ liệu điểm danh thành công! (${presentCount} có mặt, ${lateCount} muộn, ${absentCount} vắng)`
@@ -248,7 +335,7 @@ export default function TeacherSchedulePage() {
       await attendanceService.lockAttendance(sessionIdParam);
       dispatch({
         type: 'SAVE_ATTENDANCE',
-        payload: { sessionId: selectedSession.id },
+        payload: { sessionId: selectedSession.id, attendanceLocked: true },
       });
       toast.success('Đã lưu và khóa điểm danh buổi học thành công!');
       handleCloseAttendance();
