@@ -53,6 +53,9 @@ test.describe('Grades & Approvals Suite', () => {
     const submitBtn = page.getByRole('button', { name: 'Nộp điểm' }).first();
     await expect(submitBtn).toBeVisible();
     await submitBtn.click();
+    const confirmBtn = page.getByRole('button', { name: 'Nộp bảng điểm' });
+    await expect(confirmBtn).toBeVisible();
+    await confirmBtn.click();
     await expect(page.getByText(/Đã nộp bảng điểm lớp/i)).toBeVisible();
     expect(submitCalled).toBeTruthy();
   });

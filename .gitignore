@@ -1,2 +1,5 @@
 *.zip
 graphify-out/cache/
+test-results/
+playwright-report/
+

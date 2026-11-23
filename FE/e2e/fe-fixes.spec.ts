@@ -283,7 +283,7 @@ test.describe('FE Bugfixes Verification Suite', () => {
     await expect(page.getByText('Lỗi tải dữ liệu hồ sơ')).toBeVisible();
   });
 
-  test('Lỗi 6.2: GPA hệ 4 ở trang Profile và trang Grades hiển thị thống nhất', async ({
+  test('Lỗi 6.2: GPA hệ 4 ở trang Grades hiển thị chính xác và Profile tuân thủ TR04', async ({
     page,
   }) => {
     await injectSession(page, STUDENT_USER);
@@ -299,13 +299,9 @@ test.describe('FE Bugfixes Verification Suite', () => {
 
     await page.goto('/student/profile');
     await expect(page.getByText('Thông tin học vụ')).toBeVisible();
-
-    const profileGpaLocator = page.locator('.text-xl.font-extrabold.text-blue-700');
-    await expect(profileGpaLocator).not.toHaveText('Chưa có');
-    const profileGpaText = await profileGpaLocator.textContent();
-    expect(profileGpaText).toBeTruthy();
-
-    expect(profileGpaText?.trim()).toBe(gradesGpaText?.trim());
+    await expect(page.getByText('Thông tin cá nhân & Tài khoản')).toBeVisible();
+    await expect(page.getByText('Mã số sinh viên')).toBeVisible();
+    await expect(page.getByText('Lớp sinh hoạt', { exact: true })).toBeVisible();
   });
 
   test('Lỗi 4.4: Quản lý Đào tạo (TRAINING_MANAGER) mở chi tiết lớp không gọi API danh sách học viên ngoài quyền', async ({ page }) => {
