@@ -13,6 +13,7 @@ Working conventions and engineering standards tailored for Kiet (`akiet84`).
 - **Strict TDD.** Always write failing tests first and commit them before writing implementation code (Red to Green to Refactor). Separate the failing test commit from the implementation commit.
 - **Frontend only.** Never edit or add files in `BE/`. Treat `BE/` as read-only for contract and DTO reference.
 - **Zero comments in FE.** Never write single-line, multi-line, JSDoc, or JSX comments in `FE/`. Code must be self-explanatory through naming and structure.
+- **English documentation.** Write all Markdown files (`.md`, specifications, tickets, and docs) in English by default. User conversation responses remain in Vietnamese.
 - **Minimalist UI and truthful data.** Never display internal specification codes (`TRxx`), raw HTTP status codes, or fake placeholder data in UI tables. Information modals use a single top-corner close button.
 - **Localization.** Standardize all timestamps to Vietnamese format (`DD/MM/YYYY HH:mm` or `DD/MM/YYYY`) under GMT+7.
 - **Windows PowerShell command chaining.** Always sequence commands with semicolon `;`. Never use `&&`.
@@ -25,7 +26,7 @@ Working conventions and engineering standards tailored for Kiet (`akiet84`).
 
 ## Execution workflow
 
-1. **Review.** Identify bugs, specification gaps, and scope creep with `/code-review`.
+1. **Review.** Identify bugs, specification gaps, and scope creep with `/code-review`. If the review finds zero violations across both Spec and Standards axes, output the clean code-review report and stop immediately without creating tickets or modifying code.
 2. **Breakdown.** Convert review findings into trackable tickets using `/to-tickets`.
 3. **Implement.** Execute tickets sequentially with `/poteto-mode` and TDD.
 4. **Re-review gate.** Run `/code-review` again against the baseline to verify two axes:
