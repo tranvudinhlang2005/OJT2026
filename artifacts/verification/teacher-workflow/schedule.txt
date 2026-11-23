@@ -14,19 +14,19 @@ Lịch giảng dạy & Điểm danh
 Học kỳ II (2026 - 2027)
 CA DẠY HÔM NAY
 
-0 ca học
+1 ca học
 
-✓ Đã hoàn tất điểm danh hôm nay
+1 ca đang chờ điểm danh
 
 TỔNG SỐ BUỔI TUẦN NÀY
 
-0 buổi dạy
+1 buổi dạy
 
-0 tiết giảng dạy
+4 tiết giảng dạy
 
 TỈ LỆ HOÀN THÀNH ĐIỂM DANH
 
-100%
+0%
 
 Đạt chuẩn quy định học vụ
 
@@ -36,11 +36,15 @@ Tuần sau
 Tất cả các tuần
 23/11/2026 - 29/11/2026
 Danh sách các ca học sắp tới
+CS201.O21
+•
+Buổi 1/1
+Chờ điểm danh
+Cơ sở dữ liệu nâng cao
 
-Thất bại
+Thiết kế CSDL quan hệ
 
-Không thể tải lịch giảng dạy từ hệ thống.
-
-Thất bại
-
-Không thể tải lịch giảng dạy từ hệ thống.
+23/11/2026
+07:30 - 09:30
+A1-201
+Điểm danh ca này

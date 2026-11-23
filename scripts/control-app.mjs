@@ -446,17 +446,20 @@ async function drive(featureName) {
         });
       });
 
-      await page.route('**/api/v1/teacher/schedule**', (route) => {
+      await page.route('**/api/v1/me/schedule**', (route) => {
         route.fulfill({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify([
             {
-              id: 601,
+              sessionDate: '2026-11-23',
+              startTime: '07:30:00',
+              endTime: '09:30:00',
+              roomCode: 'A1-201',
+              classCode: 'CS201.O21',
               courseName: 'Cơ sở dữ liệu nâng cao',
-              roomName: 'A1-201',
-              date: '2026-11-23',
-              shift: 'Ca 1 (07:30 - 09:30)',
+              topic: 'Thiết kế CSDL quan hệ',
+              attendanceLocked: false,
             },
           ]),
         });
