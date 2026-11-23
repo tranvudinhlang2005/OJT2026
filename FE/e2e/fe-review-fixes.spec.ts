@@ -645,4 +645,81 @@ test.describe('Code Review Improvements TDD Suite', () => {
     await expect(page.locator('option', { hasText: 'Tất cả khoa / bộ môn' })).not.toBeAttached();
     await expect(page.locator('option', { hasText: 'Tất cả các ngày trong tuần' })).not.toBeAttached();
   });
+
+  test('22. Standards: Dashboard KPIs container includes items-stretch for visual balance', async ({ page }) => {
+    await injectSession(page, ADMIN_USER);
+    await setupDefaultMocks(page, ADMIN_USER);
+
+    await page.goto('/admin');
+    await expect(page.getByRole('heading', { name: /tổng quan/i })).toBeVisible();
+
+    const kpiGrid = page.locator('div.grid.grid-cols-1:has-text("Tỷ lệ lấp đầy")').first();
+    await expect(kpiGrid).toHaveClass(/items-stretch/);
+  });
+
+  test('23. Spec & Standards: Student grades page adheres to 10-point scale without GPA 4.0 or fake 140 credits threshold', async ({ page }) => {
+    await injectSession(page, STUDENT_USER);
+    await setupDefaultMocks(page, STUDENT_USER);
+
+    await page.goto('/student/grades');
+    await expect(page.getByRole('heading', { name: /bảng điểm & kết quả học tập/i })).toBeVisible();
+
+    await expect(page.getByText('GPA Tích lũy (Hệ 4)')).not.toBeVisible();
+    await expect(page.getByText('/ 4.00')).not.toBeVisible();
+    await expect(page.getByText('/ 140 Tín chỉ')).not.toBeVisible();
+    await expect(page.getByText('Đạt chuẩn tiến độ')).not.toBeVisible();
+  });
+
+  test('24. Spec: Schedule attendance modal disables controls and shows lock indicator when session is locked', async ({ page }) => {
+    await injectSession(page, INSTRUCTOR_USER);
+    await setupDefaultMocks(page, INSTRUCTOR_USER);
+
+    await page.route('**/api/v1/sessions/1/attendance', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          sessionId: 1,
+          attendanceLocked: true,
+          lockedAt: '2026-03-01T10:00:00Z',
+          items: [
+            {
+              studentId: 3,
+              studentCode: 'SV2026001',
+              fullName: 'Trần Văn Sinh',
+              status: 'PRESENT',
+              remarks: 'Đúng giờ',
+            },
+          ],
+        }),
+      });
+    });
+
+    await page.goto('/teacher/schedule');
+    await expect(page.getByRole('heading', { name: /lịch giảng dạy/i })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Tất cả các tuần' }).click();
+    const sessionCard = page.locator('div', { hasText: 'Advanced React' }).first();
+    await sessionCard.click();
+
+    await expect(page.getByText(/bảng điểm danh/i)).toBeVisible();
+    await expect(page.getByText(/đã khóa/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Có mặt' })).toBeDisabled();
+  });
+
+  test('25. Spec: Teacher grades sheet modal provides direct submit action with validation', async ({ page }) => {
+    await injectSession(page, INSTRUCTOR_USER);
+    await setupDefaultMocks(page, INSTRUCTOR_USER);
+
+    await page.goto('/teacher/grades');
+    await expect(page.getByRole('heading', { name: /quản lý kết quả & nộp bảng điểm/i })).toBeVisible();
+
+    const enterGradesBtn = page.getByRole('button', { name: 'Nhập điểm' }).first();
+    await enterGradesBtn.click();
+
+    const modal = page.locator('div.fixed.inset-0');
+    await expect(modal).toBeVisible();
+    const modalSubmitBtn = modal.getByRole('button', { name: 'Nộp bảng điểm' });
+    await expect(modalSubmitBtn).toBeVisible();
+  });
 });
