@@ -6,6 +6,7 @@ The Admin Dashboard provides training administrators with system-wide analytics,
 
 - `dashboard-summary-cards` displays primary metric cards (Courses, Active Classes, Instructors, Students).
 - `dashboard-audit-log-tab` allows switching to the grade audit and operational history tab.
+- `dashboard-security-alerts` displays security and access alerts to both `TRAINING_ADMIN` and `TRAINING_MANAGER`.
 - `dashboard-filter-bar` renders semester and date range filter selectors.
 
 ## How to get to it (user POV)

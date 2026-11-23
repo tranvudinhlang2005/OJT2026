@@ -7,7 +7,7 @@ The Courses & Classrooms module allows administrators to manage academic courses
 - `courses-list-view` displays table of existing courses with code, name, credits, and active status.
 - `courses-create-modal` opens modal form to create a new course with midterm and final exam weights.
 - `rooms-tab-switch` switches tab view from courses to classrooms.
-- `rooms-list-view` displays classroom codes, buildings, capacities, and active states.
+- `rooms-list-view` displays classroom codes, capacities, and active states.
 
 ## How to get to it (user POV)
 
