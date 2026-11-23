@@ -418,12 +418,11 @@ export const userService = {
     };
   },
 
-  async resetPassword(id: string): Promise<{ tempPassword: string; message: string }> {
-    const tempPassword = `Pass@${Math.floor(100000 + Math.random() * 900000)}`;
-    await axiosClient.patch(`/users/${id}/password`, { newPassword: tempPassword });
+  async resetPassword(id: string, newPassword = 'Password@123'): Promise<{ tempPassword: string; message: string }> {
+    await axiosClient.patch(`/users/${id}/password`, { newPassword });
     return {
-      tempPassword,
-      message: `Đã đặt lại mật khẩu thành công! Mật khẩu tạm thời: ${tempPassword}`,
+      tempPassword: newPassword,
+      message: `Đã đặt lại mật khẩu thành công! Mật khẩu mặc định: ${newPassword}`,
     };
   },
 };

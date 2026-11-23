@@ -4340,8 +4340,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "be_src_main_java_com_p02_training_dto_response_myinstructorprofileresponse",
-      "community": 56,
-      "community_name": "Instructor",
+      "community": 45,
+      "community_name": "InstructorService",
       "norm_label": "myinstructorprofileresponse.java"
     },
     {
@@ -4351,8 +4351,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "be_src_main_java_com_p02_training_dto_response_myinstructorprofileresponse_myinstructorprofileresponse",
-      "community": 56,
-      "community_name": "Instructor",
+      "community": 45,
+      "community_name": "InstructorService",
       "norm_label": "myinstructorprofileresponse"
     },
     {
@@ -22718,7 +22718,7 @@
       "label": "ClassSessionsTab()",
       "file_type": "code",
       "source_file": "FE/src/components/admin/classes/detail/ClassSessionsTab.tsx",
-      "source_location": "L16",
+      "source_location": "L17",
       "_origin": "ast",
       "id": "fe_src_components_admin_classes_detail_classsessionstab_classsessionstab",
       "community": 77,
@@ -107164,7 +107164,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "FE/src/components/admin/classes/detail/ClassSessionsTab.tsx",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "_origin": "ast",
       "source": "fe_src_components_admin_classes_detail_classsessionstab",

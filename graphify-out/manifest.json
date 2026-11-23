@@ -1105,8 +1105,8 @@
     "semantic_hash": ""
   },
   "FE/src/components/admin/classes/ClassDetailModal.tsx": {
-    "mtime": 1795429427.0356307,
-    "ast_hash": "99d52829136290b2d3f6a79eef0de18e",
+    "mtime": 1795429807.178047,
+    "ast_hash": "42eede8c3b5f9f9e056649b80073d271",
     "semantic_hash": ""
   },
   "FE/src/components/admin/classes/ClassFilters.tsx": {
@@ -1155,8 +1155,8 @@
     "semantic_hash": ""
   },
   "FE/src/components/admin/classes/detail/ClassSessionsTab.tsx": {
-    "mtime": 1795429420.231767,
-    "ast_hash": "f6dfe59708e3b52f59707a2747deb740",
+    "mtime": 1795429807.1806242,
+    "ast_hash": "ee4b0d009d01370e7aac9e3b0e7b7c76",
     "semantic_hash": ""
   },
   "FE/src/components/admin/courses/CourseTable.tsx": {
@@ -1545,8 +1545,8 @@
     "semantic_hash": ""
   },
   "FE/src/services/userService.ts": {
-    "mtime": 1795407741.0391867,
-    "ast_hash": "1c6c86b88405866d8b224a37de205498",
+    "mtime": 1795433099.9818816,
+    "ast_hash": "5d0f7de95faba019fc470500fc0c9a1a",
     "semantic_hash": ""
   },
   "FE/src/types/approval.ts": {
@@ -2005,8 +2005,8 @@
     "semantic_hash": ""
   },
   "FE/src/services/userService.test.ts": {
-    "mtime": 1795409568.0649605,
-    "ast_hash": "a85626d67a4036bde6b03b05d81845e4",
+    "mtime": 1795433047.218393,
+    "ast_hash": "a40b28d0c4ed17bbd6248f29d322880a",
     "semantic_hash": ""
   },
   ".scratch/teacher-grades/issues/01-enforce-table-row-grade-submission-validation.md": {

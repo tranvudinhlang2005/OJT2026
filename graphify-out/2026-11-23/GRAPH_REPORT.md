@@ -1,7 +1,7 @@
 # Graph Report - OJT2026 - Copy  (2026-11-23)
 
 ## Corpus Check
-- 385 files · ~200,843 words
+- 385 files · ~200,889 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -376,8 +376,8 @@ Cohesion: 0.20
 Nodes (10): AuthController, GetMapping, PatchMapping, PostMapping, RequestMapping, ResponseEntity, RestController, Override (+2 more)
 
 ### Community 45 - "InstructorService"
-Cohesion: 0.10
-Nodes (14): InstructorController, GetMapping, PatchMapping, PutMapping, RequestMapping, RestController, AssignCoursesRequest, UpdateInstructorRequest (+6 more)
+Cohesion: 0.09
+Nodes (15): InstructorController, GetMapping, PatchMapping, PutMapping, RequestMapping, RestController, AssignCoursesRequest, UpdateInstructorRequest (+7 more)
 
 ### Community 46 - ".unlockSession"
 Cohesion: 0.17
@@ -416,8 +416,8 @@ Cohesion: 0.23
 Nodes (9): ApplicationContextInitializer, Override, TestDatabaseGuard, ParameterizedTest, Test, TestDatabaseGuardTest, ConfigurableApplicationContext, MockEnvironment (+1 more)
 
 ### Community 56 - "Instructor"
-Cohesion: 0.13
-Nodes (8): ClassSummaryResponse, CourseSummaryResponse, MyInstructorProfileResponse, Instructor, Entity, Table, Service, Sort
+Cohesion: 0.14
+Nodes (7): ClassSummaryResponse, CourseSummaryResponse, Instructor, Entity, Table, Service, Sort
 
 ### Community 57 - "SecurityConfig.java"
 Cohesion: 0.26

@@ -1105,8 +1105,8 @@
     "semantic_hash": ""
   },
   "FE/src/components/admin/classes/ClassDetailModal.tsx": {
-    "mtime": 1795406122.307809,
-    "ast_hash": "42eede8c3b5f9f9e056649b80073d271",
+    "mtime": 1795429427.0356307,
+    "ast_hash": "99d52829136290b2d3f6a79eef0de18e",
     "semantic_hash": ""
   },
   "FE/src/components/admin/classes/ClassFilters.tsx": {
@@ -1155,8 +1155,8 @@
     "semantic_hash": ""
   },
   "FE/src/components/admin/classes/detail/ClassSessionsTab.tsx": {
-    "mtime": 1795406122.3605158,
-    "ast_hash": "ee4b0d009d01370e7aac9e3b0e7b7c76",
+    "mtime": 1795429420.231767,
+    "ast_hash": "f6dfe59708e3b52f59707a2747deb740",
     "semantic_hash": ""
   },
   "FE/src/components/admin/courses/CourseTable.tsx": {

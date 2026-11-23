@@ -1,29 +1,29 @@
 # Graph Report - OJT2026 - Copy  (2026-11-23)
 
 ## Corpus Check
-- 385 files · ~200,889 words
+- 385 files · ~200,874 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2924 nodes · 7658 edges · 162 communities (129 shown, 33 thin omitted)
+- 2924 nodes · 7658 edges · 162 communities (130 shown, 32 thin omitted)
 - Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 758 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `11c0b03d`
+- Built from commit: `47ee0882`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- UserController.java
+- UserService.java
 - GlobalExceptionHandler
-- CourseController.java
+- CourseService
 - JwtService
 - react
 - AdminProvisioningIntegrationTest
 - StudentRegistrationPage.tsx
 - ApiPaths
-- AuthContext.tsx
+- useToast
 - SecurityAuditLogger
 - ClassOffering
 - Room
@@ -51,7 +51,7 @@
 - ResultService.java
 - ClassQueryService
 - .conflict
-- useToast
+- TeacherSchedulePage.tsx
 - PasswordService
 - EntitySchemaMappingTest
 - AuthWebSecurityTest
@@ -116,6 +116,7 @@
 - check-no-comments.mjs
 - InstructorRepository.java
 - 01-enforce-table-row-grade-submission-validation.md
+- @playwright/test
 - UserRole
 - Hướng Dẫn Sử Dụng Docker Cho Dự Án
 - .resolve
@@ -124,7 +125,6 @@
 - Domain Docs
 - Issue tracker: Local Markdown
 - scripts
-- AccountAndCatalogRepositoryTest
 - Agent skills
 - AuditedEntity
 - package.json
@@ -150,7 +150,6 @@
 - Ticket 03: Enforce Attendance Lockout in Schedule Attendance Modal
 - Ticket 04: Validate Grade Completeness and Streamline Submission Flow
 - Đặc tả Rà soát và Giải quyết Triệt để Lỗi Tồn đọng (Final Resolution Spec)
-- babel-plugin-react-compiler
 - @types/node
 - vitest
 - 01-fix-grades-approval-e2e-confirmation.md
@@ -193,19 +192,19 @@
 ## Import Cycles
 - None detected.
 
-## Communities (162 total, 33 thin omitted)
+## Communities (162 total, 32 thin omitted)
 
-### Community 0 - "UserController.java"
-Cohesion: 0.21
-Nodes (8): GetMapping, PatchMapping, PostMapping, RequestMapping, ResponseEntity, RestController, UserController, ChangeStatusRequest
+### Community 0 - "UserService.java"
+Cohesion: 0.13
+Nodes (12): GetMapping, PatchMapping, PostMapping, RequestMapping, ResponseEntity, RestController, UserController, ChangeStatusRequest (+4 more)
 
 ### Community 1 - "GlobalExceptionHandler"
 Cohesion: 0.07
 Nodes (28): ApiErrorResponse, GlobalExceptionHandler, AccessDeniedException, AuthenticationException, Logger, Override, ResponseEntity, GlobalExceptionHandlerTest (+20 more)
 
-### Community 2 - "CourseController.java"
-Cohesion: 0.16
-Nodes (11): CourseController, DeleteMapping, GetMapping, PatchMapping, PostMapping, PutMapping, RequestMapping, ResponseEntity (+3 more)
+### Community 2 - "CourseService"
+Cohesion: 0.12
+Nodes (14): CourseController, DeleteMapping, GetMapping, PatchMapping, PostMapping, PutMapping, RequestMapping, ResponseEntity (+6 more)
 
 ### Community 3 - "JwtService"
 Cohesion: 0.07
@@ -227,9 +226,9 @@ Nodes (19): DEFAULT_COURSE_CREDITS, DEFAULT_FALLBACK_CAPACITY, DEFAULT_MIN_ATTEN
 Cohesion: 0.05
 Nodes (29): AccessDeniedHandler, AuthenticationEntryPoint, ApiPaths, GetMapping, RestController, ScheduleController, ScheduleItemResponse, ScheduleEntry (+21 more)
 
-### Community 8 - "AuthContext.tsx"
+### Community 8 - "useToast"
 Cohesion: 0.07
-Nodes (43): App(), queryClient, AdminSidebar(), LoadingSpinner(), RouteErrorBoundary(), navItems, StudentHeader(), navItems (+35 more)
+Nodes (46): App(), queryClient, AdminSidebar(), LoadingSpinner(), RouteErrorBoundary(), navItems, StudentHeader(), navItems (+38 more)
 
 ### Community 9 - "SecurityAuditLogger"
 Cohesion: 0.08
@@ -300,8 +299,8 @@ Cohesion: 0.06
 Nodes (3): Entity, Table, User
 
 ### Community 26 - "Course"
-Cohesion: 0.11
-Nodes (6): Course, Entity, Table, CourseService, Service, Transactional
+Cohesion: 0.13
+Nodes (3): Course, Entity, Table
 
 ### Community 27 - ".updateResults"
 Cohesion: 0.14
@@ -339,9 +338,9 @@ Nodes (9): GetMapping, ClassView, Schema, ClassFilter, ClassQueryService, Transa
 Cohesion: 0.19
 Nodes (5): ClassRequest, ClassService, ClassOffering, Service, Transactional
 
-### Community 36 - "useToast"
-Cohesion: 0.13
-Nodes (24): ClassTable(), ClassTableProps, WeekNavigator(), WeekNavigatorProps, ScheduleAttendanceModal(), ScheduleAttendanceModalProps, toCanonicalAttendanceMark(), useToast() (+16 more)
+### Community 36 - "TeacherSchedulePage.tsx"
+Cohesion: 0.14
+Nodes (21): ClassTable(), ClassTableProps, WeekNavigator(), WeekNavigatorProps, ScheduleAttendanceModal(), ScheduleAttendanceModalProps, toCanonicalAttendanceMark(), useWeekNavigation() (+13 more)
 
 ### Community 37 - "PasswordService"
 Cohesion: 0.21
@@ -376,8 +375,8 @@ Cohesion: 0.20
 Nodes (10): AuthController, GetMapping, PatchMapping, PostMapping, RequestMapping, ResponseEntity, RestController, Override (+2 more)
 
 ### Community 45 - "InstructorService"
-Cohesion: 0.09
-Nodes (15): InstructorController, GetMapping, PatchMapping, PutMapping, RequestMapping, RestController, AssignCoursesRequest, UpdateInstructorRequest (+7 more)
+Cohesion: 0.10
+Nodes (14): InstructorController, GetMapping, PatchMapping, PutMapping, RequestMapping, RestController, AssignCoursesRequest, UpdateInstructorRequest (+6 more)
 
 ### Community 46 - ".unlockSession"
 Cohesion: 0.17
@@ -388,8 +387,8 @@ Cohesion: 0.33
 Nodes (3): AuthUserResponse, Override, LoginResult
 
 ### Community 49 - "AccountAndCatalogRepositoryTest.java"
-Cohesion: 0.16
-Nodes (7): InstructorCourse, Entity, Table, InstructorCourseId, Override, ApplicationContext, Embeddable
+Cohesion: 0.11
+Nodes (9): InstructorCourse, Entity, Table, InstructorCourseId, Override, AccountAndCatalogRepositoryTest, ApplicationContext, Test (+1 more)
 
 ### Community 50 - "3. Checklist Công việc Chi tiết theo Từng Phân hệ"
 Cohesion: 0.09
@@ -416,8 +415,8 @@ Cohesion: 0.23
 Nodes (9): ApplicationContextInitializer, Override, TestDatabaseGuard, ParameterizedTest, Test, TestDatabaseGuardTest, ConfigurableApplicationContext, MockEnvironment (+1 more)
 
 ### Community 56 - "Instructor"
-Cohesion: 0.14
-Nodes (7): ClassSummaryResponse, CourseSummaryResponse, Instructor, Entity, Table, Service, Sort
+Cohesion: 0.15
+Nodes (8): ClassSummaryResponse, CourseSummaryResponse, MyInstructorProfileResponse, Instructor, Entity, Table, Service, Sort
 
 ### Community 57 - "SecurityConfig.java"
 Cohesion: 0.26
@@ -469,7 +468,7 @@ Nodes (17): axios, dependencies, axios, lucide-react, react, react-dom, react-ro
 
 ### Community 69 - "devDependencies"
 Cohesion: 0.11
-Nodes (19): @babel/core, devDependencies, @babel/core, oxlint, @playwright/test, @rolldown/plugin-babel, @types/react, @types/react-dom (+11 more)
+Nodes (19): @babel/core, babel-plugin-react-compiler, devDependencies, @babel/core, babel-plugin-react-compiler, oxlint, @rolldown/plugin-babel, @types/react (+11 more)
 
 ### Community 70 - "plugins"
 Cohesion: 0.22
@@ -484,8 +483,8 @@ Cohesion: 0.18
 Nodes (6): Lock, EntityGraph, Lock, Page, Pageable, EnrollmentKeys
 
 ### Community 74 - "UserService"
-Cohesion: 0.16
-Nodes (8): Override, ResetPasswordRequest, UpdateUserRequest, UserResponse, Service, Transactional, User, UserService
+Cohesion: 0.27
+Nodes (4): UserResponse, Transactional, User, UserService
 
 ### Community 75 - "4. Table definitions"
 Cohesion: 0.14
@@ -572,7 +571,7 @@ Cohesion: 0.33
 Nodes (5): allFiles, checkFile(), EXTENSIONS, stripStringLiterals(), TARGET_DIRS
 
 ### Community 99 - "InstructorRepository.java"
-Cohesion: 0.36
+Cohesion: 0.27
 Nodes (6): EntityGraph, Lock, Override, Page, Pageable, Specification
 
 ### Community 103 - "UserRole"
@@ -666,22 +665,22 @@ Nodes (3): Các vấn đề phát hiện, Mục tiêu, Đặc tả Rà soát và
 ## Knowledge Gaps
 - **538 isolated node(s):** `com.p02:training-management-backend`, `seed-demo.sh script`, `Cors`, `PRESENT`, `ABSENT` (+533 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **33 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **32 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `AuthenticatedUser` connect `AuthenticatedUser` to `UserController.java`, `CourseController.java`, `ApiPaths`, `SecurityAuditLogger`, `Room`, `SecurityAction`, `ErrorCode`, `SessionService`, `DashboardService`, `Course`, `.updateResults`, `.confirm`, `ResultService.java`, `ClassQueryService`, `.conflict`, `AuthWebSecurityTest`, `StudentController.java`, `Session`, `AuthController.java`, `InstructorService`, `.unlockSession`, `AuthUserResponse`, `Enrollment`, `EnrollmentStatus`, `Student`, `Instructor`, `.cancel`, `.lockSession`, `UserService`, `.login`, `AuthService`, `AccessTokenAuthenticator`, `.updateAttendance`, `PageResponse`, `UserRole`, `ApiException`?**
+- **Why does `AuthenticatedUser` connect `AuthenticatedUser` to `UserService.java`, `CourseService`, `ApiPaths`, `SecurityAuditLogger`, `Room`, `SecurityAction`, `ErrorCode`, `SessionService`, `DashboardService`, `Course`, `.updateResults`, `.confirm`, `ResultService.java`, `ClassQueryService`, `.conflict`, `AuthWebSecurityTest`, `StudentController.java`, `Session`, `AuthController.java`, `InstructorService`, `.unlockSession`, `AuthUserResponse`, `Enrollment`, `EnrollmentStatus`, `Student`, `Instructor`, `.cancel`, `.lockSession`, `UserService`, `.login`, `AuthService`, `AccessTokenAuthenticator`, `.updateAttendance`, `PageResponse`, `UserRole`, `ApiException`?**
   _High betweenness centrality (0.068) - this node is a cross-community bridge._
 - **Why does `ClassOffering` connect `ClassOffering` to `ClassCapacityService`, `JwtService`, `SecurityAuditLogger`, `Room`, `SessionService`, `EnrollmentAndResultRepositoryTest`, `GradeAuditLog`, `User`, `Course`, `.updateResults`, `AssessmentResult`, `ClassStatus`, `.confirm`, `ResultService.java`, `ClassQueryService`, `.conflict`, `Session`, `AccountAndCatalogRepositoryTest.java`, `Enrollment`, `EnrollmentStatus`, `Student`, `ClassGradingStatusAndDashboardFiltersIntegrationTest.java`, `Instructor`, `TestData`, `.cancel`, `.lockSession`, `PageResponse`, `AuditedEntity`, `ApiException`?**
   _High betweenness centrality (0.046) - this node is a cross-community bridge._
-- **Why does `User` connect `User` to `JwtService`, `AdminProvisioningIntegrationTest`, `SecurityAuditLogger`, `ClassOffering`, `ErrorCode`, `EnrollmentAndResultRepositoryTest`, `GradeAuditLog`, `AssessmentResult`, `ClassStatus`, `Attendance`, `ResultService.java`, `StudentController.java`, `Session`, `InstructorService`, `AccountAndCatalogRepositoryTest.java`, `Enrollment`, `EnrollmentStatus`, `Student`, `ClassGradingStatusAndDashboardFiltersIntegrationTest.java`, `Instructor`, `AuthenticatedUser`, `TestData`, `.lockSession`, `UserService`, `.login`, `Query`, `AuthService`, `UserRole`, `AuditedEntity`?**
+- **Why does `User` connect `User` to `UserService.java`, `JwtService`, `AdminProvisioningIntegrationTest`, `SecurityAuditLogger`, `ClassOffering`, `ErrorCode`, `EnrollmentAndResultRepositoryTest`, `GradeAuditLog`, `AssessmentResult`, `ClassStatus`, `Attendance`, `ResultService.java`, `StudentController.java`, `Session`, `InstructorService`, `AccountAndCatalogRepositoryTest.java`, `Enrollment`, `EnrollmentStatus`, `Student`, `ClassGradingStatusAndDashboardFiltersIntegrationTest.java`, `Instructor`, `AuthenticatedUser`, `TestData`, `.lockSession`, `UserService`, `.login`, `Query`, `AuthService`, `UserRole`, `AuditedEntity`?**
   _High betweenness centrality (0.044) - this node is a cross-community bridge._
 - **What connects `com.p02:training-management-backend`, `seed-demo.sh script`, `Cors` to the rest of the system?**
   _538 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `UserService.java` be split into smaller, more focused modules?**
+  _Cohesion score 0.13 - nodes in this community are weakly interconnected._
 - **Should `GlobalExceptionHandler` be split into smaller, more focused modules?**
   _Cohesion score 0.07330618289522399 - nodes in this community are weakly interconnected._
-- **Should `JwtService` be split into smaller, more focused modules?**
-  _Cohesion score 0.07467532467532467 - nodes in this community are weakly interconnected._
-- **Should `react` be split into smaller, more focused modules?**
-  _Cohesion score 0.06594071385359952 - nodes in this community are weakly interconnected._
+- **Should `CourseService` be split into smaller, more focused modules?**
+  _Cohesion score 0.11605937921727395 - nodes in this community are weakly interconnected._

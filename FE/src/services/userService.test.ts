@@ -183,4 +183,18 @@ describe('userService', () => {
       expect(result).toHaveLength(2);
     });
   });
+
+  describe('resetPassword', () => {
+    it('resets password with the default password matching the confirmation modal', async () => {
+      vi.mocked(axiosClient.patch).mockResolvedValueOnce({ status: 204 });
+
+      const result = await userService.resetPassword('1');
+
+      expect(axiosClient.patch).toHaveBeenCalledWith('/users/1/password', {
+        newPassword: 'Password@123',
+      });
+      expect(result.tempPassword).toBe('Password@123');
+      expect(result.message).toContain('Password@123');
+    });
+  });
 });
