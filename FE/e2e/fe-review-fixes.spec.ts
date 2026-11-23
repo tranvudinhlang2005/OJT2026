@@ -674,19 +674,26 @@ test.describe('Code Review Improvements TDD Suite', () => {
     await injectSession(page, INSTRUCTOR_USER);
     await setupDefaultMocks(page, INSTRUCTOR_USER);
 
-    await page.route('**/api/v1/sessions/1/attendance', async (route) => {
+    await page.route('**/api/v1/sessions/**/attendance', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          sessionId: 1,
+          sessionId: 201,
+          classId: 101,
+          classCode: 'INT3110.O21',
+          sessionDate: '2026-03-01',
+          startTime: '08:00:00',
+          endTime: '11:30:00',
           attendanceLocked: true,
           lockedAt: '2026-03-01T10:00:00Z',
+          version: 1,
           items: [
             {
               studentId: 3,
               studentCode: 'SV2026001',
               fullName: 'Trần Văn Sinh',
+              enrollmentStatus: 'ENROLLED',
               status: 'PRESENT',
               remarks: 'Đúng giờ',
             },
@@ -699,8 +706,8 @@ test.describe('Code Review Improvements TDD Suite', () => {
     await expect(page.getByRole('heading', { name: /lịch giảng dạy/i })).toBeVisible();
 
     await page.getByRole('button', { name: 'Tất cả các tuần' }).click();
-    const sessionCard = page.locator('div', { hasText: 'Advanced React' }).first();
-    await sessionCard.click();
+    const attendanceBtn = page.getByRole('button', { name: /điểm danh/i }).last();
+    await attendanceBtn.click();
 
     await expect(page.getByText(/bảng điểm danh/i)).toBeVisible();
     await expect(page.getByText(/đã khóa/i)).toBeVisible();

@@ -41,7 +41,7 @@ export default function TeacherSchedulePage() {
       .then((items) => {
         if (items) {
           const mapped: TeachingSession[] = items.map((it, idx) => ({
-            id: it.id,
+            id: it.id || String(idx + 1),
             className: it.classCode,
             subject: it.courseName,
             room: it.roomCode,
@@ -52,6 +52,7 @@ export default function TeacherSchedulePage() {
             attendanceStatus: it.attendanceLocked ? 'completed' : 'in_progress',
             topic: it.topic,
             attendanceLocked: it.attendanceLocked,
+            isLocked: Boolean(it.attendanceLocked),
           }));
           dispatch({ type: 'SET_SESSIONS', payload: mapped });
         }
@@ -91,6 +92,17 @@ export default function TeacherSchedulePage() {
       const sheet = await attendanceService.getAttendance(activeSessionId);
       if (sheet) {
         setSessionVersion(sheet.version ?? 0);
+        if (sheet.attendanceLocked) {
+          dispatch({
+            type: 'OPEN_ATTENDANCE_MODAL',
+            payload: {
+              ...session,
+              id: activeSessionId,
+              attendanceLocked: true,
+              isLocked: true,
+            },
+          });
+        }
         if (sheet.items && sheet.items.length > 0) {
           dispatch({
             type: 'SET_STUDENTS',

@@ -4,6 +4,7 @@ import {
   calculateGpa4,
   calculateAccumulatedCredits,
   getAcademicClassification,
+  calculateAverageScore10,
 } from './gradeUtils';
 
 describe('gradeUtils', () => {
@@ -111,6 +112,25 @@ describe('gradeUtils', () => {
     it('classifies GPA below 2.0 as Yeu / Kem', () => {
       expect(getAcademicClassification(1.99)).toBe('Yếu / Kém');
       expect(getAcademicClassification(0)).toBe('Yếu / Kém');
+    });
+  });
+
+  describe('calculateAverageScore10', () => {
+    it('returns 0 for empty list', () => {
+      expect(calculateAverageScore10([])).toBe(0);
+    });
+
+    it('returns 0 when all scores are null', () => {
+      expect(calculateAverageScore10([{ totalScore: null }])).toBe(0);
+    });
+
+    it('calculates average score accurately on 10-point scale', () => {
+      const items = [
+        { totalScore: 8.5 },
+        { totalScore: 7.0 },
+        { totalScore: 9.0 },
+      ];
+      expect(calculateAverageScore10(items)).toBe(8.17);
     });
   });
 });

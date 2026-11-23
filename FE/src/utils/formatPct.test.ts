@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatPct } from './formatPct';
+import { formatPct, formatRatioPct, formatPercentage } from './formatPct';
 
 describe('formatPct utility', () => {
   it('returns null for null or undefined input', () => {
@@ -18,5 +18,17 @@ describe('formatPct utility', () => {
     expect(formatPct(85.6)).toBe('85.6');
     expect(formatPct(92)).toBe('92.0');
     expect(formatPct(100)).toBe('100.0');
+  });
+
+  it('explicitly formats ratio using formatRatioPct', () => {
+    expect(formatRatioPct(0.008)).toBe('0.8');
+    expect(formatRatioPct(0.856)).toBe('85.6');
+    expect(formatRatioPct(null)).toBeNull();
+  });
+
+  it('explicitly formats percentage using formatPercentage', () => {
+    expect(formatPercentage(0.8)).toBe('0.8');
+    expect(formatPercentage(92.5)).toBe('92.5');
+    expect(formatPercentage(null)).toBeNull();
   });
 });

@@ -477,15 +477,26 @@ export default function TeacherGradesPage() {
                   Đóng
                 </button>
                 {activeClass.gradingStatus === 'DRAFT' && (
-                  <button
-                    type="button"
-                    disabled={submitting}
-                    onClick={handleSaveDraft}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-                  >
-                    <FileSpreadsheet className="h-4 w-4" />
-                    {submitting ? 'Đang lưu...' : 'Lưu bảng điểm'}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={handleSaveDraft}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-600 bg-white px-4 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"
+                    >
+                      <FileSpreadsheet className="h-4 w-4" />
+                      {submitting ? 'Đang lưu...' : 'Lưu bảng điểm'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={submitting || submittingApproval}
+                      onClick={() => setClassToSubmit(activeClass)}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 shadow-xs"
+                    >
+                      <Send className="h-4 w-4" />
+                      Nộp bảng điểm
+                    </button>
+                  </>
                 )}
               </div>
             </div>

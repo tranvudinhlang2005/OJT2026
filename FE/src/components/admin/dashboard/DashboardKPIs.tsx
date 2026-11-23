@@ -37,7 +37,7 @@ export function DashboardKPIs({ summary, classes = [] }: DashboardKPIsProps) {
       : 0;
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 items-stretch">
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs transition hover:shadow-md">
         <div className="flex items-center justify-between">
           <div>
