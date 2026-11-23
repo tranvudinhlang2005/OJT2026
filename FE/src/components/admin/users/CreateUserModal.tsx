@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, UserPlus, AlertCircle, Info, Loader2 } from 'lucide-react';
 import type { CreateUserPayload, CreatableUserRole } from '../../../types/user';
 import { getApiErrorDetails } from '../../../services/axiosClient';
+import { validateCreateUserInput } from '../../../utils/validation';
 
 interface CreateUserModalProps {
   isOpen: boolean;
@@ -79,35 +80,24 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
     if (isSubmitting || submittingRef.current) return;
     setError(null);
 
-    if (username.length < 4 || username.length > 50) {
-      setError('Tên đăng nhập phải từ 4 đến 50 ký tự');
-      return;
-    }
-    if (!/^[a-z0-9._]+$/i.test(username)) {
-      setError('Tên đăng nhập chỉ gồm các ký tự chữ, số, dấu chấm (.) và gạch dưới (_)');
-      return;
-    }
-    if (!email.includes('@')) {
-      setError('Địa chỉ email không đúng định dạng');
-      return;
-    }
-    if (password.length < 8) {
-      setError('Mật khẩu phải từ 8 ký tự trở lên (gồm chữ hoa, chữ thường và chữ số)');
+    const validationErrors = validateCreateUserInput({
+      username,
+      email,
+      password,
+      fullName,
+      role,
+      studentCode,
+      instructorCode,
+      dateOfBirth,
+    });
+
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
       return;
     }
 
     if ((role as string) === 'TRAINING_ADMIN') {
       setError('Hệ thống không cho phép tạo mới trực tiếp tài khoản Admin. Chỉ có thể nâng từ Quản lý đào tạo.');
-      return;
-    }
-
-    if (role === 'STUDENT' && !studentCode.trim()) {
-      setError('Vui lòng nhập Mã học viên (MSSV)');
-      return;
-    }
-
-    if (role === 'INSTRUCTOR' && !instructorCode.trim()) {
-      setError('Vui lòng nhập Mã giảng viên');
       return;
     }
 
@@ -132,8 +122,16 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
       onClose();
     } catch (err: unknown) {
       const errDetail = getApiErrorDetails(err, 'Có lỗi xảy ra khi tạo tài khoản');
-      setError(errDetail.message);
-      setFieldErrors(errDetail.fieldErrors);
+      if (Object.keys(errDetail.fieldErrors).length > 0) {
+        setFieldErrors(errDetail.fieldErrors);
+        if (errDetail.message && !errDetail.message.includes('chưa hợp lệ')) {
+          setError(errDetail.message);
+        } else {
+          setError(null);
+        }
+      } else {
+        setError(errDetail.message);
+      }
     } finally {
       submittingRef.current = false;
       setIsSubmitting(false);
@@ -336,9 +334,19 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                   <input
                     type="date"
                     value={dateOfBirth}
-                    onChange={e => setDateOfBirth(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm text-slate-800 focus:border-emerald-500 focus:outline-none"
+                    onChange={e => {
+                      setDateOfBirth(e.target.value);
+                      clearFieldError('dateOfBirth');
+                    }}
+                    className={`w-full rounded-lg border bg-white p-2 text-sm text-slate-800 focus:outline-none ${
+                      fieldErrors.dateOfBirth
+                        ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+                        : 'border-slate-300 focus:border-emerald-500'
+                    }`}
                   />
+                  {fieldErrors.dateOfBirth && (
+                    <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.dateOfBirth}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -392,10 +400,20 @@ export const CreateUserModal: React.FC<CreateUserModalProps> = ({
                   <input
                     type="tel"
                     value={phone}
-                    onChange={e => setPhone(e.target.value)}
+                    onChange={e => {
+                      setPhone(e.target.value);
+                      clearFieldError('phone');
+                    }}
                     placeholder="VD: 0912345678"
-                    className="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none"
+                    className={`w-full rounded-lg border bg-white p-2 text-sm text-slate-800 focus:outline-none ${
+                      fieldErrors.phone
+                        ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+                        : 'border-slate-300 focus:border-blue-500'
+                    }`}
                   />
+                  {fieldErrors.phone && (
+                    <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.phone}</p>
+                  )}
                 </div>
               </div>
             </div>

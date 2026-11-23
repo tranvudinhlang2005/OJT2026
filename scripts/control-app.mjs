@@ -259,7 +259,7 @@ async function drive(featureName) {
       // 2. Perform Login as Admin
       console.log('  -> Step 2: Logging in as Admin');
       await userInput.fill('admin');
-      await passInput.fill('Admin@123');
+      await passInput.fill('Demo@123');
       await loginBtn.click();
 
       // 3. Verify Admin Dashboard arrival
@@ -386,12 +386,17 @@ async function drive(featureName) {
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
-            totalCourses: 12,
-            activeClasses: 8,
-            totalInstructors: 15,
-            totalStudents: 120,
-            pendingApprovals: 3,
-            attendanceRate: 94.5,
+            classCountsByStatus: {
+              DRAFT: 1,
+              OPEN: 4,
+              IN_PROGRESS: 6,
+              CLOSED: 2,
+              CANCELLED: 0,
+            },
+            totalEnrollments: 180,
+            fillRate: 85.0,
+            completionRate: 90.0,
+            averageAttendanceRate: 92.5,
           }),
         });
       });
@@ -401,8 +406,11 @@ async function drive(featureName) {
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
-            content: [],
+            items: [],
             totalElements: 0,
+            totalPages: 1,
+            page: 0,
+            size: 10,
           }),
         });
       });

@@ -7,16 +7,16 @@ interface UserStatsCardsProps {
 }
 
 export const UserStatsCards: React.FC<UserStatsCardsProps> = ({ users }) => {
-  const [nowIso] = useState(() => new Date().toISOString());
+  const [nowTimestamp] = useState(() => Date.now());
   const stats = useMemo(() => {
     const totalUsers = users.length;
     const adminManagers = users.filter(u => u.role === 'TRAINING_ADMIN' || u.role === 'TRAINING_MANAGER').length;
     const instructors = users.filter(u => u.role === 'INSTRUCTOR').length;
     const students = users.filter(u => u.role === 'STUDENT').length;
-    const lockedOrInactive = users.filter(u => !u.isActive || (u.lockedUntil ? u.lockedUntil > nowIso : false)).length;
+    const lockedOrInactive = users.filter(u => !u.isActive || (u.lockedUntil ? new Date(u.lockedUntil).getTime() > nowTimestamp : false)).length;
 
     return { totalUsers, adminManagers, instructors, students, lockedOrInactive };
-  }, [users, nowIso]);
+  }, [users, nowTimestamp]);
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">

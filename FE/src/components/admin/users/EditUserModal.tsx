@@ -79,12 +79,19 @@ const EditUserModalContent: React.FC<{
     setError(null);
 
     if (!fullName.trim()) {
-      setError('Họ và tên không được để trống');
+      setError('Họ và tên không được để trống. VD hợp lệ: Nguyễn Văn Nam');
       return;
     }
-    if (!email.includes('@')) {
-      setError('Email không đúng định dạng');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError('Email không đúng định dạng. VD hợp lệ: nam.nguyen@edu.vn, student@school.com');
       return;
+    }
+    if (dateOfBirth) {
+      const today = new Date().toISOString().slice(0, 10);
+      if (dateOfBirth > today) {
+        setError('Ngày sinh không được ở tương lai. VD hợp lệ: 15/08/2003');
+        return;
+      }
     }
 
     try {

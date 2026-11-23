@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import type { ApprovalSummaryItem } from '../../../types/approval';
 import { formatDateTime } from '../../../utils/dateFormat';
-import { getGradingStatusLabel } from '../../../constants/status';
 
 interface ApprovalTableProps {
   items: ApprovalSummaryItem[];
@@ -23,24 +22,37 @@ export function ApprovalTable({
   onSelectReview,
   onOpenCompleteModal,
 }: ApprovalTableProps) {
-  const getStatusBadge = (status: ApprovalSummaryItem['gradingStatus']) => {
-    const label = getGradingStatusLabel(status);
-    const variant =
-      status === 'CONFIRMED'
-        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-        : status === 'SUBMITTED'
-        ? 'bg-amber-50 text-amber-700 border-amber-200'
-        : 'bg-rose-50 text-rose-700 border-rose-200';
+  const getStatusBadge = (item: ApprovalSummaryItem) => {
+    if (item.gradingStatus === 'CONFIRMED') {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">
+          <CheckCircle className="h-3.5 w-3.5" />
+          Đã phê duyệt
+        </span>
+      );
+    }
+
+    if (item.gradingStatus === 'SUBMITTED') {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold border bg-amber-50 text-amber-700 border-amber-200">
+          <Clock className="h-3.5 w-3.5" />
+          Chờ xét duyệt
+        </span>
+      );
+    }
 
     return (
-      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold border ${variant}`}>
-        {status === 'CONFIRMED' ? (
-          <CheckCircle className="h-3.5 w-3.5" />
-        ) : (
-          <Clock className="h-3.5 w-3.5" />
+      <div className="inline-flex flex-col items-center">
+        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold border bg-rose-50 text-rose-700 border-rose-200">
+          <AlertCircle className="h-3.5 w-3.5" />
+          {item.returnReason ? 'Yêu cầu chỉnh sửa' : 'Bản nháp'}
+        </span>
+        {item.returnReason && (
+          <span className="mt-1 text-[10px] text-rose-600 max-w-[160px] truncate" title={item.returnReason}>
+            {item.returnReason}
+          </span>
         )}
-        {label}
-      </span>
+      </div>
     );
   };
 
@@ -116,7 +128,7 @@ export function ApprovalTable({
                   </td>
 
                   <td className="px-6 py-4 text-center">
-                    {getStatusBadge(item.gradingStatus)}
+                    {getStatusBadge(item)}
                     {item.classStatus === 'CLOSED' && (
                       <span className="block text-[10px] text-slate-400 mt-1 font-medium">
                         (Lớp đã đóng)

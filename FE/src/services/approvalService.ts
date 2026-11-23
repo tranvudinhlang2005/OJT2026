@@ -36,12 +36,14 @@ export const approvalService = {
     const classes = await classService.getClasses({
       semester: filter.semester,
       keyword: filter.keyword,
-      gradingStatus: filter.gradingStatus && filter.gradingStatus !== 'ALL' ? filter.gradingStatus : undefined,
     });
 
     const targetClasses = classes.filter((cls) => {
       if (filter.gradingStatus && filter.gradingStatus !== 'ALL') {
-        if (cls.gradingStatus !== filter.gradingStatus) return false;
+        if (filter.gradingStatus === 'DRAFT') {
+          return cls.gradingStatus === 'DRAFT' && Boolean(cls.returnReason);
+        }
+        return cls.gradingStatus === filter.gradingStatus;
       }
       return true;
     });
@@ -58,7 +60,7 @@ export const approvalService = {
       studentsCount: cls.enrolledCount,
       sessionsCount: 0,
       unlockedSessionsCount: 0,
-      submittedAt: cls.submittedAt || cls.createdAt,
+      submittedAt: cls.submittedAt || undefined,
       confirmedAt: undefined,
       returnReason: cls.returnReason || undefined,
       hasIncompleteGrades: false,
@@ -66,13 +68,19 @@ export const approvalService = {
   },
 
   async getApprovalStats(): Promise<ApprovalStats> {
-    const classes = await classService.getClasses({ status: 'IN_PROGRESS' });
+    const classes = await classService.getClasses();
+
+    const pending = classes.filter((c) => c.gradingStatus === 'SUBMITTED').length;
+    const confirmed = classes.filter((c) => c.gradingStatus === 'CONFIRMED').length;
+    const draftOrReturned = classes.filter(
+      (c) => c.gradingStatus === 'DRAFT' && Boolean(c.returnReason)
+    ).length;
 
     return {
-      total: classes.length,
-      pending: classes.filter((c) => c.gradingStatus === 'SUBMITTED').length,
-      confirmed: classes.filter((c) => c.gradingStatus === 'CONFIRMED').length,
-      draftOrReturned: classes.filter((c) => c.gradingStatus === 'DRAFT').length,
+      total: pending + confirmed + draftOrReturned,
+      pending,
+      confirmed,
+      draftOrReturned,
     };
   },
 

@@ -36,11 +36,11 @@ export const UserTable: React.FC<UserTableProps> = ({
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
-
-  const [nowIso] = useState(() => new Date().toISOString());
+  const [nowTimestamp] = useState(() => Date.now());
 
   const totalPages = Math.ceil(users.length / pageSize) || 1;
-  const startIndex = (currentPage - 1) * pageSize;
+  const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
   const currentUsers = users.slice(startIndex, startIndex + pageSize);
 
   const getRoleBadge = (role: SystemRole) => {
@@ -74,7 +74,7 @@ export const UserTable: React.FC<UserTableProps> = ({
   };
 
   const getStatusBadge = (user: ManagedUser) => {
-    const isTemporarilyLocked = Boolean(user.lockedUntil && user.lockedUntil > nowIso);
+    const isTemporarilyLocked = Boolean(user.lockedUntil && new Date(user.lockedUntil).getTime() > nowTimestamp);
 
     if (isTemporarilyLocked) {
       return (
@@ -128,7 +128,7 @@ export const UserTable: React.FC<UserTableProps> = ({
               currentUsers.map((user, idx) => {
                 const isSelf = user.username === currentAdminUsername;
                 const isDefaultAdmin = user.username === 'admin';
-                const isTemporarilyLocked = Boolean(user.lockedUntil && user.lockedUntil > nowIso);
+                const isTemporarilyLocked = Boolean(user.lockedUntil && new Date(user.lockedUntil).getTime() > nowTimestamp);
 
                 let profileInfo = '-';
                 if (user.role === 'INSTRUCTOR' && user.instructorProfile) {

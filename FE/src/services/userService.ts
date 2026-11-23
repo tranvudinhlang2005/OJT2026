@@ -118,7 +118,7 @@ export const userService = {
       await Promise.allSettled(fetchTasks);
     }
 
-    return users.map((u) => {
+    const mapped = users.map((u) => {
       const std = studentsMap.get(u.id);
       const inst = instructorsMap.get(u.id);
 
@@ -155,6 +155,21 @@ export const userService = {
 
       return managed;
     });
+
+    if (filter.status && filter.status !== 'ALL') {
+      const now = Date.now();
+      if (filter.status === 'LOCKED') {
+        return mapped.filter((u) => Boolean(u.lockedUntil && new Date(u.lockedUntil).getTime() > now));
+      }
+      if (filter.status === 'ACTIVE') {
+        return mapped.filter((u) => u.isActive && !(u.lockedUntil && new Date(u.lockedUntil).getTime() > now));
+      }
+      if (filter.status === 'INACTIVE') {
+        return mapped.filter((u) => !u.isActive);
+      }
+    }
+
+    return mapped;
   },
 
   async getStudentById(id: string): Promise<BackendStudentResponse> {
