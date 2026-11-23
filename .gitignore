@@ -2,4 +2,6 @@
 graphify-out/cache/
 test-results/
 playwright-report/
+.verification-server.pid
+
 
