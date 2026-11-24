@@ -100,9 +100,9 @@ export function validateCreateUserInput(input: CreateUserInput): Record<string, 
   }
 
   if (input.dateOfBirth) {
-    const today = new Date().toISOString().slice(0, 10);
-    if (input.dateOfBirth > today) {
-      errors.dateOfBirth = 'Ngày sinh không được ở tương lai. VD hợp lệ: 15/08/2003';
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
+    if (input.dateOfBirth >= today) {
+      errors.dateOfBirth = 'Ngày sinh phải trước ngày hôm nay. VD hợp lệ: 15/08/2003';
     }
   }
 

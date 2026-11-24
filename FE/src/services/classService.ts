@@ -351,9 +351,16 @@ export const classService = {
     }));
   },
 
-  async getInstructors(): Promise<InstructorSummary[]> {
+  async getInstructors(filter?: { courseId?: number | string; isActive?: boolean }): Promise<InstructorSummary[]> {
+    const params: Record<string, unknown> = {
+      size: 100,
+      isActive: filter?.isActive ?? true,
+    };
+    if (filter?.courseId != null) {
+      params.courseId = filter.courseId;
+    }
     const res = await axiosClient.get<PageResponse<BackendInstructorResponse>>('/instructors', {
-      params: { size: 100, isActive: true },
+      params,
     });
     const items = res.data?.items || [];
     return items.map((i) => {

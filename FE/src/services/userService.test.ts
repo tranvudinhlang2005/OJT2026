@@ -6,6 +6,7 @@ vi.mock('./axiosClient', () => ({
   axiosClient: {
     get: vi.fn(),
     post: vi.fn(),
+    put: vi.fn(),
     patch: vi.fn(),
     delete: vi.fn(),
   },
@@ -195,6 +196,95 @@ describe('userService', () => {
       });
       expect(result.tempPassword).toBe('Password@123');
       expect(result.message).toContain('Password@123');
+    });
+  });
+
+  describe('createUser profile error propagation', () => {
+    it('throws when updating student profile fails', async () => {
+      vi.mocked(axiosClient.post).mockResolvedValueOnce({
+        data: {
+          id: 101,
+          username: 'student.test',
+          email: 'student.test@edu.vn',
+          fullName: 'Student Test',
+          role: 'STUDENT',
+          isActive: true,
+          createdAt: '2026-11-23T00:00:00Z',
+        },
+      });
+
+      vi.mocked(axiosClient.get).mockResolvedValueOnce({
+        data: {
+          items: [
+            {
+              id: 201,
+              userId: 101,
+              studentCode: 'SE170123',
+              status: 'ACTIVE',
+            },
+          ],
+        },
+      });
+
+      const profileError = new Error('Ngày sinh phải trước ngày hôm nay');
+      vi.mocked(axiosClient.put).mockRejectedValueOnce(profileError);
+
+      await expect(
+        userService.createUser({
+          username: 'student.test',
+          email: 'student.test@edu.vn',
+          password: 'Password@123',
+          fullName: 'Student Test',
+          role: 'STUDENT',
+          studentCode: 'SE170123',
+          dateOfBirth: '2026-11-24',
+        })
+      ).rejects.toThrow('Ngày sinh phải trước ngày hôm nay');
+    });
+
+    it('throws when updating instructor profile fails', async () => {
+      vi.mocked(axiosClient.post).mockResolvedValueOnce({
+        data: {
+          id: 102,
+          username: 'instructor.test',
+          email: 'instructor.test@edu.vn',
+          fullName: 'Instructor Test',
+          role: 'INSTRUCTOR',
+          isActive: true,
+          createdAt: '2026-11-23T00:00:00Z',
+        },
+      });
+
+      vi.mocked(axiosClient.get).mockResolvedValueOnce({
+        data: {
+          items: [
+            {
+              id: 202,
+              userId: 102,
+              instructorCode: 'GV001',
+              department: 'IT',
+              phone: '0912345678',
+              isActive: true,
+            },
+          ],
+        },
+      });
+
+      const profileError = new Error('Lỗi cập nhật giảng viên');
+      vi.mocked(axiosClient.put).mockRejectedValueOnce(profileError);
+
+      await expect(
+        userService.createUser({
+          username: 'instructor.test',
+          email: 'instructor.test@edu.vn',
+          password: 'Password@123',
+          fullName: 'Instructor Test',
+          role: 'INSTRUCTOR',
+          instructorCode: 'GV001',
+          department: 'IT',
+          phone: '0912345678',
+        })
+      ).rejects.toThrow('Lỗi cập nhật giảng viên');
     });
   });
 });

@@ -253,53 +253,47 @@ export const userService = {
     let instructorProfile = undefined;
 
     if (payload.role === 'STUDENT' && payload.studentCode) {
-      try {
-        const stdListRes = await axiosClient.get<PageResponse<BackendStudentResponse>>('/students', {
-          params: { keyword: payload.studentCode.trim() },
-        });
-        const matchedStd = stdListRes.data?.items?.find((s) => s.userId === u.id);
-        if (matchedStd) {
-          studentProfile = {
-            id: String(matchedStd.id),
-            studentCode: matchedStd.studentCode,
+      const stdListRes = await axiosClient.get<PageResponse<BackendStudentResponse>>('/students', {
+        params: { keyword: payload.studentCode.trim() },
+      });
+      const matchedStd = stdListRes.data?.items?.find((s) => s.userId === u.id);
+      if (matchedStd) {
+        studentProfile = {
+          id: String(matchedStd.id),
+          studentCode: matchedStd.studentCode,
+          dateOfBirth: payload.dateOfBirth,
+          homeroomClass: payload.homeroomClass || 'Chưa gán',
+          status: matchedStd.status,
+        };
+        if (payload.dateOfBirth || payload.homeroomClass) {
+          await this.updateStudentProfile(String(matchedStd.id), {
+            studentCode: payload.studentCode,
             dateOfBirth: payload.dateOfBirth,
-            homeroomClass: payload.homeroomClass || 'Chưa gán',
-            status: matchedStd.status,
-          };
-          if (payload.dateOfBirth || payload.homeroomClass) {
-            await this.updateStudentProfile(String(matchedStd.id), {
-              studentCode: payload.studentCode,
-              dateOfBirth: payload.dateOfBirth,
-              homeroomClass: payload.homeroomClass,
-            });
-          }
+            homeroomClass: payload.homeroomClass,
+          });
         }
-      } catch {
       }
     } else if (payload.role === 'INSTRUCTOR' && payload.instructorCode) {
-      try {
-        const instListRes = await axiosClient.get<PageResponse<BackendInstructorSummary>>('/instructors', {
-          params: { keyword: payload.instructorCode.trim() },
-        });
-        const matchedInst = instListRes.data?.items?.find((i) => i.userId === u.id);
-        if (matchedInst) {
-          instructorProfile = {
-            id: String(matchedInst.id),
-            instructorCode: matchedInst.instructorCode,
-            department: payload.department || 'Chưa cập nhật',
-            phone: payload.phone || '',
-            teachingActive: true,
-            teachableCourses: [],
-          };
-          if (payload.department || payload.phone) {
-            await this.updateInstructorProfile(String(matchedInst.id), {
-              instructorCode: payload.instructorCode,
-              department: payload.department,
-              phone: payload.phone,
-            });
-          }
+      const instListRes = await axiosClient.get<PageResponse<BackendInstructorSummary>>('/instructors', {
+        params: { keyword: payload.instructorCode.trim() },
+      });
+      const matchedInst = instListRes.data?.items?.find((i) => i.userId === u.id);
+      if (matchedInst) {
+        instructorProfile = {
+          id: String(matchedInst.id),
+          instructorCode: matchedInst.instructorCode,
+          department: payload.department || 'Chưa cập nhật',
+          phone: payload.phone || '',
+          teachingActive: true,
+          teachableCourses: [],
+        };
+        if (payload.department || payload.phone) {
+          await this.updateInstructorProfile(String(matchedInst.id), {
+            instructorCode: payload.instructorCode,
+            department: payload.department,
+            phone: payload.phone,
+          });
         }
-      } catch {
       }
     }
 

@@ -71,8 +71,9 @@ export default function UsersPage() {
       loadData();
       loadStats();
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
-      const msg = axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi tạo tài khoản');
+      loadData();
+      loadStats();
+      const msg = getApiErrorMessage(err, 'Lỗi khi tạo tài khoản');
       toast.error(msg);
       throw err;
     }

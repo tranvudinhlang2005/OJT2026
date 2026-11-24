@@ -137,13 +137,24 @@ describe('validateCreateUserInput', () => {
     expect(errors.instructorCode).toContain('GV001');
   });
 
+  it('rejects dateOfBirth equal to today in Vietnam timezone and provides example', () => {
+    const todayVietnam = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const errors = validateCreateUserInput({
+      ...validInput,
+      dateOfBirth: todayVietnam,
+    });
+    expect(errors.dateOfBirth).toBeDefined();
+    expect(errors.dateOfBirth).toContain('Ngày sinh phải trước ngày hôm nay');
+    expect(errors.dateOfBirth).toContain('15/08/2003');
+  });
+
   it('rejects future dateOfBirth and provides example', () => {
     const errors = validateCreateUserInput({
       ...validInput,
       dateOfBirth: '2099-01-01',
     });
     expect(errors.dateOfBirth).toBeDefined();
-    expect(errors.dateOfBirth).toContain('Ngày sinh không được ở tương lai');
+    expect(errors.dateOfBirth).toContain('Ngày sinh phải trước ngày hôm nay');
     expect(errors.dateOfBirth).toContain('15/08/2003');
   });
 });

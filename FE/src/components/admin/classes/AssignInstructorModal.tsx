@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, UserCheck, ShieldAlert, Loader2 } from 'lucide-react';
 import type { ClassOffering, InstructorSummary } from '../../../types/classOffering';
+import { classService } from '../../../services/classService';
 
 interface AssignInstructorModalProps {
   isOpen: boolean;
   classOffering: ClassOffering | null;
-  instructors: InstructorSummary[];
+  instructors?: InstructorSummary[];
   onClose: () => void;
   onSubmit: (classId: string, instructorId: string | null) => Promise<void>;
 }
@@ -13,18 +14,21 @@ interface AssignInstructorModalProps {
 export function AssignInstructorModal({
   isOpen,
   classOffering,
-  instructors,
   onClose,
   onSubmit,
 }: AssignInstructorModalProps) {
   const [selectedInstructorId, setSelectedInstructorId] = useState<string>('');
+  const [qualifiedInstructors, setQualifiedInstructors] = useState<InstructorSummary[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const submittingRef = useRef(false);
 
   const resetForm = useCallback(() => {
     setSelectedInstructorId('');
+    setQualifiedInstructors([]);
     setError(null);
+    setIsLoading(false);
     setIsSubmitting(false);
     submittingRef.current = false;
   }, []);
@@ -42,16 +46,22 @@ export function AssignInstructorModal({
       setError(null);
       setIsSubmitting(false);
       submittingRef.current = false;
+      setIsLoading(true);
+      classService
+        .getInstructors({ courseId: classOffering.courseId, isActive: true })
+        .then((data) => {
+          setQualifiedInstructors(Array.isArray(data) ? data : []);
+        })
+        .catch(() => {
+          setError('Không thể tải danh sách giảng viên.');
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
     }
   }, [isOpen, classOffering, resetForm]);
 
   if (!isOpen || !classOffering) return null;
-
-  const qualifiedInstructors = instructors.filter(
-    (inst) =>
-      inst.teachableCourses.includes(classOffering.courseId) ||
-      inst.teachableCourses.includes(classOffering.course.code)
-  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,7 +146,12 @@ export function AssignInstructorModal({
                 </label>
               )}
 
-              {qualifiedInstructors.length === 0 ? (
+              {isLoading ? (
+                <div className="flex items-center justify-center p-6 text-slate-500">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  <span className="text-sm">Đang tải danh sách giảng viên...</span>
+                </div>
+              ) : qualifiedInstructors.length === 0 ? (
                 <p className="text-sm text-amber-600 p-3 bg-amber-50 rounded-xl border border-amber-200">
                   Không tìm thấy giảng viên nào có chuyên môn cho học phần này trong hệ thống.
                 </p>
