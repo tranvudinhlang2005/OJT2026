@@ -489,6 +489,15 @@ async function drive(featureName) {
       await page.screenshot({ path: path.join(featureDir, '01-schedule.png') });
       summary.steps.push({ step: 'Open Teacher Schedule', url: page.url(), status: 'OK' });
 
+      console.log('  -> Step 2: Switching to All Weeks view');
+      const allWeeksBtn = page.getByRole('button', { name: 'Tất cả các tuần' });
+      if (await allWeeksBtn.isVisible()) {
+        await allWeeksBtn.click();
+        await page.waitForTimeout(500);
+        await page.screenshot({ path: path.join(featureDir, '02-schedule-all-weeks.png') });
+        summary.steps.push({ step: 'Switch to All Weeks View', url: page.url(), status: 'OK' });
+      }
+
       const text = await page.locator('body').innerText();
       fs.writeFileSync(path.join(featureDir, 'schedule.txt'), text, 'utf-8');
 

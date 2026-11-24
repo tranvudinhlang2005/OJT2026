@@ -14,11 +14,11 @@ Lịch giảng dạy & Điểm danh
 Học kỳ II (2026 - 2027)
 CA DẠY HÔM NAY
 
-1 ca học
+0 ca học
 
-1 ca đang chờ điểm danh
+✓ Đã hoàn tất điểm danh hôm nay
 
-TỔNG SỐ BUỔI TUẦN NÀY
+TỔNG SỐ BUỔI GIẢNG DẠY
 
 1 buổi dạy
 
@@ -34,8 +34,12 @@ Tuần trước
 Tuần này
 Tuần sau
 Tất cả các tuần
-23/11/2026 - 29/11/2026
-Danh sách các ca học sắp tới
+Toàn bộ lịch giảng dạy
+Toàn bộ danh sách ca học
+1 ca học
+Tuần: 23/11/2026 - 29/11/2026
+•
+1 ca học
 CS201.O21
 •
 Buổi 1/1
