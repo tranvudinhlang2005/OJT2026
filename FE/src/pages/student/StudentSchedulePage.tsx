@@ -31,15 +31,14 @@ export default function StudentSchedulePage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const { weekOffset, setWeekOffset, weekRange } = useWeekNavigation();
+  const { weekOffset, setWeekOffset, weekRange, queryRange } = useWeekNavigation();
 
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
       try {
         setLoading(true);
-        const from = weekRange?.from;
-        const to = weekRange?.to;
+        const { from, to } = queryRange;
         const items = await scheduleService.getMySchedule(from, to);
         if (isMounted) setScheduleItems(items);
       } catch {
@@ -53,7 +52,7 @@ export default function StudentSchedulePage() {
     return () => {
       isMounted = false;
     };
-  }, [toast, weekRange]);
+  }, [toast, queryRange]);
 
   const sortedItems = useMemo(() => {
     return [...scheduleItems].sort((a, b) => {
