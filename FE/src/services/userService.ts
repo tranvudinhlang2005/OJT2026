@@ -80,6 +80,20 @@ async function fetchAuxiliaryUserMap<T extends { userId: number }>(
   }
 }
 
+export function generateTemporaryPassword(): string {
+  const chars = 'abcdefghjkmnpqrstuvwxyz';
+  const uppers = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const digits = '23456789';
+
+  let result = 'Tmp@';
+  for (let i = 0; i < 3; i++) {
+    result += uppers.charAt(Math.floor(Math.random() * uppers.length));
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += digits.charAt(Math.floor(Math.random() * digits.length));
+  }
+  return result;
+}
+
 export const userService = {
   async getUsers(filter: UserFilter = {}): Promise<ManagedUser[]> {
     const params: Record<string, string | boolean | number> = {
@@ -412,11 +426,12 @@ export const userService = {
     };
   },
 
-  async resetPassword(id: string, newPassword = 'Password@123'): Promise<{ tempPassword: string; message: string }> {
-    await axiosClient.patch(`/users/${id}/password`, { newPassword });
+  async resetPassword(id: string, newPassword?: string): Promise<{ tempPassword: string; message: string }> {
+    const passwordToSet = newPassword || generateTemporaryPassword();
+    await axiosClient.patch(`/users/${id}/password`, { newPassword: passwordToSet });
     return {
-      tempPassword: newPassword,
-      message: `Đã đặt lại mật khẩu thành công! Mật khẩu mặc định: ${newPassword}`,
+      tempPassword: passwordToSet,
+      message: `Đã đặt lại mật khẩu thành công! Mật khẩu tạm thời: ${passwordToSet}`,
     };
   },
 };

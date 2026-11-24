@@ -186,16 +186,34 @@ describe('userService', () => {
   });
 
   describe('resetPassword', () => {
-    it('resets password with the default password matching the confirmation modal', async () => {
+    it('generates a secure dynamic temporary password when none is provided', async () => {
       vi.mocked(axiosClient.patch).mockResolvedValueOnce({ status: 204 });
 
       const result = await userService.resetPassword('1');
 
+      expect(result.tempPassword).toBeDefined();
+      expect(result.tempPassword.length).toBeGreaterThanOrEqual(10);
+      expect(/[A-Z]/.test(result.tempPassword)).toBe(true);
+      expect(/[a-z]/.test(result.tempPassword)).toBe(true);
+      expect(/[0-9]/.test(result.tempPassword)).toBe(true);
       expect(axiosClient.patch).toHaveBeenCalledWith('/users/1/password', {
-        newPassword: 'Password@123',
+        newPassword: result.tempPassword,
       });
-      expect(result.tempPassword).toBe('Password@123');
-      expect(result.message).toContain('Password@123');
+      expect(result.message).toContain(result.tempPassword);
+      expect(result.tempPassword).not.toBe('Password@123');
+    });
+
+    it('resets password with the custom temporary password provided by caller', async () => {
+      vi.mocked(axiosClient.patch).mockResolvedValueOnce({ status: 204 });
+
+      const customPass = 'CustomTemp@2026';
+      const result = await userService.resetPassword('1', customPass);
+
+      expect(axiosClient.patch).toHaveBeenCalledWith('/users/1/password', {
+        newPassword: customPass,
+      });
+      expect(result.tempPassword).toBe(customPass);
+      expect(result.message).toContain(customPass);
     });
   });
 

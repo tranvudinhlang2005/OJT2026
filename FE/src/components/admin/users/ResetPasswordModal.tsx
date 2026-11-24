@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, KeyRound, AlertTriangle, Loader2 } from 'lucide-react';
 import type { ManagedUser } from '../../../types/user';
+import { generateTemporaryPassword } from '../../../services/userService';
 
 interface ResetPasswordModalProps {
   isOpen: boolean;
   user: ManagedUser | null;
   onClose: () => void;
-  onSubmit: (id: string) => Promise<void>;
+  onSubmit: (id: string, temporaryPassword?: string) => Promise<void>;
 }
 
 export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
@@ -16,11 +17,13 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
   onSubmit,
 }) => {
   const [error, setError] = useState<string | null>(null);
+  const [temporaryPassword, setTemporaryPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
 
   const resetForm = useCallback(() => {
     setError(null);
+    setTemporaryPassword('');
     setIsSubmitting(false);
     submittingRef.current = false;
   }, []);
@@ -28,6 +31,8 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
   useEffect(() => {
     if (!isOpen) {
       resetForm();
+    } else {
+      setTemporaryPassword(generateTemporaryPassword());
     }
   }, [isOpen, resetForm]);
 
@@ -46,7 +51,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
     try {
       submittingRef.current = true;
       setIsSubmitting(true);
-      await onSubmit(user.id);
+      await onSubmit(user.id, temporaryPassword);
       resetForm();
       onClose();
     } catch (err: unknown) {
@@ -90,9 +95,9 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
           </p>
 
           <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-900 space-y-1.5">
-            <p className="font-semibold">Mật khẩu mặc định sau khi đặt lại:</p>
-            <div className="rounded-lg border border-amber-300 bg-white p-2 text-center font-mono text-sm font-bold text-slate-800 tracking-wider">
-              Password@123
+            <p className="font-semibold">Mật khẩu tạm thời sau khi đặt lại:</p>
+            <div className="rounded-lg border border-amber-300 bg-white p-2 text-center font-mono text-sm font-bold text-slate-800 tracking-wider select-all">
+              {temporaryPassword}
             </div>
             <p className="text-[11px] text-amber-700">
               * Người dùng nên đổi mật khẩu ngay sau lần đăng nhập đầu tiên để đảm bảo an toàn.

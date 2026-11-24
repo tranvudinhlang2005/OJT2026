@@ -1245,8 +1245,8 @@
     "semantic_hash": ""
   },
   "FE/src/components/admin/users/ResetPasswordModal.tsx": {
-    "mtime": 1795406122.412026,
-    "ast_hash": "428ccd2c9fb7a6f6a07b9e123384b410",
+    "mtime": 1795483670.3314846,
+    "ast_hash": "2321b0f3e8d73a91295f8a41feffb398",
     "semantic_hash": ""
   },
   "FE/src/components/admin/users/UserFilters.tsx": {
@@ -1350,8 +1350,8 @@
     "semantic_hash": ""
   },
   "FE/src/contexts/AuthContext.tsx": {
-    "mtime": 1795406122.504495,
-    "ast_hash": "603a8c90e6a1ca4908d002c4addc0254",
+    "mtime": 1795483900.923054,
+    "ast_hash": "2f2633e4f1ed047ec6c40b18b9277b71",
     "semantic_hash": ""
   },
   "FE/src/contexts/ToastContext.tsx": {
@@ -1420,13 +1420,13 @@
     "semantic_hash": ""
   },
   "FE/src/pages/admin/UsersPage.tsx": {
-    "mtime": 1795480913.4050858,
-    "ast_hash": "42433f6f8429fb0fb59ec3f634b62dda",
+    "mtime": 1795483679.4513679,
+    "ast_hash": "0316adcad55a5e3aa43f4f82007a0742",
     "semantic_hash": ""
   },
   "FE/src/pages/auth/LoginPage.tsx": {
-    "mtime": 1795406122.5548313,
-    "ast_hash": "84571e0eb1d40d793ee8858531eb0969",
+    "mtime": 1795483715.9736273,
+    "ast_hash": "b97dbac9c10b5e93c65519217460f3d4",
     "semantic_hash": ""
   },
   "FE/src/pages/student/StudentGradesPage.tsx": {
@@ -1545,8 +1545,8 @@
     "semantic_hash": ""
   },
   "FE/src/services/userService.ts": {
-    "mtime": 1795480903.974995,
-    "ast_hash": "f32d2e52e6666bfbc033e693721e547f",
+    "mtime": 1795483621.644163,
+    "ast_hash": "b168c063526763cb65f69a075d7c0418",
     "semantic_hash": ""
   },
   "FE/src/types/approval.ts": {
@@ -1625,13 +1625,13 @@
     "semantic_hash": ""
   },
   "artifacts/verification/auth-and-routing/summary.json": {
-    "mtime": 1795411077.4523573,
-    "ast_hash": "3ae3b0313bfc42869786d60eaa93acab",
+    "mtime": 1795482988.3672342,
+    "ast_hash": "6e0d21f2b8646d9f301361f3e6237d8f",
     "semantic_hash": ""
   },
   "artifacts/verification/courses-and-rooms/summary.json": {
-    "mtime": 1795410917.4145632,
-    "ast_hash": "1fc596125a05422263564132ef8fce18",
+    "mtime": 1795482988.368254,
+    "ast_hash": "616c22ac9e1a7e21bed02b0840877f3e",
     "semantic_hash": ""
   },
   "scripts/control-app.mjs": {
@@ -1745,12 +1745,12 @@
     "semantic_hash": ""
   },
   "artifacts/verification/auth-and-routing/dashboard-aria.txt": {
-    "mtime": 1795411077.4483163,
+    "mtime": 1795482938.0398798,
     "ast_hash": "ea6b54b8f35fc502af010e5658454ff4",
     "semantic_hash": ""
   },
   "artifacts/verification/courses-and-rooms/courses-rooms.txt": {
-    "mtime": 1795410917.4122257,
+    "mtime": 1795482946.8964024,
     "ast_hash": "93bfb84cfcb88325a1c0b892e4da5247",
     "semantic_hash": ""
   },
@@ -1790,23 +1790,23 @@
     "semantic_hash": ""
   },
   "artifacts/verification/auth-and-routing/01-login-screen.png": {
-    "mtime": 1795411075.3122623,
+    "mtime": 1795482937.11793,
     "ast_hash": "ee596d15659fab0e4e33c049a894d7f2",
     "semantic_hash": ""
   },
   "artifacts/verification/auth-and-routing/02-admin-dashboard.png": {
-    "mtime": 1795411077.4295733,
-    "ast_hash": "145572c2d799f6d224033665a1c4613c",
+    "mtime": 1795482988.3672342,
+    "ast_hash": "afc9960db20047fca3c08bbdf8565342",
     "semantic_hash": ""
   },
   "artifacts/verification/courses-and-rooms/01-courses-tab.png": {
-    "mtime": 1795410916.9403036,
+    "mtime": 1795482946.5361352,
     "ast_hash": "b86f1e313916d8430d4c94c2ffdbc683",
     "semantic_hash": ""
   },
   "artifacts/verification/courses-and-rooms/02-rooms-tab.png": {
-    "mtime": 1795410917.3883574,
-    "ast_hash": "0f8119fb687594b6250f7a54094709aa",
+    "mtime": 1795482988.3672342,
+    "ast_hash": "e7037bb48047106f0dbcadc9449c802b",
     "semantic_hash": ""
   },
   "FE/src/types/attendance.ts": {
@@ -1860,18 +1860,18 @@
     "semantic_hash": ""
   },
   "artifacts/verification/admin-dashboard/summary.json": {
-    "mtime": 1795411096.9936638,
-    "ast_hash": "51676abb9689972e37116a6eb6ead18e",
+    "mtime": 1795482988.3661644,
+    "ast_hash": "e9c838bb6ce7394a1d70662a0b4e3391",
     "semantic_hash": ""
   },
   "artifacts/verification/student-portal/summary.json": {
-    "mtime": 1795410969.938525,
-    "ast_hash": "8db782b74dc16dd7ba00865478084ba1",
+    "mtime": 1795482988.368254,
+    "ast_hash": "e3b0d387df128736b7c6629ba5a94901",
     "semantic_hash": ""
   },
   "artifacts/verification/teacher-workflow/summary.json": {
-    "mtime": 1795410944.4785225,
-    "ast_hash": "7c0f0558d664e5228472c46e106b69b5",
+    "mtime": 1795482988.3692203,
+    "ast_hash": "772ece5738cac8c0bf790f723b21f412",
     "semantic_hash": ""
   },
   "scripts/check-minimalist-ui.mjs": {
@@ -1945,33 +1945,33 @@
     "semantic_hash": ""
   },
   "artifacts/verification/admin-dashboard/dashboard-aria.txt": {
-    "mtime": 1795411096.9921284,
+    "mtime": 1795482955.7757974,
     "ast_hash": "0bcbee1dd4a0b3a0c4c025071dfa4c58",
     "semantic_hash": ""
   },
   "artifacts/verification/student-portal/student-schedule.txt": {
-    "mtime": 1795410969.9376628,
+    "mtime": 1795482971.7000575,
     "ast_hash": "d1df12f28f1e665a73d2565368b60ab9",
     "semantic_hash": ""
   },
   "artifacts/verification/teacher-workflow/schedule.txt": {
-    "mtime": 1795410944.4760213,
+    "mtime": 1795482964.1813161,
     "ast_hash": "8a01ee0cdea211e36f0beba161d4dbc9",
     "semantic_hash": ""
   },
   "artifacts/verification/admin-dashboard/01-overview.png": {
-    "mtime": 1795411096.982875,
+    "mtime": 1795482955.763679,
     "ast_hash": "0cb8a556d98675cc96d69edcd520f50f",
     "semantic_hash": ""
   },
   "artifacts/verification/student-portal/01-student-schedule.png": {
-    "mtime": 1795410969.86971,
+    "mtime": 1795482971.6522472,
     "ast_hash": "fccdf6b0a419b10a9dfadbbc13005598",
     "semantic_hash": ""
   },
   "artifacts/verification/teacher-workflow/01-schedule.png": {
-    "mtime": 1795410944.3987076,
-    "ast_hash": "4670c0de411f06bb23e9fcc017825e89",
+    "mtime": 1795482988.3692203,
+    "ast_hash": "7e9ec9367051cddebdc6f4d8fc0dae95",
     "semantic_hash": ""
   },
   ".scratch/audit-resolution/issues/01-fix-balanced-viz-and-approvals-default.md": {
@@ -2005,8 +2005,8 @@
     "semantic_hash": ""
   },
   "FE/src/services/userService.test.ts": {
-    "mtime": 1795480870.3177488,
-    "ast_hash": "f1422871731e9323c8072321588239d3",
+    "mtime": 1795483584.9716594,
+    "ast_hash": "4442664fd1fcda6a2b3cdcc450bb3c6f",
     "semantic_hash": ""
   },
   ".scratch/teacher-grades/issues/01-enforce-table-row-grade-submission-validation.md": {

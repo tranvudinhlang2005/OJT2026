@@ -5,5 +5,7 @@ playwright-report/
 .verification-server.pid
 decisions.tsv
 .agents/
+.env.local
+.env.*.local
 
 

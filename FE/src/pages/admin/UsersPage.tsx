@@ -135,9 +135,9 @@ export default function UsersPage() {
     }
   };
 
-  const handleResetPassword = async (id: string) => {
+  const handleResetPassword = async (id: string, temporaryPassword?: string) => {
     try {
-      const result = await userService.resetPassword(id);
+      const result = await userService.resetPassword(id, temporaryPassword);
       toast.success(result.message, { duration: 5000 });
       loadData();
     } catch (err: unknown) {

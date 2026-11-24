@@ -26,8 +26,10 @@ export default function LoginPage() {
   const { login } = useAuth();
   const { toast } = useToast();
 
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('Demo@123');
+  const isDemoEnabled = Boolean(import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS === 'true');
+
+  const [username, setUsername] = useState(isDemoEnabled ? 'admin' : '');
+  const [password, setPassword] = useState(isDemoEnabled ? 'Demo@123' : '');
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState<UserRole>('TRAINING_ADMIN');
   const [isLoading, setIsLoading] = useState(false);
@@ -95,28 +97,30 @@ export default function LoginPage() {
           <p className="mt-1 text-sm text-slate-500">Hệ thống quản lý đào tạo & khóa học (OJT 2026)</p>
         </div>
 
-        <div className="mb-4">
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Tài khoản kiểm thử nhanh
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {SEED_ACCOUNTS.map((acc) => (
-              <button
-                key={acc.username}
-                type="button"
-                onClick={() => handleSelectSeed(acc)}
-                className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition text-left flex flex-col ${
-                  selectedRole === acc.role && username === acc.username
-                    ? 'border-indigo-600 bg-indigo-50/80 text-indigo-700 font-semibold ring-1 ring-indigo-500/20'
-                    : 'border-slate-200 text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <span>{acc.label}</span>
-                <span className="text-[10px] text-slate-400 font-mono">@{acc.username}</span>
-              </button>
-            ))}
+        {isDemoEnabled && (
+          <div className="mb-4">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Tài khoản kiểm thử nhanh
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {SEED_ACCOUNTS.map((acc) => (
+                <button
+                  key={acc.username}
+                  type="button"
+                  onClick={() => handleSelectSeed(acc)}
+                  className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition text-left flex flex-col ${
+                    selectedRole === acc.role && username === acc.username
+                      ? 'border-indigo-600 bg-indigo-50/80 text-indigo-700 font-semibold ring-1 ring-indigo-500/20'
+                      : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <span>{acc.label}</span>
+                  <span className="text-[10px] text-slate-400 font-mono">@{acc.username}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {errorMessage && (
           <div className="mb-4 flex items-start gap-2 rounded-lg bg-red-50 p-3 text-xs text-red-700 border border-red-200">
