@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import {
   BookOpen,
   DoorOpen,
@@ -20,99 +20,51 @@ import { RoomTable } from '../../components/admin/rooms/RoomTable';
 import { CreateRoomModal } from '../../components/admin/rooms/CreateRoomModal';
 import { EditRoomModal } from '../../components/admin/rooms/EditRoomModal';
 import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../../contexts/ToastContext';
-import { getApiErrorMessage } from '../../services/axiosClient';
+import { usePagination } from '../../hooks/usePagination';
+import {
+  useCoursesPagedQuery,
+  useRoomsPagedQuery,
+  useCourseMutations,
+  useRoomMutations,
+} from '../../hooks/queries/useCoursesRoomsQueries';
 
 export default function CoursesRoomsPage() {
   const { user } = useAuth();
-  const { toast } = useToast();
-
   const canManage = user?.role === 'TRAINING_ADMIN';
 
   const [activeTab, setActiveTab] = useState<'courses' | 'rooms'>('courses');
 
-  const [courses, setCourses] = useState<CourseItem[]>([]);
   const [courseFilter, setCourseFilter] = useState<CourseFilter>({ keyword: '', isActive: 'ALL' });
-  const [isCoursesLoading, setIsCoursesLoading] = useState(true);
+  const coursePagination = usePagination();
   const [isCreateCourseOpen, setIsCreateCourseOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<CourseItem | null>(null);
 
-  const [rooms, setRooms] = useState<RoomItem[]>([]);
   const [roomFilter, setRoomFilter] = useState<RoomFilter>({ keyword: '', isActive: 'ALL' });
-  const [isRoomsLoading, setIsRoomsLoading] = useState(true);
+  const roomPagination = usePagination();
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<RoomItem | null>(null);
 
-  const loadCourses = useCallback(async () => {
-    try {
-      setIsCoursesLoading(true);
-      const data = await courseService.getCourses(courseFilter);
-      setCourses(data);
-    } catch {
-      toast.error('Không thể tải danh sách khóa học');
-    } finally {
-      setIsCoursesLoading(false);
-    }
-  }, [courseFilter, toast]);
+  const { data: coursesPaged, isLoading: isCoursesLoading } = useCoursesPagedQuery(
+    courseFilter,
+    { page: coursePagination.page, size: coursePagination.size }
+  );
 
-  const loadRooms = useCallback(async () => {
-    if (!canManage) {
-      setIsRoomsLoading(false);
-      return;
-    }
-    try {
-      setIsRoomsLoading(true);
-      const data = await roomService.getRooms(roomFilter);
-      setRooms(data);
-    } catch {
-      toast.error('Không thể tải danh sách phòng học');
-    } finally {
-      setIsRoomsLoading(false);
-    }
-  }, [canManage, roomFilter, toast]);
+  const { data: roomsPaged, isLoading: isRoomsLoading } = useRoomsPagedQuery(
+    roomFilter,
+    { page: roomPagination.page, size: roomPagination.size },
+    canManage
+  );
 
-  useEffect(() => {
-    loadCourses();
-  }, [loadCourses]);
+  const courseMutations = useCourseMutations();
+  const roomMutations = useRoomMutations();
 
-  useEffect(() => {
-    if (canManage) {
-      loadRooms();
-    }
-  }, [canManage, loadRooms]);
-
-  const handleToggleCourseStatus = async (course: CourseItem) => {
-    try {
-      const nextStatus = !course.isActive;
-      await courseService.toggleCourseStatus(course.id, nextStatus);
-      toast.success(
-        nextStatus
-          ? `Đã kích hoạt môn học "${course.code}"`
-          : `Đã khóa môn học "${course.code}"`
-      );
-      await loadCourses();
-    } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err, 'Lỗi khi cập nhật trạng thái'));
-    }
-  };
-
-  const handleToggleRoomStatus = async (room: RoomItem) => {
-    try {
-      const nextStatus = !room.isActive;
-      await roomService.toggleRoomStatus(room.id, nextStatus);
-      toast.success(
-        nextStatus
-          ? `Phòng "${room.code}" đã sẵn sàng sử dụng`
-          : `Đã chuyển phòng "${room.code}" sang bảo trì`
-      );
-      await loadRooms();
-    } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err, 'Lỗi khi cập nhật trạng thái'));
-    }
-  };
+  const courses = useMemo(() => coursesPaged?.items ?? [], [coursesPaged]);
+  const rooms = useMemo(() => roomsPaged?.items ?? [], [roomsPaged]);
 
   const activeCoursesCount = courses.filter((c) => c.isActive).length;
   const activeRoomsCount = rooms.filter((r) => r.isActive).length;
+  const totalCoursesCount = coursesPaged?.totalElements ?? courses.length;
+  const totalRoomsCount = roomsPaged?.totalElements ?? rooms.length;
 
   return (
     <div className="space-y-6">
@@ -159,7 +111,7 @@ export default function CoursesRoomsPage() {
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng môn học</span>
             <BookOpen className="h-5 w-5 text-indigo-600" />
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{courses.length}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{totalCoursesCount}</p>
           <p className="text-xs text-slate-500 mt-1">{activeCoursesCount} môn đang kích hoạt</p>
         </div>
 
@@ -179,7 +131,7 @@ export default function CoursesRoomsPage() {
                 <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng phòng học</span>
                 <DoorOpen className="h-5 w-5 text-indigo-600" />
               </div>
-              <p className="mt-2 text-2xl font-bold text-slate-900">{rooms.length}</p>
+              <p className="mt-2 text-2xl font-bold text-slate-900">{totalRoomsCount}</p>
               <p className="text-xs text-slate-500 mt-1">{activeRoomsCount} phòng hoạt động</p>
             </div>
 
@@ -206,7 +158,7 @@ export default function CoursesRoomsPage() {
             }`}
           >
             <GraduationCap className="h-4 w-4" />
-            <span>Danh mục Môn học ({courses.length})</span>
+            <span>Danh mục Môn học ({totalCoursesCount})</span>
           </button>
           {canManage && (
             <button
@@ -218,7 +170,7 @@ export default function CoursesRoomsPage() {
               }`}
             >
               <DoorOpen className="h-4 w-4" />
-              <span>Danh mục Phòng học ({rooms.length})</span>
+              <span>Danh mục Phòng học ({totalRoomsCount})</span>
             </button>
           )}
         </div>
@@ -231,7 +183,10 @@ export default function CoursesRoomsPage() {
                 type="text"
                 placeholder="Tìm mã hoặc tên môn..."
                 value={courseFilter.keyword || ''}
-                onChange={(e) => setCourseFilter((prev) => ({ ...prev, keyword: e.target.value }))}
+                onChange={(e) => {
+                  setCourseFilter((prev) => ({ ...prev, keyword: e.target.value }));
+                  coursePagination.resetPage();
+                }}
                 className="rounded-xl border border-slate-300 py-1.5 pl-9 pr-3 text-xs focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 w-48 sm:w-64"
               />
             </div>
@@ -245,6 +200,7 @@ export default function CoursesRoomsPage() {
                     ...prev,
                     isActive: val === 'ALL' ? 'ALL' : val === 'true',
                   }));
+                  coursePagination.resetPage();
                 }}
                 className="rounded-xl border border-slate-300 py-1.5 px-2.5 text-xs focus:border-indigo-600 focus:outline-none"
               >
@@ -262,7 +218,10 @@ export default function CoursesRoomsPage() {
                 type="text"
                 placeholder="Tìm mã phòng, tòa nhà..."
                 value={roomFilter.keyword || ''}
-                onChange={(e) => setRoomFilter((prev) => ({ ...prev, keyword: e.target.value }))}
+                onChange={(e) => {
+                  setRoomFilter((prev) => ({ ...prev, keyword: e.target.value }));
+                  roomPagination.resetPage();
+                }}
                 className="rounded-xl border border-slate-300 py-1.5 pl-9 pr-3 text-xs focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 w-48 sm:w-64"
               />
             </div>
@@ -276,6 +235,7 @@ export default function CoursesRoomsPage() {
                     ...prev,
                     isActive: val === 'ALL' ? 'ALL' : val === 'true',
                   }));
+                  roomPagination.resetPage();
                 }}
                 className="rounded-xl border border-slate-300 py-1.5 px-2.5 text-xs focus:border-indigo-600 focus:outline-none"
               >
@@ -293,6 +253,7 @@ export default function CoursesRoomsPage() {
           courses={courses}
           isLoading={isCoursesLoading}
           canManage={canManage}
+          pagination={coursePagination.toPaginationProps(coursesPaged)}
           onEdit={async (c) => {
             try {
               const fresh = await courseService.getCourseById(c.id);
@@ -301,13 +262,16 @@ export default function CoursesRoomsPage() {
               setEditingCourse(c);
             }
           }}
-          onToggleStatus={handleToggleCourseStatus}
+          onToggleStatus={(c) => {
+            courseMutations.toggleCourseStatus(c).catch(() => {});
+          }}
         />
       ) : (
         <RoomTable
           rooms={rooms}
           isLoading={isRoomsLoading}
           canManage={canManage}
+          pagination={roomPagination.toPaginationProps(roomsPaged)}
           onEdit={async (r) => {
             try {
               const fresh = await roomService.getRoomById(r.id);
@@ -316,7 +280,9 @@ export default function CoursesRoomsPage() {
               setEditingRoom(r);
             }
           }}
-          onToggleStatus={handleToggleRoomStatus}
+          onToggleStatus={(r) => {
+            roomMutations.toggleRoomStatus(r).catch(() => {});
+          }}
         />
       )}
 
@@ -324,9 +290,7 @@ export default function CoursesRoomsPage() {
         isOpen={isCreateCourseOpen}
         onClose={() => setIsCreateCourseOpen(false)}
         onSubmit={async (payload) => {
-          await courseService.createCourse(payload);
-          toast.success(`Đã tạo thành công môn học "${payload.code}"`);
-          await loadCourses();
+          await courseMutations.createCourse(payload);
         }}
       />
 
@@ -335,9 +299,7 @@ export default function CoursesRoomsPage() {
         course={editingCourse}
         onClose={() => setEditingCourse(null)}
         onSubmit={async (id, payload) => {
-          await courseService.updateCourse(id, payload);
-          toast.success('Đã cập nhật môn học thành công');
-          await loadCourses();
+          await courseMutations.updateCourse({ id, payload });
         }}
       />
 
@@ -345,9 +307,7 @@ export default function CoursesRoomsPage() {
         isOpen={isCreateRoomOpen}
         onClose={() => setIsCreateRoomOpen(false)}
         onSubmit={async (payload) => {
-          await roomService.createRoom(payload);
-          toast.success(`Đã thêm phòng học "${payload.code}"`);
-          await loadRooms();
+          await roomMutations.createRoom(payload);
         }}
       />
 
@@ -356,12 +316,9 @@ export default function CoursesRoomsPage() {
         room={editingRoom}
         onClose={() => setEditingRoom(null)}
         onSubmit={async (id, payload) => {
-          await roomService.updateRoom(id, payload);
-          toast.success('Đã cập nhật phòng học thành công');
-          await loadRooms();
+          await roomMutations.updateRoom({ id, payload });
         }}
       />
     </div>
   );
 }
-

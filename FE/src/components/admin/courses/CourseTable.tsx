@@ -1,10 +1,12 @@
 import { Edit, Power, BookOpen, Clock, Award } from 'lucide-react';
 import type { CourseItem } from '../../../types/course';
+import { Pagination, type PaginationProps } from '../../ui/Pagination';
 
 interface CourseTableProps {
   courses: CourseItem[];
   isLoading: boolean;
   canManage: boolean;
+  pagination?: PaginationProps;
   onEdit: (course: CourseItem) => void;
   onToggleStatus: (course: CourseItem) => void;
 }
@@ -13,6 +15,7 @@ export function CourseTable({
   courses,
   isLoading,
   canManage,
+  pagination,
   onEdit,
   onToggleStatus,
 }: CourseTableProps) {
@@ -125,6 +128,11 @@ export function CourseTable({
           </tbody>
         </table>
       </div>
+      {pagination && (
+        <div className="px-5 pb-4">
+          <Pagination {...pagination} />
+        </div>
+      )}
     </div>
   );
 }

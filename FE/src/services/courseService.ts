@@ -1,4 +1,6 @@
 import { axiosClient } from './axiosClient';
+import { normalizePageRequest, toPageResult } from './apiUtils';
+import { LOOKUP_PAGE_SIZE, type PageRequest, type PageResult } from '../types/pagination';
 import type { CourseItem, CreateCoursePayload, UpdateCoursePayload, CourseFilter } from '../types/course';
 
 interface BackendCourseResponse {
@@ -22,30 +24,47 @@ interface PageResponse<T> {
   totalPages: number;
 }
 
-export const courseService = {
-  async getCourses(filter: CourseFilter = {}): Promise<CourseItem[]> {
-    const params: Record<string, string | boolean | number> = {
-      page: 0,
-      size: 100,
-    };
-    if (filter.keyword && filter.keyword.trim()) params.keyword = filter.keyword.trim();
-    if (filter.isActive !== undefined && filter.isActive !== 'ALL') params.isActive = filter.isActive;
+function mapCourse(c: BackendCourseResponse): CourseItem {
+  return {
+    id: String(c.id),
+    code: c.code,
+    name: c.name,
+    credits: c.credits,
+    durationHours: c.durationHours,
+    minAttendancePct: Number(c.minAttendancePct),
+    passScore: Number(c.passScore),
+    midtermWeight: Number(c.midtermWeight),
+    finalWeight: Number(c.finalWeight),
+    isActive: c.isActive,
+  };
+}
 
+function buildCourseQueryParams(
+  filter: CourseFilter,
+  pageReq: Required<PageRequest>
+): Record<string, string | boolean | number> {
+  const params: Record<string, string | boolean | number> = {
+    page: pageReq.page,
+    size: pageReq.size,
+  };
+  if (filter.keyword && filter.keyword.trim()) params.keyword = filter.keyword.trim();
+  if (filter.isActive !== undefined && filter.isActive !== 'ALL') params.isActive = filter.isActive;
+  return params;
+}
+
+export const courseService = {
+  async getCoursesPaged(filter: CourseFilter = {}, pageReq?: PageRequest): Promise<PageResult<CourseItem>> {
+    const normalized = normalizePageRequest(pageReq);
+    const params = buildCourseQueryParams(filter, normalized);
+    const res = await axiosClient.get<PageResponse<BackendCourseResponse>>('/courses', { params });
+    return toPageResult(res.data, mapCourse, normalized.page, normalized.size);
+  },
+
+  async getCourses(filter: CourseFilter = {}): Promise<CourseItem[]> {
+    const params = buildCourseQueryParams(filter, { page: 0, size: LOOKUP_PAGE_SIZE });
     const res = await axiosClient.get<PageResponse<BackendCourseResponse>>('/courses', { params });
     const items = res.data?.items || [];
-
-    return items.map((c) => ({
-      id: String(c.id),
-      code: c.code,
-      name: c.name,
-      credits: c.credits,
-      durationHours: c.durationHours,
-      minAttendancePct: Number(c.minAttendancePct),
-      passScore: Number(c.passScore),
-      midtermWeight: Number(c.midtermWeight),
-      finalWeight: Number(c.finalWeight),
-      isActive: c.isActive,
-    }));
+    return items.map(mapCourse);
   },
 
   async getCourseById(id: string): Promise<CourseItem> {

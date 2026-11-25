@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { UserStatsCards } from '../../components/admin/users/UserStatsCards';
 import { UserFilters } from '../../components/admin/users/UserFilters';
 import { UserTable } from '../../components/admin/users/UserTable';
@@ -7,8 +7,6 @@ import { EditUserModal } from '../../components/admin/users/EditUserModal';
 import { ChangeRoleModal } from '../../components/admin/users/ChangeRoleModal';
 import { ResetPasswordModal } from '../../components/admin/users/ResetPasswordModal';
 import { AssignCoursesModal } from '../../components/admin/users/AssignCoursesModal';
-import { userService } from '../../services/userService';
-import { getApiErrorMessage } from '../../services/axiosClient';
 import type {
   ManagedUser,
   UserFilter,
@@ -18,16 +16,20 @@ import type {
 } from '../../types/user';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { usePagination } from '../../hooks/usePagination';
+import {
+  useUsersPagedQuery,
+  useUsersStatsQuery,
+  useUserMutations,
+} from '../../hooks/queries/useUsersQueries';
 import { RefreshCw } from 'lucide-react';
 
 export default function UsersPage() {
   const { user: currentAuthUser } = useAuth();
   const { toast } = useToast();
 
-  const [users, setUsers] = useState<ManagedUser[]>([]);
-  const [allUsersCount, setAllUsersCount] = useState<ManagedUser[]>([]);
   const [filter, setFilter] = useState<UserFilter>({ role: 'ALL', status: 'ALL', keyword: '' });
-  const [isLoading, setIsLoading] = useState(true);
+  const pagination = usePagination();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedUserForEdit, setSelectedUserForEdit] = useState<ManagedUser | null>(null);
@@ -35,116 +37,61 @@ export default function UsersPage() {
   const [selectedUserForResetPass, setSelectedUserForResetPass] = useState<ManagedUser | null>(null);
   const [selectedUserForAssignCourses, setSelectedUserForAssignCourses] = useState<ManagedUser | null>(null);
 
-  const loadStats = useCallback(async () => {
-    try {
-      const fullData = await userService.getUsers();
-      setAllUsersCount(fullData);
-    } catch (err) {
-      console.warn('Không thể tải dữ liệu thống kê tài khoản:', err);
-    }
-  }, []);
+  const {
+    data: pagedData,
+    isLoading,
+    isFetching,
+  } = useUsersPagedQuery(filter, { page: pagination.page, size: pagination.size });
 
-  useEffect(() => {
-    loadStats();
-  }, [loadStats]);
+  const { data: allUsersCount = [] } = useUsersStatsQuery();
+  const mutations = useUserMutations();
 
-  const loadData = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const filteredData = await userService.getUsers(filter);
-      setUsers(filteredData);
-    } catch {
-      toast.error('Không thể tải danh sách tài khoản');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filter, toast]);
+  const users = useMemo(() => pagedData?.items ?? [], [pagedData]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const handleFilterChange = useCallback(
+    (nextFilter: UserFilter) => {
+      setFilter(nextFilter);
+      pagination.resetPage();
+    },
+    [pagination]
+  );
 
   const handleCreateUser = async (payload: CreateUserPayload) => {
-    try {
-      const created = await userService.createUser(payload);
-      toast.success(`Đã tạo thành công tài khoản "${created.username}"`);
-      loadData();
-      loadStats();
-    } catch (err: unknown) {
-      loadData();
-      loadStats();
-      const msg = getApiErrorMessage(err, 'Lỗi khi tạo tài khoản');
-      toast.error(msg);
-      throw err;
-    }
+    await mutations.createUser(payload);
   };
 
   const handleUpdateUser = async (id: string, payload: UpdateUserPayload) => {
-    try {
-      await userService.updateUser(id, payload, selectedUserForEdit || undefined);
-      toast.success('Cập nhật thông tin hồ sơ thành công');
-      loadData();
-    } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
-      const msg = axiosErr.response?.data?.message || (err instanceof Error ? err.message : 'Lỗi khi cập nhật hồ sơ');
-      toast.error(msg);
-      throw err;
-    }
+    await mutations.updateUser({
+      id,
+      payload,
+      currentUser: selectedUserForEdit || undefined,
+    });
   };
 
   const handleToggleStatus = async (user: ManagedUser) => {
-    try {
-      const updated = await userService.toggleUserStatus(user.id, currentAuthUser?.id);
-      if (updated.isActive) {
-        toast.success(`Đã kích hoạt lại tài khoản "${user.username}"`);
-      } else {
-        toast.warning(`Đã vô hiệu hóa tài khoản "${user.username}"`);
-      }
-      loadData();
-      loadStats();
-    } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err, 'Không thể thay đổi trạng thái'));
-    }
+    await mutations
+      .toggleUserStatus({
+        id: user.id,
+        currentIsActive: user.isActive,
+        username: user.username,
+      })
+      .catch(() => {});
   };
 
   const handleUnlockUser = async (user: ManagedUser) => {
-    try {
-      await userService.unlockUser(user.id);
-      toast.success(`Đã mở khóa tài khoản "${user.username}" thành công`);
-      loadData();
-      loadStats();
-    } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err, 'Không thể mở khóa tài khoản'));
-    }
+    await mutations.unlockUser({ id: user.id, username: user.username }).catch(() => {});
   };
 
   const handleChangeRole = async (id: string, newRole: SystemRole) => {
-    try {
-      await userService.changeRole(id, newRole, currentAuthUser?.id);
-      if (newRole === 'TRAINING_ADMIN') {
-        toast.success('Đã nâng quyền lên Admin đào tạo thành công');
-      } else {
-        toast.success('Đã chuyển vai trò về Quản lý đào tạo thành công');
-      }
-      loadData();
-      loadStats();
-    } catch (err: unknown) {
-      const msg = getApiErrorMessage(err, 'Lỗi khi chuyển đổi vai trò');
-      toast.error(msg);
-      throw err;
-    }
+    await mutations.changeUserRole({
+      id,
+      newRole,
+      currentAdminId: currentAuthUser?.id,
+    });
   };
 
   const handleResetPassword = async (id: string, temporaryPassword?: string) => {
-    try {
-      const result = await userService.resetPassword(id, temporaryPassword);
-      toast.success(result.message, { duration: 5000 });
-      loadData();
-    } catch (err: unknown) {
-      const msg = getApiErrorMessage(err, 'Lỗi khi đặt lại mật khẩu');
-      toast.error(msg);
-      throw err;
-    }
+    await mutations.resetUserPassword({ id, temporaryPassword });
   };
 
   return (
@@ -155,13 +102,13 @@ export default function UsersPage() {
         </div>
 
         <button
-          onClick={loadData}
-          disabled={isLoading}
+          onClick={() => mutations.invalidateUsers()}
+          disabled={isLoading || isFetching}
           title="Làm mới dữ liệu"
           className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-medium text-slate-700 shadow-xs hover:bg-slate-50 transition cursor-pointer self-start sm:self-auto"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin text-indigo-600' : 'text-slate-500'}`} />
-          <span>{isLoading ? 'Đang tải...' : 'Làm mới'}</span>
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading || isFetching ? 'animate-spin text-indigo-600' : 'text-slate-500'}`} />
+          <span>{isLoading || isFetching ? 'Đang tải...' : 'Làm mới'}</span>
         </button>
       </div>
 
@@ -169,19 +116,20 @@ export default function UsersPage() {
 
       <UserFilters
         filter={filter}
-        onFilterChange={setFilter}
+        onFilterChange={handleFilterChange}
         onCreateClick={() => setIsCreateModalOpen(true)}
       />
 
       <UserTable
         users={users}
         currentAdminUsername={currentAuthUser?.username || ''}
-        onEdit={user => setSelectedUserForEdit(user)}
-        onChangeRole={user => setSelectedUserForRoleChange(user)}
+        pagination={pagination.toPaginationProps(pagedData)}
+        onEdit={(user) => setSelectedUserForEdit(user)}
+        onChangeRole={(user) => setSelectedUserForRoleChange(user)}
         onToggleStatus={handleToggleStatus}
         onUnlock={handleUnlockUser}
-        onResetPassword={user => setSelectedUserForResetPass(user)}
-        onAssignCourses={user => setSelectedUserForAssignCourses(user)}
+        onResetPassword={(user) => setSelectedUserForResetPass(user)}
+        onAssignCourses={(user) => setSelectedUserForAssignCourses(user)}
       />
 
       <CreateUserModal
@@ -217,7 +165,7 @@ export default function UsersPage() {
         onClose={() => setSelectedUserForAssignCourses(null)}
         onSuccess={() => {
           toast.success('Phân công môn học thành công');
-          loadData();
+          mutations.invalidateUsers();
         }}
       />
     </div>

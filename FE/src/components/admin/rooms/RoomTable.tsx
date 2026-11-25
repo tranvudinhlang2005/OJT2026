@@ -1,10 +1,12 @@
 import { Edit, Power, DoorOpen, Users } from 'lucide-react';
 import type { RoomItem } from '../../../types/room';
+import { Pagination, type PaginationProps } from '../../ui/Pagination';
 
 interface RoomTableProps {
   rooms: RoomItem[];
   isLoading: boolean;
   canManage: boolean;
+  pagination?: PaginationProps;
   onEdit: (room: RoomItem) => void;
   onToggleStatus: (room: RoomItem) => void;
 }
@@ -13,6 +15,7 @@ export function RoomTable({
   rooms,
   isLoading,
   canManage,
+  pagination,
   onEdit,
   onToggleStatus,
 }: RoomTableProps) {
@@ -103,6 +106,11 @@ export function RoomTable({
           </tbody>
         </table>
       </div>
+      {pagination && (
+        <div className="px-5 pb-4">
+          <Pagination {...pagination} />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,6 @@
 import { axiosClient } from './axiosClient';
+import { normalizePageRequest, toPageResult } from './apiUtils';
+import { LOOKUP_PAGE_SIZE, type PageRequest, type PageResult } from '../types/pagination';
 import type { RoomItem, CreateRoomPayload, UpdateRoomPayload, RoomFilter } from '../types/room';
 
 interface BackendRoomResponse {
@@ -16,24 +18,41 @@ interface PageResponse<T> {
   totalPages: number;
 }
 
-export const roomService = {
-  async getRooms(filter: RoomFilter = {}): Promise<RoomItem[]> {
-    const params: Record<string, string | boolean | number> = {
-      page: 0,
-      size: 100,
-    };
-    if (filter.keyword && filter.keyword.trim()) params.keyword = filter.keyword.trim();
-    if (filter.isActive !== undefined && filter.isActive !== 'ALL') params.isActive = filter.isActive;
+function mapRoom(r: BackendRoomResponse): RoomItem {
+  return {
+    id: String(r.id),
+    code: r.code,
+    capacity: r.capacity,
+    isActive: r.isActive,
+  };
+}
 
+function buildRoomQueryParams(
+  filter: RoomFilter,
+  pageReq: Required<PageRequest>
+): Record<string, string | boolean | number> {
+  const params: Record<string, string | boolean | number> = {
+    page: pageReq.page,
+    size: pageReq.size,
+  };
+  if (filter.keyword && filter.keyword.trim()) params.keyword = filter.keyword.trim();
+  if (filter.isActive !== undefined && filter.isActive !== 'ALL') params.isActive = filter.isActive;
+  return params;
+}
+
+export const roomService = {
+  async getRoomsPaged(filter: RoomFilter = {}, pageReq?: PageRequest): Promise<PageResult<RoomItem>> {
+    const normalized = normalizePageRequest(pageReq);
+    const params = buildRoomQueryParams(filter, normalized);
+    const res = await axiosClient.get<PageResponse<BackendRoomResponse>>('/rooms', { params });
+    return toPageResult(res.data, mapRoom, normalized.page, normalized.size);
+  },
+
+  async getRooms(filter: RoomFilter = {}): Promise<RoomItem[]> {
+    const params = buildRoomQueryParams(filter, { page: 0, size: LOOKUP_PAGE_SIZE });
     const res = await axiosClient.get<PageResponse<BackendRoomResponse>>('/rooms', { params });
     const items = res.data?.items || [];
-
-    return items.map((r) => ({
-      id: String(r.id),
-      code: r.code,
-      capacity: r.capacity,
-      isActive: r.isActive,
-    }));
+    return items.map(mapRoom);
   },
 
   async getRoomById(id: string): Promise<RoomItem> {

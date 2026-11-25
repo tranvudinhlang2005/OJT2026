@@ -6,16 +6,16 @@ import {
   ShieldCheck,
   Shield,
   Power,
-  ChevronLeft,
-  ChevronRight,
   Unlock,
   BookOpen,
 } from 'lucide-react';
 import type { ManagedUser, SystemRole } from '../../../types/user';
+import { Pagination, type PaginationProps } from '../../ui/Pagination';
 
 interface UserTableProps {
   users: ManagedUser[];
   currentAdminUsername?: string;
+  pagination?: PaginationProps;
   onEdit: (user: ManagedUser) => void;
   onChangeRole: (user: ManagedUser) => void;
   onToggleStatus: (user: ManagedUser) => void;
@@ -27,6 +27,7 @@ interface UserTableProps {
 export const UserTable: React.FC<UserTableProps> = ({
   users,
   currentAdminUsername = 'admin',
+  pagination,
   onEdit,
   onChangeRole,
   onToggleStatus,
@@ -34,14 +35,10 @@ export const UserTable: React.FC<UserTableProps> = ({
   onResetPassword,
   onAssignCourses,
 }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 8;
   const [nowTimestamp] = useState(() => Date.now());
-
-  const totalPages = Math.ceil(users.length / pageSize) || 1;
-  const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
-  const startIndex = (safeCurrentPage - 1) * pageSize;
-  const currentUsers = users.slice(startIndex, startIndex + pageSize);
+  const pageSize = pagination?.pageSize ?? 20;
+  const currentPage = pagination?.currentPage ?? 1;
+  const startIndex = (currentPage - 1) * pageSize;
 
   const getRoleBadge = (role: SystemRole) => {
     switch (role) {
@@ -118,14 +115,14 @@ export const UserTable: React.FC<UserTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {currentUsers.length === 0 ? (
+            {users.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
                   Không tìm thấy tài khoản nào phù hợp với bộ lọc.
                 </td>
               </tr>
             ) : (
-              currentUsers.map((user, idx) => {
+              users.map((user, idx) => {
                 const isSelf = user.username === currentAdminUsername;
                 const isDefaultAdmin = user.username === 'admin';
                 const isTemporarilyLocked = Boolean(user.lockedUntil && new Date(user.lockedUntil).getTime() > nowTimestamp);
@@ -292,37 +289,9 @@ export const UserTable: React.FC<UserTableProps> = ({
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
-          <div className="text-xs text-slate-500">
-            Hiển thị <span className="font-semibold text-slate-700">{startIndex + 1}</span> đến{' '}
-            <span className="font-semibold text-slate-700">
-              {Math.min(startIndex + pageSize, users.length)}
-            </span>{' '}
-            trong tổng số <span className="font-semibold text-slate-700">{users.length}</span> người dùng
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-              disabled={currentPage === 1}
-              className="flex items-center gap-1 rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <ChevronLeft className="h-3.5 w-3.5" />
-              Trước
-            </button>
-            <span className="text-xs font-medium text-slate-700">
-              Trang {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="flex items-center gap-1 rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-            >
-              Sau
-              <ChevronRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
+      {pagination && (
+        <div className="px-5 pb-4">
+          <Pagination {...pagination} />
         </div>
       )}
     </div>

@@ -1,4 +1,6 @@
 import { axiosClient } from './axiosClient';
+import { normalizePageRequest, toPageResult } from './apiUtils';
+import { LOOKUP_PAGE_SIZE, type PageRequest, type PageResult } from '../types/pagination';
 import type {
   ManagedUser,
   UserFilter,
@@ -94,96 +96,127 @@ export function generateTemporaryPassword(): string {
   return result;
 }
 
-export const userService = {
-  async getUsers(filter: UserFilter = {}): Promise<ManagedUser[]> {
-    const params: Record<string, string | boolean | number> = {
-      page: 0,
-      size: 100,
+function buildUserQueryParams(
+  filter: UserFilter,
+  pageReq: Required<PageRequest>
+): Record<string, string | boolean | number> {
+  const params: Record<string, string | boolean | number> = {
+    page: pageReq.page,
+    size: pageReq.size,
+  };
+
+  if (filter.role && filter.role !== 'ALL') {
+    params.role = filter.role;
+  }
+  if (filter.status && filter.status !== 'ALL') {
+    if (filter.status === 'ACTIVE') params.isActive = true;
+    if (filter.status === 'INACTIVE') params.isActive = false;
+  }
+  if (filter.keyword && filter.keyword.trim()) {
+    params.keyword = filter.keyword.trim();
+  }
+
+  return params;
+}
+
+async function enrichUsersWithProfiles(
+  users: BackendUserResponse[],
+  filter: UserFilter
+): Promise<ManagedUser[]> {
+  const studentsMap = new Map<number, BackendStudentResponse>();
+  const instructorsMap = new Map<number, BackendInstructorSummary>();
+
+  const hasStudents = users.some((u) => u.role === 'STUDENT');
+  const hasInstructors = users.some((u) => u.role === 'INSTRUCTOR');
+
+  if (hasStudents || hasInstructors) {
+    const fetchTasks: Promise<void>[] = [];
+    if (hasStudents) {
+      fetchTasks.push(fetchAuxiliaryUserMap('/students', studentsMap));
+    }
+    if (hasInstructors) {
+      fetchTasks.push(fetchAuxiliaryUserMap('/instructors', instructorsMap));
+    }
+    await Promise.allSettled(fetchTasks);
+  }
+
+  const mapped = users.map((u) => {
+    const std = studentsMap.get(u.id);
+    const inst = instructorsMap.get(u.id);
+
+    const managed: ManagedUser = {
+      id: String(u.id),
+      username: u.username,
+      email: u.email,
+      fullName: u.fullName,
+      role: u.role,
+      isActive: u.isActive,
+      failedLoginCount: u.failedLoginCount ?? 0,
+      lockedUntil: u.lockedUntil,
+      createdAt: u.createdAt || new Date().toISOString(),
     };
 
-    if (filter.role && filter.role !== 'ALL') {
-      params.role = filter.role;
-    }
-    if (filter.status && filter.status !== 'ALL') {
-      if (filter.status === 'ACTIVE') params.isActive = true;
-      if (filter.status === 'INACTIVE') params.isActive = false;
-    }
-    if (filter.keyword && filter.keyword.trim()) {
-      params.keyword = filter.keyword.trim();
-    }
-
-    const usersRes = await axiosClient.get<PageResponse<BackendUserResponse>>('/users', { params });
-    const users = usersRes.data?.items || [];
-
-    const studentsMap = new Map<number, BackendStudentResponse>();
-    const instructorsMap = new Map<number, BackendInstructorSummary>();
-
-    const hasStudents = users.some((u) => u.role === 'STUDENT');
-    const hasInstructors = users.some((u) => u.role === 'INSTRUCTOR');
-
-    if (hasStudents || hasInstructors) {
-      const fetchTasks: Promise<void>[] = [];
-      if (hasStudents) {
-        fetchTasks.push(fetchAuxiliaryUserMap('/students', studentsMap));
-      }
-      if (hasInstructors) {
-        fetchTasks.push(fetchAuxiliaryUserMap('/instructors', instructorsMap));
-      }
-      await Promise.allSettled(fetchTasks);
-    }
-
-    const mapped = users.map((u) => {
-      const std = studentsMap.get(u.id);
-      const inst = instructorsMap.get(u.id);
-
-      const managed: ManagedUser = {
-        id: String(u.id),
-        username: u.username,
-        email: u.email,
-        fullName: u.fullName,
-        role: u.role,
-        isActive: u.isActive,
-        failedLoginCount: u.failedLoginCount ?? 0,
-        lockedUntil: u.lockedUntil,
-        createdAt: u.createdAt || new Date().toISOString(),
+    if (u.role === 'STUDENT' && std) {
+      managed.studentProfile = {
+        id: String(std.id),
+        studentCode: std.studentCode,
+        dateOfBirth: std.dateOfBirth,
+        homeroomClass: std.homeroomClass || 'Chưa gán',
+        status: std.status,
       };
-
-      if (u.role === 'STUDENT' && std) {
-        managed.studentProfile = {
-          id: String(std.id),
-          studentCode: std.studentCode,
-          dateOfBirth: std.dateOfBirth,
-          homeroomClass: std.homeroomClass || 'Chưa gán',
-          status: std.status,
-        };
-      } else if (u.role === 'INSTRUCTOR' && inst) {
-        managed.instructorProfile = {
-          id: String(inst.id),
-          instructorCode: inst.instructorCode,
-          department: inst.department || 'Chưa cập nhật',
-          phone: inst.phone || '',
-          teachingActive: inst.isActive,
-          teachableCourses: [],
-        };
-      }
-
-      return managed;
-    });
-
-    if (filter.status && filter.status !== 'ALL') {
-      const now = Date.now();
-      if (filter.status === 'LOCKED') {
-        return mapped.filter((u) => Boolean(u.lockedUntil && new Date(u.lockedUntil).getTime() > now));
-      }
-      if (filter.status === 'ACTIVE') {
-        return mapped.filter((u) => u.isActive && !(u.lockedUntil && new Date(u.lockedUntil).getTime() > now));
-      }
-      if (filter.status === 'INACTIVE') {
-        return mapped.filter((u) => !u.isActive);
-      }
+    } else if (u.role === 'INSTRUCTOR' && inst) {
+      managed.instructorProfile = {
+        id: String(inst.id),
+        instructorCode: inst.instructorCode,
+        department: inst.department || 'Chưa cập nhật',
+        phone: inst.phone || '',
+        teachingActive: inst.isActive,
+        teachableCourses: [],
+      };
     }
 
-    return mapped;
+    return managed;
+  });
+
+  if (filter.status && filter.status !== 'ALL') {
+    const now = Date.now();
+    if (filter.status === 'LOCKED') {
+      return mapped.filter((u) => Boolean(u.lockedUntil && new Date(u.lockedUntil).getTime() > now));
+    }
+    if (filter.status === 'ACTIVE') {
+      return mapped.filter((u) => u.isActive && !(u.lockedUntil && new Date(u.lockedUntil).getTime() > now));
+    }
+    if (filter.status === 'INACTIVE') {
+      return mapped.filter((u) => !u.isActive);
+    }
+  }
+
+  return mapped;
+}
+
+export const userService = {
+  async getUsersPaged(filter: UserFilter = {}, pageReq?: PageRequest): Promise<PageResult<ManagedUser>> {
+    const normalized = normalizePageRequest(pageReq);
+    const params = buildUserQueryParams(filter, normalized);
+    const usersRes = await axiosClient.get<PageResponse<BackendUserResponse>>('/users', { params });
+    const rawUsers = usersRes.data?.items || [];
+    const enriched = await enrichUsersWithProfiles(rawUsers, filter);
+    return toPageResult(
+      {
+        ...usersRes.data,
+        items: enriched,
+      },
+      (item) => item,
+      normalized.page,
+      normalized.size
+    );
+  },
+
+  async getUsers(filter: UserFilter = {}): Promise<ManagedUser[]> {
+    const params = buildUserQueryParams(filter, { page: 0, size: LOOKUP_PAGE_SIZE });
+    const usersRes = await axiosClient.get<PageResponse<BackendUserResponse>>('/users', { params });
+    const rawUsers = usersRes.data?.items || [];
+    return enrichUsersWithProfiles(rawUsers, filter);
   },
 
   async getStudentById(id: string): Promise<BackendStudentResponse> {
@@ -388,10 +421,8 @@ export const userService = {
     };
   },
 
-  async toggleUserStatus(id: string, _currentAdminId?: string): Promise<ManagedUser> {
-    const users = await this.getUsers();
-    const current = users.find((u) => u.id === id);
-    const nextStatus = current ? !current.isActive : true;
+  async toggleUserStatus(id: string, currentIsActive: boolean): Promise<ManagedUser> {
+    const nextStatus = !currentIsActive;
 
     const res = await axiosClient.patch<BackendUserResponse>(`/users/${id}/status`, { isActive: nextStatus });
     const u = res.data;
