@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { Search, ShieldCheck, ArrowRight, User, Clock, FileSpreadsheet } from 'lucide-react';
 import type { GradeAuditLogItem } from '../../../types/dashboard';
 import { formatDateTime } from '../../../utils/dateFormat';
+import { Pagination, type PaginationProps } from '../../ui/Pagination';
 
 interface GradeAuditTableProps {
   logs: GradeAuditLogItem[];
   isLoading: boolean;
+  pagination?: PaginationProps;
 }
 
-export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
+export function GradeAuditTable({ logs, isLoading, pagination }: GradeAuditTableProps) {
   const [keyword, setKeyword] = useState('');
   const [selectedScoreType, setSelectedScoreType] = useState<'ALL' | 'MIDTERM' | 'FINAL'>('ALL');
 
@@ -161,6 +163,12 @@ export function GradeAuditTable({ logs, isLoading }: GradeAuditTableProps) {
           </tbody>
         </table>
       </div>
+
+      {pagination && (
+        <div className="px-6 pb-4">
+          <Pagination {...pagination} />
+        </div>
+      )}
 
       <div className="border-t border-slate-200 px-6 py-3 text-xs text-slate-500 flex items-center justify-between">
         <span>Tổng cộng {filtered.length} lượt điều chỉnh điểm đã được ghi nhận</span>

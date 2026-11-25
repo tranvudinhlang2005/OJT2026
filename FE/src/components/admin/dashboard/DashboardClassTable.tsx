@@ -1,16 +1,16 @@
 import { useState } from 'react';
-import { Search, ChevronLeft, ChevronRight, Award } from 'lucide-react';
+import { Search, Award } from 'lucide-react';
 import type { DashboardClassItem } from '../../../types/dashboard';
+import { Pagination, type PaginationProps } from '../../ui/Pagination';
 
 interface DashboardClassTableProps {
   classes: DashboardClassItem[];
   isLoading: boolean;
+  pagination?: PaginationProps;
 }
 
-export function DashboardClassTable({ classes, isLoading }: DashboardClassTableProps) {
+export function DashboardClassTable({ classes, isLoading, pagination }: DashboardClassTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 8;
 
   const filtered = classes.filter((c) => {
     if (!searchTerm.trim()) return true;
@@ -18,8 +18,7 @@ export function DashboardClassTable({ classes, isLoading }: DashboardClassTableP
     return c.classCode.toLowerCase().includes(kw) || c.courseName.toLowerCase().includes(kw);
   });
 
-  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
-  const paginated = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginated = filtered;
 
   const getStatusBadge = (status: DashboardClassItem['status']) => {
     switch (status) {
@@ -73,7 +72,6 @@ export function DashboardClassTable({ classes, isLoading }: DashboardClassTableP
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
-              setCurrentPage(1);
             }}
             className="w-full rounded-lg border border-slate-300 py-1.5 pl-8 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
           />
@@ -173,34 +171,11 @@ export function DashboardClassTable({ classes, isLoading }: DashboardClassTableP
         </table>
       </div>
 
-      <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3 text-xs text-slate-500">
-        <span>
-          Hiển thị {(currentPage - 1) * pageSize + 1} -{' '}
-          {Math.min(currentPage * pageSize, filtered.length)} trên tổng số{' '}
-          {filtered.length} lớp
-        </span>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            disabled={currentPage === 1}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </button>
-          <span className="px-2 font-semibold text-slate-700">
-            {currentPage} / {totalPages}
-          </span>
-          <button
-            type="button"
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            disabled={currentPage >= totalPages}
-            className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition"
-          >
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+      {pagination && (
+        <div className="px-6 pb-4">
+          <Pagination {...pagination} />
         </div>
-      </div>
+      )}
     </div>
   );
 }

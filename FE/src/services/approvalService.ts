@@ -1,4 +1,7 @@
 import { axiosClient } from './axiosClient';
+import { toPageResult } from './apiUtils';
+import type { PageRequest, PageResult } from '../types/pagination';
+import type { ClassOffering } from '../types/classOffering';
 import type {
   ApprovalFilter,
   ApprovalStats,
@@ -31,7 +34,61 @@ interface BackendClassResultsResponse {
   }>;
 }
 
+function mapClassToApprovalSummary(cls: ClassOffering): ApprovalSummaryItem {
+  return {
+    classId: cls.id,
+    classCode: cls.classCode,
+    courseCode: cls.course.code,
+    courseName: cls.course.name,
+    semester: cls.semester,
+    instructorName: cls.instructor?.fullName || 'Chưa phân công',
+    classStatus: cls.status,
+    gradingStatus: cls.gradingStatus,
+    studentsCount: cls.enrolledCount,
+    sessionsCount: 0,
+    unlockedSessionsCount: 0,
+    submittedAt: cls.submittedAt || undefined,
+    confirmedAt: undefined,
+    returnReason: cls.returnReason || undefined,
+    hasIncompleteGrades: false,
+  };
+}
+
 export const approvalService = {
+  async getApprovalListPaged(
+    filter: ApprovalFilter = {},
+    pageReq?: PageRequest
+  ): Promise<PageResult<ApprovalSummaryItem>> {
+    const paged = await classService.getClassesPaged(
+      {
+        semester: filter.semester,
+        keyword: filter.keyword,
+        gradingStatus:
+          filter.gradingStatus && filter.gradingStatus !== 'ALL' && filter.gradingStatus !== 'DRAFT'
+            ? filter.gradingStatus
+            : undefined,
+      },
+      pageReq
+    );
+
+    const filtered = paged.items.filter((cls) => {
+      if (filter.gradingStatus === 'DRAFT') {
+        return cls.gradingStatus === 'DRAFT' && Boolean(cls.returnReason);
+      }
+      return true;
+    });
+
+    return toPageResult(
+      {
+        ...paged,
+        items: filtered.map(mapClassToApprovalSummary),
+      },
+      (item) => item,
+      paged.page,
+      paged.size
+    );
+  },
+
   async getApprovalList(filter: ApprovalFilter = {}): Promise<ApprovalSummaryItem[]> {
     const classes = await classService.getClasses({
       semester: filter.semester,
@@ -48,23 +105,7 @@ export const approvalService = {
       return true;
     });
 
-    return targetClasses.map((cls) => ({
-      classId: cls.id,
-      classCode: cls.classCode,
-      courseCode: cls.course.code,
-      courseName: cls.course.name,
-      semester: cls.semester,
-      instructorName: cls.instructor?.fullName || 'Chưa phân công',
-      classStatus: cls.status,
-      gradingStatus: cls.gradingStatus,
-      studentsCount: cls.enrolledCount,
-      sessionsCount: 0,
-      unlockedSessionsCount: 0,
-      submittedAt: cls.submittedAt || undefined,
-      confirmedAt: undefined,
-      returnReason: cls.returnReason || undefined,
-      hasIncompleteGrades: false,
-    }));
+    return targetClasses.map(mapClassToApprovalSummary);
   },
 
   async getApprovalStats(): Promise<ApprovalStats> {

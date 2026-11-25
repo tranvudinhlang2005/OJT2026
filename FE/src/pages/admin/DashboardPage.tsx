@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   LayoutDashboard,
   ShieldCheck,
@@ -11,22 +12,39 @@ import { DashboardFilters } from '../../components/admin/dashboard/DashboardFilt
 import { DashboardClassTable } from '../../components/admin/dashboard/DashboardClassTable';
 import { SecurityAlertsCard } from '../../components/admin/dashboard/SecurityAlertsCard';
 import { GradeAuditTable } from '../../components/admin/dashboard/GradeAuditTable';
-import { dashboardService } from '../../services/dashboardService';
-import { classService } from '../../services/classService';
-import type {
-  DashboardClassItem,
-  DashboardFilter,
-  DashboardSummary,
-  GradeAuditLogItem,
-  SecurityAlerts,
-} from '../../types/dashboard';
-import type { CourseSummary } from '../../types/classOffering';
+import type { DashboardFilter, DashboardSummary } from '../../types/dashboard';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
+import { usePagination } from '../../hooks/usePagination';
+import { queryKeys } from '../../queries/queryKeys';
+import { useClassCoursesLookupQuery } from '../../hooks/queries/useAdminClassesQueries';
+import {
+  useSemestersQuery,
+  useDashboardSummaryQuery,
+  useDashboardClassesPagedQuery,
+  useSecurityAlertsQuery,
+  useGradeAuditLogsPagedQuery,
+} from '../../hooks/queries/useDashboardQueries';
+
+const EMPTY_SUMMARY: DashboardSummary = {
+  classCountsByStatus: {
+    DRAFT: 0,
+    OPEN: 0,
+    IN_PROGRESS: 0,
+    CLOSED: 0,
+    CANCELLED: 0,
+  },
+  totalEnrollments: 0,
+  fillRate: null,
+  completionRate: null,
+  averageAttendanceRate: null,
+  totalClasses: 0,
+};
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const isAdmin = user?.role === 'TRAINING_ADMIN';
   const isManager = user?.role === 'TRAINING_MANAGER';
@@ -34,93 +52,58 @@ export default function DashboardPage() {
   const canViewAudit = isAdmin;
 
   const [activeTab, setActiveTab] = useState<'overview' | 'audit'>('overview');
-
-  const [summary, setSummary] = useState<DashboardSummary>({
-    classCountsByStatus: {
-      DRAFT: 0,
-      OPEN: 0,
-      IN_PROGRESS: 0,
-      CLOSED: 0,
-      CANCELLED: 0,
-    },
-    totalEnrollments: 0,
-    fillRate: null,
-    completionRate: null,
-    averageAttendanceRate: null,
-    totalClasses: 0,
-  });
-
-  const [dashboardClasses, setDashboardClasses] = useState<DashboardClassItem[]>([]);
-  const [securityAlerts, setSecurityAlerts] = useState<SecurityAlerts | null>(null);
-  const [gradeLogs, setGradeLogs] = useState<GradeAuditLogItem[]>([]);
-
-  const [courses, setCourses] = useState<CourseSummary[]>([]);
-  const [semesters, setSemesters] = useState<string[]>([]);
-
   const [filter, setFilter] = useState<DashboardFilter>({
     semester: 'ALL',
     courseId: 'ALL',
     from: '',
     to: '',
   });
-
-  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    async function loadMetadata() {
-      try {
-        const [cList, sems] = await Promise.all([
-          classService.getCourses(),
-          dashboardService.getSemesters(),
-        ]);
-        setCourses(cList);
-        setSemesters(sems);
-      } catch {
-        toast.error('Không thể tải danh mục bổ trợ cho Dashboard.');
-      }
-    }
-    loadMetadata();
-  }, [toast]);
+  const classPagination = usePagination();
+  const auditPagination = usePagination();
 
-  const loadDashboardData = useCallback(async (isRefreshAction = false) => {
+  const { data: courses = [] } = useClassCoursesLookupQuery();
+  const { data: semesters = [] } = useSemestersQuery();
+  const { data: summaryData, isLoading: isSummaryLoading } = useDashboardSummaryQuery(filter);
+  const { data: classesPaged, isLoading: isClassesLoading } = useDashboardClassesPagedQuery(
+    filter,
+    { page: classPagination.page, size: classPagination.size }
+  );
+  const { data: securityAlerts = null, isLoading: isAlertsLoading } = useSecurityAlertsQuery(
+    filter.from || undefined,
+    filter.to || undefined,
+    canViewSecurityAlerts
+  );
+  const { data: auditPaged, isLoading: isAuditLoading } = useGradeAuditLogsPagedQuery(
+    { from: filter.from || undefined, to: filter.to || undefined },
+    { page: auditPagination.page, size: auditPagination.size },
+    canViewAudit && activeTab === 'audit'
+  );
+
+  const summary = summaryData ?? EMPTY_SUMMARY;
+  const dashboardClasses = useMemo(() => classesPaged?.items ?? [], [classesPaged]);
+  const gradeLogs = useMemo(() => auditPaged?.items ?? [], [auditPaged]);
+  const isLoading = isSummaryLoading || isClassesLoading || isAlertsLoading;
+
+  const handleFilterChange = useCallback(
+    (nextFilter: DashboardFilter) => {
+      setFilter(nextFilter);
+      classPagination.resetPage();
+      auditPagination.resetPage();
+    },
+    [classPagination, auditPagination]
+  );
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
     try {
-      if (isRefreshAction) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
-
-      const [summaryData, classesData, alertsData, logsData] = await Promise.all([
-        dashboardService.getSummary(filter),
-        dashboardService.getDashboardClasses(filter),
-        canViewSecurityAlerts
-          ? dashboardService.getSecurityAlerts(filter.from || undefined, filter.to || undefined)
-          : Promise.resolve(null),
-        isAdmin
-          ? dashboardService.getGradeAuditLogs(undefined, filter.from || undefined, filter.to || undefined)
-          : Promise.resolve([]),
-      ]);
-
-      setSummary(summaryData);
-      setDashboardClasses(classesData);
-      setSecurityAlerts(alertsData);
-      setGradeLogs(logsData);
-
-      if (isRefreshAction) {
-        toast.success('Đã cập nhật chỉ số Dashboard mới nhất.');
-      }
-    } catch {
-      toast.error('Có lỗi xảy ra khi tải dữ liệu Dashboard.');
+      await queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      toast.success('Đã cập nhật chỉ số Dashboard mới nhất.');
     } finally {
-      setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [filter, isAdmin, canViewSecurityAlerts, toast]);
-
-  useEffect(() => {
-    loadDashboardData();
-  }, [loadDashboardData]);
+  }, [queryClient, toast]);
 
   return (
     <div className="space-y-6">
@@ -168,16 +151,16 @@ export default function DashboardPage() {
             semesters={semesters}
             courses={courses}
             isRefreshing={isRefreshing}
-            onFilterChange={setFilter}
+            onFilterChange={handleFilterChange}
             onReset={() =>
-              setFilter({
+              handleFilterChange({
                 semester: 'ALL',
                 courseId: 'ALL',
                 from: '',
                 to: '',
               })
             }
-            onRefresh={() => loadDashboardData(true)}
+            onRefresh={handleRefresh}
           />
 
           <DashboardKPIs summary={summary} classes={dashboardClasses} />
@@ -196,16 +179,24 @@ export default function DashboardPage() {
           {canViewSecurityAlerts ? (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
               <div className="lg:col-span-7">
-                <DashboardClassTable classes={dashboardClasses} isLoading={isLoading} />
+                <DashboardClassTable
+                  classes={dashboardClasses}
+                  isLoading={isClassesLoading}
+                  pagination={classPagination.toPaginationProps(classesPaged)}
+                />
               </div>
 
               <div className="lg:col-span-5">
-                <SecurityAlertsCard alerts={securityAlerts} isLoading={isLoading} />
+                <SecurityAlertsCard alerts={securityAlerts} isLoading={isAlertsLoading} />
               </div>
             </div>
           ) : (
             <div className="w-full">
-              <DashboardClassTable classes={dashboardClasses} isLoading={isLoading} />
+              <DashboardClassTable
+                classes={dashboardClasses}
+                isLoading={isClassesLoading}
+                pagination={classPagination.toPaginationProps(classesPaged)}
+              />
             </div>
           )}
         </div>
@@ -225,7 +216,11 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <GradeAuditTable logs={gradeLogs} isLoading={isLoading} />
+          <GradeAuditTable
+            logs={gradeLogs}
+            isLoading={isAuditLoading}
+            pagination={auditPagination.toPaginationProps(auditPaged)}
+          />
         </div>
       )}
     </div>

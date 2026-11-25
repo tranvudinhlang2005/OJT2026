@@ -8,10 +8,12 @@ import {
 } from 'lucide-react';
 import type { ApprovalSummaryItem } from '../../../types/approval';
 import { formatDateTime } from '../../../utils/dateFormat';
+import { Pagination, type PaginationProps } from '../../ui/Pagination';
 
 interface ApprovalTableProps {
   items: ApprovalSummaryItem[];
   isLoading: boolean;
+  pagination?: PaginationProps;
   onSelectReview: (classId: string) => void;
   onOpenCompleteModal: (item: ApprovalSummaryItem) => void;
 }
@@ -19,6 +21,7 @@ interface ApprovalTableProps {
 export function ApprovalTable({
   items,
   isLoading,
+  pagination,
   onSelectReview,
   onOpenCompleteModal,
 }: ApprovalTableProps) {
@@ -179,6 +182,11 @@ export function ApprovalTable({
           </tbody>
         </table>
       </div>
+      {pagination && (
+        <div className="px-6 pb-4">
+          <Pagination {...pagination} />
+        </div>
+      )}
     </div>
   );
 }

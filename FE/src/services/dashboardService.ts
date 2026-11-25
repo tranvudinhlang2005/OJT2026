@@ -1,4 +1,6 @@
 import { axiosClient } from './axiosClient';
+import { normalizePageRequest, toPageResult } from './apiUtils';
+import { LOOKUP_PAGE_SIZE, type PageRequest, type PageResult } from '../types/pagination';
 import type { ClassStatus } from '../types/classOffering';
 import type {
   DashboardClassItem,
@@ -59,9 +61,52 @@ interface BackendGradeAuditLogResponse {
   reason: string;
 }
 
-let cachedSemesters: { data: string[]; timestamp: number } | null = null;
-let semestersInflightPromise: Promise<string[]> | null = null;
-const SEMESTERS_CACHE_TTL_MS = 5 * 60 * 1000;
+function buildDashboardClassParams(
+  filter: DashboardFilter,
+  pageReq: Required<PageRequest>
+): Record<string, string | number> {
+  const params: Record<string, string | number> = {
+    page: pageReq.page,
+    size: pageReq.size,
+  };
+  if (filter.semester && filter.semester !== 'ALL') params.semester = filter.semester;
+  if (filter.courseId && filter.courseId !== 'ALL') params.courseId = Number(filter.courseId);
+  if (filter.from) params.from = filter.from;
+  if (filter.to) params.to = filter.to;
+  return params;
+}
+
+function mapDashboardClass(
+  c: BackendDashboardClassResponse,
+  filter: DashboardFilter
+): DashboardClassItem {
+  return {
+    classId: String(c.classId),
+    classCode: c.classCode,
+    courseName: c.courseName,
+    semester:
+      c.semester ||
+      (filter.semester && filter.semester !== 'ALL' ? filter.semester : 'Chưa phân kỳ'),
+    status: c.status,
+    enrolledCount: c.enrolledCount,
+    maxCapacity: c.maxCapacity,
+    completionRate: c.completionRate !== null ? Number(c.completionRate) : null,
+  };
+}
+
+function mapGradeAuditLog(l: BackendGradeAuditLogResponse, idx: number): GradeAuditLogItem {
+  return {
+    id: `audit-${idx}-${l.changedAt}`,
+    changedAt: l.changedAt,
+    classCode: l.classCode,
+    studentCode: l.studentCode,
+    scoreType: l.scoreType,
+    oldScore: l.oldScore !== null ? Number(l.oldScore) : null,
+    newScore: l.newScore !== null ? Number(l.newScore) : null,
+    changedBy: l.changedBy,
+    reason: l.reason,
+  };
+}
 
 export const dashboardService = {
   async getSummary(filter: DashboardFilter = {}): Promise<DashboardSummary> {
@@ -94,56 +139,37 @@ export const dashboardService = {
     };
   },
 
+  async getDashboardClassesPaged(
+    filter: DashboardFilter = {},
+    pageReq?: PageRequest
+  ): Promise<PageResult<DashboardClassItem>> {
+    const normalized = normalizePageRequest(pageReq);
+    const params = buildDashboardClassParams(filter, normalized);
+    const res = await axiosClient.get<PageResponse<BackendDashboardClassResponse>>(
+      '/dashboard/classes',
+      { params }
+    );
+    return toPageResult(
+      res.data,
+      (c) => mapDashboardClass(c, filter),
+      normalized.page,
+      normalized.size
+    );
+  },
+
   async getDashboardClasses(filter: DashboardFilter = {}): Promise<DashboardClassItem[]> {
-    const params: Record<string, string | number> = {
-      page: 0,
-      size: 100,
-    };
-    if (filter.semester && filter.semester !== 'ALL') params.semester = filter.semester;
-    if (filter.courseId && filter.courseId !== 'ALL') params.courseId = Number(filter.courseId);
-    if (filter.from) params.from = filter.from;
-    if (filter.to) params.to = filter.to;
-
-    const res = await axiosClient.get<PageResponse<BackendDashboardClassResponse>>('/dashboard/classes', { params });
+    const params = buildDashboardClassParams(filter, { page: 0, size: LOOKUP_PAGE_SIZE });
+    const res = await axiosClient.get<PageResponse<BackendDashboardClassResponse>>(
+      '/dashboard/classes',
+      { params }
+    );
     const items = res.data?.items || [];
-
-    return items.map((c) => ({
-      classId: String(c.classId),
-      classCode: c.classCode,
-      courseName: c.courseName,
-      semester: c.semester || (filter.semester && filter.semester !== 'ALL' ? filter.semester : 'Chưa phân kỳ'),
-      status: c.status,
-      enrolledCount: c.enrolledCount,
-      maxCapacity: c.maxCapacity,
-      completionRate: c.completionRate !== null ? Number(c.completionRate) : null,
-    }));
+    return items.map((c) => mapDashboardClass(c, filter));
   },
 
-  async getSemesters(forceRefresh = false): Promise<string[]> {
-    const now = Date.now();
-    if (!forceRefresh && cachedSemesters && now - cachedSemesters.timestamp < SEMESTERS_CACHE_TTL_MS) {
-      return cachedSemesters.data;
-    }
-    if (!forceRefresh && semestersInflightPromise) {
-      return semestersInflightPromise;
-    }
-
-    semestersInflightPromise = axiosClient
-      .get<string[]>('/dashboard/semesters')
-      .then((res) => {
-        const data = Array.isArray(res.data) ? res.data : [];
-        cachedSemesters = { data, timestamp: Date.now() };
-        return data;
-      })
-      .finally(() => {
-        semestersInflightPromise = null;
-      });
-
-    return semestersInflightPromise;
-  },
-
-  clearSemestersCache(): void {
-    cachedSemesters = null;
+  async getSemesters(): Promise<string[]> {
+    const res = await axiosClient.get<string[]>('/dashboard/semesters');
+    return Array.isArray(res.data) ? res.data : [];
   },
 
   async getSecurityAlerts(from?: string, to?: string): Promise<SecurityAlerts> {
@@ -176,10 +202,41 @@ export const dashboardService = {
     };
   },
 
+  async getGradeAuditLogsPaged(
+    classId?: string,
+    from?: string,
+    to?: string,
+    pageReq?: PageRequest
+  ): Promise<PageResult<GradeAuditLogItem>> {
+    const normalized = normalizePageRequest(pageReq);
+    const params: Record<string, string | number> = {
+      page: normalized.page,
+      size: normalized.size,
+    };
+    if (classId && classId !== 'ALL') params.classId = Number(classId);
+    if (from) params.from = from;
+    if (to) params.to = to;
+
+    const res = await axiosClient.get<PageResponse<BackendGradeAuditLogResponse>>(
+      '/audit/grade-logs',
+      { params }
+    );
+    const mapped = (res.data?.items || []).map(mapGradeAuditLog);
+    return toPageResult(
+      {
+        ...res.data,
+        items: mapped,
+      },
+      (item) => item,
+      normalized.page,
+      normalized.size
+    );
+  },
+
   async getGradeAuditLogs(classId?: string, from?: string, to?: string): Promise<GradeAuditLogItem[]> {
     const params: Record<string, string | number> = {
       page: 0,
-      size: 100,
+      size: LOOKUP_PAGE_SIZE,
     };
     if (classId && classId !== 'ALL') params.classId = Number(classId);
     if (from) params.from = from;
@@ -188,16 +245,6 @@ export const dashboardService = {
     const res = await axiosClient.get<PageResponse<BackendGradeAuditLogResponse>>('/audit/grade-logs', { params });
     const items = res.data?.items || [];
 
-    return items.map((l, idx) => ({
-      id: `audit-${idx}-${l.changedAt}`,
-      changedAt: l.changedAt,
-      classCode: l.classCode,
-      studentCode: l.studentCode,
-      scoreType: l.scoreType,
-      oldScore: l.oldScore !== null ? Number(l.oldScore) : null,
-      newScore: l.newScore !== null ? Number(l.newScore) : null,
-      changedBy: l.changedBy,
-      reason: l.reason,
-    }));
+    return items.map(mapGradeAuditLog);
   },
 };

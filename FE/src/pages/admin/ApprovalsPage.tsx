@@ -1,55 +1,46 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { ApprovalStatsCards } from '../../components/admin/approvals/ApprovalStatsCards';
 import { ApprovalFilters } from '../../components/admin/approvals/ApprovalFilters';
 import { ApprovalTable } from '../../components/admin/approvals/ApprovalTable';
 import { ApprovalDetailModal } from '../../components/admin/approvals/ApprovalDetailModal';
 import { ReturnResultModal } from '../../components/admin/approvals/ReturnResultModal';
 import { CompleteClassModal } from '../../components/admin/approvals/CompleteClassModal';
-import { approvalService } from '../../services/approvalService';
-import { dashboardService } from '../../services/dashboardService';
-import { getApiErrorMessage } from '../../services/axiosClient';
 import type {
   ApprovalFilter,
   ApprovalStats,
   ApprovalSummaryItem,
-  ClassResultDetail,
 } from '../../types/approval';
 import { useAuth } from '../../contexts/AuthContext';
-import { useToast } from '../../contexts/ToastContext';
+import { usePagination } from '../../hooks/usePagination';
+import { useSemestersQuery } from '../../hooks/queries/useDashboardQueries';
+import {
+  useApprovalListPagedQuery,
+  useApprovalStatsQuery,
+  useApprovalClassResultsQuery,
+  useApprovalMutations,
+} from '../../hooks/queries/useApprovalsQueries';
 import { ShieldAlert } from 'lucide-react';
+
+const EMPTY_STATS: ApprovalStats = {
+  total: 0,
+  pending: 0,
+  confirmed: 0,
+  draftOrReturned: 0,
+};
 
 export default function ApprovalsPage() {
   const { user } = useAuth();
-  const { toast } = useToast();
-
   const canManage = user?.role === 'TRAINING_ADMIN';
 
-  const [items, setItems] = useState<ApprovalSummaryItem[]>([]);
-  const [stats, setStats] = useState<ApprovalStats>({
-    total: 0,
-    pending: 0,
-    confirmed: 0,
-    draftOrReturned: 0,
-  });
   const [filter, setFilter] = useState<ApprovalFilter>({
     semester: 'ALL',
     gradingStatus: 'ALL',
     keyword: '',
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const pagination = usePagination();
 
-  const [selectedDetail, setSelectedDetail] = useState<ClassResultDetail | null>(null);
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [availableSemesters, setAvailableSemesters] = useState<string[]>([]);
-
-  useEffect(() => {
-    dashboardService
-      .getSemesters()
-      .then((sems) => {
-        if (sems && sems.length > 0) setAvailableSemesters(sems);
-      })
-      .catch(() => {});
-  }, []);
 
   const [returnModal, setReturnModal] = useState<{
     isOpen: boolean;
@@ -77,62 +68,46 @@ export default function ApprovalsPage() {
     studentsCount: 0,
   });
 
-  const selectedDetailRef = useRef(selectedDetail);
-  useEffect(() => {
-    selectedDetailRef.current = selectedDetail;
-  }, [selectedDetail]);
+  const { data: availableSemesters = [] } = useSemestersQuery();
+  const { data: pagedData, isLoading } = useApprovalListPagedQuery(filter, {
+    page: pagination.page,
+    size: pagination.size,
+  });
+  const { data: stats = EMPTY_STATS } = useApprovalStatsQuery();
+  const { data: selectedDetail = null } = useApprovalClassResultsQuery(
+    isDetailOpen ? selectedClassId : null
+  );
+  const mutations = useApprovalMutations();
 
-  const loadData = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const [listData, statsData] = await Promise.all([
-        approvalService.getApprovalList(filter),
-        approvalService.getApprovalStats(),
-      ]);
-      setItems(listData);
-      setStats(statsData);
+  const items = useMemo(() => pagedData?.items ?? [], [pagedData]);
 
-      if (selectedDetailRef.current) {
-        const refreshed = await approvalService.getClassResults(selectedDetailRef.current.classId);
-        setSelectedDetail(refreshed);
-      }
-    } catch {
-      toast.error('Không thể tải danh sách xét duyệt kết quả.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filter, toast]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const distinctSemesters = Array.from(
-    new Set([...availableSemesters, ...items.map((i) => i.semester)].filter(Boolean))
+  const distinctSemesters = useMemo(
+    () =>
+      Array.from(
+        new Set([...availableSemesters, ...items.map((i) => i.semester)].filter(Boolean))
+      ),
+    [availableSemesters, items]
   );
 
-  const handleOpenReview = async (classId: string) => {
-    try {
-      const detail = await approvalService.getClassResults(classId);
-      setSelectedDetail(detail);
-      setIsDetailOpen(true);
-    } catch (err: unknown) {
-      toast.error(getApiErrorMessage(err, 'Lỗi khi tải chi tiết bảng điểm'));
-    }
+  const handleFilterChange = useCallback(
+    (nextFilter: ApprovalFilter) => {
+      setFilter(nextFilter);
+      pagination.resetPage();
+    },
+    [pagination]
+  );
+
+  const handleOpenReview = (classId: string) => {
+    setSelectedClassId(classId);
+    setIsDetailOpen(true);
   };
 
   const handleConfirmResult = async () => {
     if (!selectedDetail) return;
-    try {
-      const updated = await approvalService.confirmResults(selectedDetail.classId);
-      setSelectedDetail(updated);
-      toast.success(`Đã phê duyệt kết quả bảng điểm lớp ${selectedDetail.classCode} thành công!`);
-      await loadData();
-    } catch (err: unknown) {
-      const msg = getApiErrorMessage(err, 'Có lỗi xảy ra khi phê duyệt');
-      toast.error(msg);
-      throw err;
-    }
+    await mutations.confirmResults({
+      classId: selectedDetail.classId,
+      classCode: selectedDetail.classCode,
+    });
   };
 
   const handleOpenReturnModal = () => {
@@ -146,16 +121,12 @@ export default function ApprovalsPage() {
   };
 
   const handleReturnSubmit = async (reason: string) => {
-    try {
-      await approvalService.returnResults(returnModal.classId, reason);
-      toast.success(`Đã trả về bảng điểm lớp ${returnModal.classCode} để giảng viên cập nhật!`);
-      setIsDetailOpen(false);
-      await loadData();
-    } catch (err: unknown) {
-      const msg = getApiErrorMessage(err, 'Lỗi khi trả kết quả');
-      toast.error(msg);
-      throw err;
-    }
+    await mutations.returnResults({
+      classId: returnModal.classId,
+      classCode: returnModal.classCode,
+      reason,
+    });
+    setIsDetailOpen(false);
   };
 
   const handleOpenCompleteFromDetail = () => {
@@ -180,17 +151,12 @@ export default function ApprovalsPage() {
   };
 
   const handleCompleteSubmit = async () => {
-    try {
-      await approvalService.completeClass(completeModal.classId);
-      toast.success(`Đã hoàn tất và đóng lớp học ${completeModal.classCode} thành công!`);
-      if (selectedDetail && selectedDetail.classId === completeModal.classId) {
-        setIsDetailOpen(false);
-      }
-      await loadData();
-    } catch (err: unknown) {
-      const msg = getApiErrorMessage(err, 'Lỗi khi đóng lớp học');
-      toast.error(msg);
-      throw err;
+    await mutations.completeClass({
+      classId: completeModal.classId,
+      classCode: completeModal.classCode,
+    });
+    if (selectedDetail && selectedDetail.classId === completeModal.classId) {
+      setIsDetailOpen(false);
     }
   };
 
@@ -223,9 +189,9 @@ export default function ApprovalsPage() {
       <ApprovalFilters
         filter={filter}
         semesters={distinctSemesters}
-        onFilterChange={setFilter}
+        onFilterChange={handleFilterChange}
         onReset={() =>
-          setFilter({
+          handleFilterChange({
             semester: 'ALL',
             gradingStatus: 'ALL',
             keyword: '',
@@ -236,6 +202,7 @@ export default function ApprovalsPage() {
       <ApprovalTable
         items={items}
         isLoading={isLoading}
+        pagination={pagination.toPaginationProps(pagedData)}
         onSelectReview={handleOpenReview}
         onOpenCompleteModal={handleOpenCompleteFromTable}
       />
