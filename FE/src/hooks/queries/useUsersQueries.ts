@@ -13,9 +13,18 @@ import type {
 import type { PageRequest } from '@/types/pagination';
 
 export function useUsersPagedQuery(filter: UserFilter, pageReq: PageRequest) {
+  const { toast } = useToast();
+
   return useQuery({
     queryKey: queryKeys.users.list(filter, pageReq),
-    queryFn: () => userService.getUsersPaged(filter, pageReq),
+    queryFn: async () => {
+      try {
+        return await userService.getUsersPaged(filter, pageReq);
+      } catch (err) {
+        toast.error('Không thể tải danh sách tài khoản');
+        throw err;
+      }
+    },
     placeholderData: keepPreviousData,
   });
 }
