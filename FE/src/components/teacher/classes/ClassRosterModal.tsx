@@ -1,5 +1,5 @@
 import type { ClassOffering } from '@/types/classOffering';
-import { useClassRoster } from '@/hooks/useTeacherClasses';
+import { useClassRoster } from '@/hooks/queries/useTeacherQueries';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { formatDate } from '@/utils/dateFormat';

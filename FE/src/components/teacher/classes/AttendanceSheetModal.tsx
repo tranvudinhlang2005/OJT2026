@@ -4,7 +4,7 @@ import type { ClassOffering, ClassSession } from '@/types/classOffering';
 import {
   useSessionAttendance,
   useAttendanceMutations,
-} from '@/hooks/useTeacherClasses';
+} from '@/hooks/queries/useTeacherQueries';
 import type { AttendanceStudentItem, AttendanceMark } from '@/services/attendanceService';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';

@@ -1,6 +1,6 @@
 import { Calendar, CheckCircle2, Lock } from 'lucide-react';
 import type { ClassOffering, ClassSession } from '@/types/classOffering';
-import { useClassSessions } from '@/hooks/useTeacherClasses';
+import { useClassSessions } from '@/hooks/queries/useTeacherQueries';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';

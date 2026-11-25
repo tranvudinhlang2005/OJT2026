@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Search } from 'lucide-react';
 import type { ClassOffering, ClassSession } from '@/types/classOffering';
-import { useTeacherClasses } from '@/hooks/useTeacherClasses';
+import { useTeacherClasses } from '@/hooks/queries/useTeacherQueries';
 import { useModal } from '@/hooks/useModal';
 import { useDebounce } from '@/hooks/useDebounce';
 import { ClassCard } from '@/components/teacher/classes/ClassCard';
