@@ -140,15 +140,39 @@ export function useStudentRegistrationController(): UseStudentRegistrationContro
     [enrollments, cancelMutation]
   );
 
+  const handleSearchChange = useCallback(
+    (val: string) => {
+      setSearchTerm(val);
+      openPagination.resetPage();
+    },
+    [openPagination]
+  );
+
+  const handleSemesterChange = useCallback(
+    (val: string) => {
+      setSelectedSemester(val);
+      openPagination.resetPage();
+    },
+    [openPagination]
+  );
+
+  const handleEnrollmentStatusFilterChange = useCallback(
+    (status: EnrollmentStatusFilter) => {
+      setEnrollmentStatusFilter(status);
+      enrollmentsPagination.resetPage();
+    },
+    [enrollmentsPagination]
+  );
+
   return {
     activeTab,
     setActiveTab,
     searchTerm,
-    setSearchTerm,
+    setSearchTerm: handleSearchChange,
     selectedSemester,
-    setSelectedSemester,
+    setSelectedSemester: handleSemesterChange,
     enrollmentStatusFilter,
-    setEnrollmentStatusFilter,
+    setEnrollmentStatusFilter: handleEnrollmentStatusFilterChange,
     semesters,
     openClassesCount: openPaged?.totalElements ?? classesList.length,
     filteredOpenClasses,
