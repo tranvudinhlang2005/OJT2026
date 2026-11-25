@@ -1,6 +1,7 @@
 import { axiosClient } from './axiosClient';
 import { normalizePageRequest, toPageResult } from './apiUtils';
 import { LOOKUP_PAGE_SIZE, type PageRequest, type PageResult } from '../types/pagination';
+import { getTodayVietnamIsoDate } from '../utils/dateFormat';
 import type {
   ClassOffering,
   ClassSession,
@@ -310,7 +311,7 @@ export const classService = {
     const end = payload.endTime || '11:30';
 
     const body = {
-      sessionDate: payload.sessionDate || new Date().toISOString().substring(0, 10),
+      sessionDate: payload.sessionDate || getTodayVietnamIsoDate(),
       startTime: start.length === 5 ? `${start}:00` : start,
       endTime: end.length === 5 ? `${end}:00` : end,
       roomId: Number(payload.roomId || 1),

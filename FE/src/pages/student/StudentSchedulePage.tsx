@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router';
 import { ROUTES } from '../../routes/paths';
-import { formatDate } from '../../utils/dateFormat';
+import { formatDate, getDayOfWeekFromIsoDate } from '../../utils/dateFormat';
 import { useWeekNavigation } from '../../hooks/useWeekNavigation';
 import { WeekNavigator } from '../../components/common/WeekNavigator';
 import { useStudentScheduleQuery } from '../../hooks/queries/useStudentQueries';
@@ -119,8 +119,8 @@ export default function StudentSchedulePage() {
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {sortedItems.map((item) => {
-            const dateObj = new Date(item.sessionDate);
-            const dayLabel = DAYS.find((d) => d.value === dateObj.getDay())?.label || 'Buổi học';
+            const dayOfWeek = getDayOfWeekFromIsoDate(item.sessionDate);
+            const dayLabel = DAYS.find((d) => d.value === dayOfWeek)?.label || 'Buổi học';
 
             return (
               <div

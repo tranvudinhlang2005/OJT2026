@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Edit, AlertCircle, Save, Loader2 } from 'lucide-react';
 import type { ManagedUser, UpdateUserPayload, StudentStatus } from '../../../types/user';
+import { getTodayVietnamIsoDate } from '../../../utils/dateFormat';
 
 interface EditUserModalProps {
   isOpen: boolean;
@@ -87,7 +88,7 @@ const EditUserModalContent: React.FC<{
       return;
     }
     if (dateOfBirth) {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = getTodayVietnamIsoDate();
       if (dateOfBirth > today) {
         setError('Ngày sinh không được ở tương lai. VD hợp lệ: 15/08/2003');
         return;
