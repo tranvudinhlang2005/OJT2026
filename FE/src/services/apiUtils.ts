@@ -1,6 +1,6 @@
-import { DEFAULT_PAGE_SIZE, type PageRequest, type PageResult } from '../types/pagination';
+import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, type PageRequest, type PageResult } from '../types/pagination';
 
-function toNonNegativeInt(value: unknown, fallback: number): number {
+export function toNonNegativeInt(value: unknown, fallback: number): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) {
     return fallback;
   }
@@ -10,7 +10,7 @@ function toNonNegativeInt(value: unknown, fallback: number): number {
 export function normalizePageRequest(pageReq?: PageRequest, defaultSize = DEFAULT_PAGE_SIZE): Required<PageRequest> {
   const page = toNonNegativeInt(pageReq?.page, 0);
   const rawSize = toNonNegativeInt(pageReq?.size, defaultSize);
-  const size = rawSize > 0 ? Math.min(rawSize, 100) : defaultSize;
+  const size = rawSize > 0 ? Math.min(rawSize, MAX_PAGE_SIZE) : defaultSize;
   return { page, size };
 }
 
