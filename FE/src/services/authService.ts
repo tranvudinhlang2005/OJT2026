@@ -27,18 +27,13 @@ export const authService = {
     const response = await axiosClient.post<AuthUserResponse>('/auth/login', credentials);
     const data = response.data;
 
-    const user: User = {
+    return {
       id: String(data.userId),
+      username: data.username || credentials.username,
       name: data.fullName,
       email: data.email || `${credentials.username}@edu.vn`,
       role: data.role,
     };
-
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('role', user.role);
-    localStorage.setItem('token', 'active-session');
-
-    return user;
   },
 
   async logout(): Promise<void> {
@@ -55,16 +50,13 @@ export const authService = {
     try {
       const response = await axiosClient.get<AuthUserResponse>('/auth/me');
       const data = response.data;
-      const user: User = {
+      return {
         id: String(data.userId),
+        username: data.username,
         name: data.fullName,
         email: data.email || 'user@edu.vn',
         role: data.role,
       };
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('role', user.role);
-      localStorage.setItem('token', 'active-session');
-      return user;
     } catch {
       return null;
     }
@@ -74,4 +66,3 @@ export const authService = {
     await axiosClient.patch('/auth/password', { oldPassword, newPassword });
   },
 };
-

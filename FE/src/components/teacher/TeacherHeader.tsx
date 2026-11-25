@@ -41,8 +41,8 @@ export function TeacherHeader() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast.info('Đã đăng xuất khỏi tài khoản Giảng viên');
     navigate(ROUTES.AUTH.LOGIN);
   };

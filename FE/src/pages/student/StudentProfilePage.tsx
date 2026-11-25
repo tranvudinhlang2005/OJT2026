@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router';
 import {
   User,
   Calendar,
@@ -10,6 +11,8 @@ import {
   RefreshCw,
   Lock,
 } from 'lucide-react';
+import { ROUTES } from '../../routes/paths';
+import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { authService } from '../../services/authService';
 import { studentService, type StudentProfile } from '../../services/studentService';
@@ -20,6 +23,8 @@ export default function StudentProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const { toast } = useToast();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -60,11 +65,8 @@ export default function StudentProfilePage() {
       setConfirmPassword('');
       setIsRedirecting(true);
       redirectTimerRef.current = setTimeout(async () => {
-        try {
-          await authService.logout();
-        } finally {
-          window.location.href = '/login';
-        }
+        await logout();
+        navigate(ROUTES.AUTH.LOGIN, { replace: true });
       }, 1500);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };

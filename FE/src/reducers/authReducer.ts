@@ -1,14 +1,13 @@
 import type { AuthState, User } from '../types/auth';
 
 export type AuthAction =
-  | { type: 'LOGIN_SUCCESS'; payload: { user: User; token: string } }
+  | { type: 'LOGIN_SUCCESS'; payload: { user: User } }
   | { type: 'LOGOUT' }
   | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'INITIALIZE'; payload: { user: User | null; token: string | null } };
+  | { type: 'INITIALIZE'; payload: { user: User | null } };
 
 export const initialAuthState: AuthState = {
   user: null,
-  token: null,
   isAuthenticated: false,
   isLoading: true,
 };
@@ -19,15 +18,13 @@ export function authReducer(state: AuthState, action: AuthAction): AuthState {
       return {
         ...state,
         user: action.payload.user,
-        token: action.payload.token,
-        isAuthenticated: !!action.payload.token,
+        isAuthenticated: Boolean(action.payload.user),
         isLoading: false,
       };
     case 'LOGIN_SUCCESS':
       return {
         ...state,
         user: action.payload.user,
-        token: action.payload.token,
         isAuthenticated: true,
         isLoading: false,
       };
@@ -35,7 +32,6 @@ export function authReducer(state: AuthState, action: AuthAction): AuthState {
       return {
         ...state,
         user: null,
-        token: null,
         isAuthenticated: false,
         isLoading: false,
       };
@@ -48,4 +44,3 @@ export function authReducer(state: AuthState, action: AuthAction): AuthState {
       return state;
   }
 }
-

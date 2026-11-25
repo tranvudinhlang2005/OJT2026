@@ -53,7 +53,7 @@ export default function LoginPage() {
         password,
       });
 
-      login(user, 'active-session');
+      login(user);
       toast.success(`Đăng nhập thành công (${user.name})`);
 
       if (user.role === 'INSTRUCTOR') {

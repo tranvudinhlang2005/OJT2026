@@ -175,7 +175,7 @@ export default function UsersPage() {
 
       <UserTable
         users={users}
-        currentAdminUsername={currentAuthUser?.name?.includes('Admin') ? 'admin' : 'admin'}
+        currentAdminUsername={currentAuthUser?.username || ''}
         onEdit={user => setSelectedUserForEdit(user)}
         onChangeRole={user => setSelectedUserForRoleChange(user)}
         onToggleStatus={handleToggleStatus}

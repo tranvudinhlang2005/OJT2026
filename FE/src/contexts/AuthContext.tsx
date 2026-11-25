@@ -7,18 +7,19 @@ import {
   useCallback,
   useMemo,
 } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { User, UserRole } from '../types/auth';
 import { authService } from '../services/authService';
 import { authReducer, initialAuthState, type AuthAction } from '../reducers/authReducer';
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: User | null;
   role: UserRole | null;
-  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (user: User, token: string) => void;
-  logout: () => void;
+  login: (user: User) => void;
+  logout: () => Promise<void>;
+  refreshSession: () => Promise<User | null>;
   dispatch: React.Dispatch<AuthAction>;
 }
 
@@ -26,42 +27,26 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
+  const queryClient = useQueryClient();
+
+  const refreshSession = useCallback(async (): Promise<User | null> => {
+    const currentUser = await authService.getCurrentUser();
+    dispatch({
+      type: 'INITIALIZE',
+      payload: { user: currentUser },
+    });
+    return currentUser;
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
     const initAuth = async () => {
       authService.getCsrfToken();
-      try {
-        const currentUser = await authService.getCurrentUser();
-        if (currentUser && isMounted) {
-          dispatch({
-            type: 'INITIALIZE',
-            payload: { user: currentUser, token: 'active-session' },
-          });
-          return;
-        }
-      } catch {
-      }
-
+      const currentUser = await authService.getCurrentUser();
       if (!isMounted) return;
-
-      const token = localStorage.getItem('token');
-      const userJson = localStorage.getItem('user');
-      if (token && userJson) {
-        try {
-          const user = JSON.parse(userJson);
-          dispatch({
-            type: 'INITIALIZE',
-            payload: { user, token },
-          });
-          return;
-        } catch {
-        }
-      }
-
       dispatch({
         type: 'INITIALIZE',
-        payload: { user: null, token: null },
+        payload: { user: currentUser },
       });
     };
 
@@ -71,37 +56,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback((user: User, token: string) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('role', user.role);
-    localStorage.setItem('user', JSON.stringify(user));
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      queryClient.clear();
+      dispatch({ type: 'LOGOUT' });
+    };
 
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
+  }, [queryClient]);
+
+  const login = useCallback((user: User) => {
     dispatch({
       type: 'LOGIN_SUCCESS',
-      payload: { user, token },
+      payload: { user },
     });
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('user');
-    authService.logout();
+  const logout = useCallback(async () => {
+    await authService.logout();
+    queryClient.clear();
     dispatch({ type: 'LOGOUT' });
-  }, []);
+  }, [queryClient]);
 
   const value = useMemo(
     () => ({
       user: state.user,
-      role: state.user?.role || (localStorage.getItem('role') as UserRole | null),
-      token: state.token,
+      role: state.user?.role ?? null,
       isAuthenticated: state.isAuthenticated,
       isLoading: state.isLoading,
       login,
       logout,
+      refreshSession,
       dispatch,
     }),
-    [state.user, state.token, state.isAuthenticated, state.isLoading, login, logout]
+    [state.user, state.isAuthenticated, state.isLoading, login, logout, refreshSession]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -114,4 +105,3 @@ export function useAuth() {
   }
   return context;
 }
-

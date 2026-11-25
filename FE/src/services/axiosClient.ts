@@ -43,13 +43,11 @@ axiosClient.interceptors.response.use(
     const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
 
     if (status === 401 && typeof window !== 'undefined') {
-      const currentPath = window.location.pathname;
-      if (!currentPath.includes('/login')) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('user');
+      if (!window.location.pathname.includes('/login')) {
         window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-        window.location.href = '/login';
       }
     }
 

@@ -27,8 +27,8 @@ export function AdminSidebar() {
         ...(!isManager ? [{ label: 'Xét duyệt kết quả', path: ROUTES.ADMIN.APPROVALS, icon: CheckSquare }] : []),
     ];
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await logout();
         toast.info('Đã đăng xuất khỏi hệ thống');
         navigate(ROUTES.AUTH.LOGIN);
     };

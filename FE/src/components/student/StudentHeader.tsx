@@ -63,8 +63,8 @@ export function StudentHeader() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     toast.info('Đã đăng xuất khỏi tài khoản Sinh viên');
     navigate(ROUTES.AUTH.LOGIN);
   };
