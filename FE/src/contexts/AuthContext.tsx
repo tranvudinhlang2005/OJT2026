@@ -10,7 +10,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import type { User, UserRole } from '../types/auth';
 import { authService } from '../services/authService';
-import { authReducer, initialAuthState, type AuthAction } from '../reducers/authReducer';
+import { authReducer, initialAuthState } from '../reducers/authReducer';
 
 export interface AuthContextValue {
   user: User | null;
@@ -20,7 +20,6 @@ export interface AuthContextValue {
   login: (user: User) => void;
   logout: () => Promise<void>;
   refreshSession: () => Promise<User | null>;
-  dispatch: React.Dispatch<AuthAction>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -30,19 +29,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   const refreshSession = useCallback(async (): Promise<User | null> => {
-    const currentUser = await authService.getCurrentUser();
-    dispatch({
-      type: 'INITIALIZE',
-      payload: { user: currentUser },
-    });
-    return currentUser;
+    try {
+      const currentUser = await authService.getCurrentUser();
+      dispatch({
+        type: 'INITIALIZE',
+        payload: { user: currentUser },
+      });
+      return currentUser;
+    } catch {
+      dispatch({
+        type: 'INITIALIZE',
+        payload: { user: null },
+      });
+      return null;
+    }
   }, []);
 
   useEffect(() => {
     let isMounted = true;
     const initAuth = async () => {
       authService.getCsrfToken();
-      const currentUser = await authService.getCurrentUser();
+      let currentUser: User | null = null;
+      try {
+        currentUser = await authService.getCurrentUser();
+      } catch {
+        currentUser = null;
+      }
       if (!isMounted) return;
       dispatch({
         type: 'INITIALIZE',
@@ -90,7 +102,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       refreshSession,
-      dispatch,
     }),
     [state.user, state.isAuthenticated, state.isLoading, login, logout, refreshSession]
   );

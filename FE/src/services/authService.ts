@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { axiosClient } from './axiosClient';
 import type { User, UserRole } from '../types/auth';
 
@@ -14,6 +15,20 @@ export interface AuthUserResponse {
   username?: string;
 }
 
+function mapAuthUser(
+  data: AuthUserResponse,
+  fallbackUsername?: string,
+  fallbackEmail = 'user@edu.vn'
+): User {
+  return {
+    id: String(data.userId),
+    username: data.username || fallbackUsername,
+    name: data.fullName,
+    email: data.email || fallbackEmail,
+    role: data.role,
+  };
+}
+
 export const authService = {
   async getCsrfToken(): Promise<void> {
     try {
@@ -25,15 +40,11 @@ export const authService = {
   async login(credentials: LoginCredentials): Promise<User> {
     await this.getCsrfToken();
     const response = await axiosClient.post<AuthUserResponse>('/auth/login', credentials);
-    const data = response.data;
-
-    return {
-      id: String(data.userId),
-      username: data.username || credentials.username,
-      name: data.fullName,
-      email: data.email || `${credentials.username}@edu.vn`,
-      role: data.role,
-    };
+    return mapAuthUser(
+      response.data,
+      credentials.username,
+      `${credentials.username}@edu.vn`
+    );
   },
 
   async logout(): Promise<void> {
@@ -49,16 +60,12 @@ export const authService = {
   async getCurrentUser(): Promise<User | null> {
     try {
       const response = await axiosClient.get<AuthUserResponse>('/auth/me');
-      const data = response.data;
-      return {
-        id: String(data.userId),
-        username: data.username,
-        name: data.fullName,
-        email: data.email || 'user@edu.vn',
-        role: data.role,
-      };
-    } catch {
-      return null;
+      return mapAuthUser(response.data);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        return null;
+      }
+      throw error;
     }
   },
 
