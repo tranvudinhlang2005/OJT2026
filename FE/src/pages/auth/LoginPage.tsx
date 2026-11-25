@@ -174,7 +174,7 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full rounded-lg bg-indigo-600 py-2.5 font-semibold text-white transition hover:bg-indigo-700 shadow-xs disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {isLoading ? 'Đang kết nối Backend...' : 'Đăng nhập vào hệ thống'}
+            {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập vào hệ thống'}
           </button>
         </form>
       </div>
