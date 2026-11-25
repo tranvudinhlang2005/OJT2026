@@ -1,4 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/queries/queryKeys';
 import { ClassStatsCards } from '@/components/admin/classes/ClassStatsCards';
 import { ClassFilters } from '@/components/admin/classes/ClassFilters';
 import { ClassTable } from '@/components/admin/classes/ClassTable';
@@ -52,8 +54,13 @@ export default function ClassesPage() {
     data: pagedData,
     isLoading,
     isFetching,
-    refetch,
   } = useClassesPagedQuery(filter, { page: pagination.page, size: pagination.size });
+
+  const queryClient = useQueryClient();
+  const refreshClasses = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: queryKeys.classes.all }),
+    [queryClient]
+  );
 
   const { data: allClasses = [] } = useClassesSummaryQuery();
   const { data: courses = [] } = useClassCoursesLookupQuery();
@@ -144,7 +151,7 @@ export default function ClassesPage() {
         canManage={canManage}
         onFilterChange={handleFilterChange}
         onCreateClick={() => createModal.open()}
-        onRefreshClick={() => refetch()}
+        onRefreshClick={refreshClasses}
         isLoading={isLoading || isFetching}
       />
 
@@ -199,7 +206,7 @@ export default function ClassesPage() {
         classOffering={activeDetailClass}
         rooms={rooms}
         onClose={detailModal.close}
-        onClassUpdated={() => refetch()}
+        onClassUpdated={refreshClasses}
       />
 
       <CancelClassModal
