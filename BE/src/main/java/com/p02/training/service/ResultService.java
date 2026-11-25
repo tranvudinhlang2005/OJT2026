@@ -123,7 +123,7 @@ public class ResultService {
         for (ResultItemRequest item : request.items()) {
             if (!enrolled.containsKey(item.studentId())) {
                 throw ApiException.conflict("STUDENT_NOT_IN_CLASS",
-                        "Học viên " + studentLabel(item.studentId()) + " không thuộc lớp này");
+                        "Học viên không thuộc lớp này");
             }
         }
 
@@ -244,10 +244,6 @@ public class ResultService {
             throw ApiException.validation("items", "Học viên bị lặp trong cùng yêu cầu: "
                     + repeated.stream().map(String::valueOf).collect(Collectors.joining(", ")));
         }
-    }
-
-    private String studentLabel(Long studentId) {
-        return studentRepository.findById(studentId).map(Student::getStudentCode).orElse(String.valueOf(studentId));
     }
 
     /**

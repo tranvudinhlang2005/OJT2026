@@ -119,7 +119,7 @@ public class AttendanceService {
         for (AttendanceItemRequest item : request.items()) {
             if (!enrolled.contains(item.studentId())) {
                 throw ApiException.conflict("STUDENT_NOT_IN_CLASS",
-                        "Học viên " + studentLabel(item.studentId()) + " không còn trong danh sách lớp");
+                        "Học viên không còn trong danh sách lớp");
             }
         }
 
@@ -249,11 +249,6 @@ public class AttendanceService {
             throw ApiException.validation("items", "Học viên bị lặp trong cùng yêu cầu: "
                     + repeated.stream().map(String::valueOf).collect(Collectors.joining(", ")));
         }
-    }
-
-    /** The student's code for an error message, or the id if there is no such student. */
-    private String studentLabel(Long studentId) {
-        return studentRepository.findById(studentId).map(Student::getStudentCode).orElse(String.valueOf(studentId));
     }
 
     /**
