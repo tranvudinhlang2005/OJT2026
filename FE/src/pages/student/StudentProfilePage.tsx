@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import {
   User,
@@ -15,13 +15,17 @@ import { ROUTES } from '../../routes/paths';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { authService } from '../../services/authService';
-import { studentService, type StudentProfile } from '../../services/studentService';
 import { formatDate } from '../../utils/dateFormat';
+import { useStudentProfileQuery } from '../../hooks/queries/useStudentQueries';
 
 export default function StudentProfilePage() {
-  const [profile, setProfile] = useState<StudentProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: profile = null,
+    isLoading: loading,
+    isError,
+    refetch,
+  } = useStudentProfileQuery();
+  const error = isError ? 'Không thể tải thông tin hồ sơ sinh viên từ hệ thống.' : null;
 
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -76,24 +80,6 @@ export default function StudentProfilePage() {
     }
   };
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const prof = await studentService.getMyProfile();
-      setProfile(prof);
-    } catch {
-      setError('Không thể tải thông tin hồ sơ sinh viên từ hệ thống.');
-      setProfile(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   if (loading && !profile) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -114,7 +100,7 @@ export default function StudentProfilePage() {
         </div>
         <button
           type="button"
-          onClick={loadData}
+          onClick={() => refetch()}
           className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 transition"
         >
           <RefreshCw className="h-4 w-4" />

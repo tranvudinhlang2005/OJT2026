@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Clock,
   MapPin,
@@ -10,11 +10,10 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router';
 import { ROUTES } from '../../routes/paths';
-import { useToast } from '../../contexts/ToastContext';
-import { scheduleService, type ScheduleItem } from '../../services/scheduleService';
 import { formatDate } from '../../utils/dateFormat';
 import { useWeekNavigation } from '../../hooks/useWeekNavigation';
 import { WeekNavigator } from '../../components/common/WeekNavigator';
+import { useStudentScheduleQuery } from '../../hooks/queries/useStudentQueries';
 
 const DAYS = [
   { value: 1, label: 'Thứ Hai' },
@@ -27,32 +26,12 @@ const DAYS = [
 ];
 
 export default function StudentSchedulePage() {
-  const { toast } = useToast();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [scheduleItems, setScheduleItems] = useState<ScheduleItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const { weekOffset, setWeekOffset, weekRange, queryRange } = useWeekNavigation();
-
-  useEffect(() => {
-    let isMounted = true;
-    const load = async () => {
-      try {
-        setLoading(true);
-        const { from, to } = queryRange;
-        const items = await scheduleService.getMySchedule(from, to);
-        if (isMounted) setScheduleItems(items);
-      } catch {
-        toast.error('Không thể tải dữ liệu thời khóa biểu từ hệ thống.');
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    load();
-    return () => {
-      isMounted = false;
-    };
-  }, [toast, queryRange]);
+  const { data: scheduleItems = [], isLoading: loading } = useStudentScheduleQuery(
+    queryRange.from,
+    queryRange.to
+  );
 
   const sortedItems = useMemo(() => {
     return [...scheduleItems].sort((a, b) => {

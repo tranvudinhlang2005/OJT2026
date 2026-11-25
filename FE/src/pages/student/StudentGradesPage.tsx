@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Award,
   GraduationCap,
@@ -6,39 +6,20 @@ import {
   TrendingUp,
   Filter,
 } from 'lucide-react';
-import { useToast } from '../../contexts/ToastContext';
-import { studentService, type StudentResult } from '../../services/studentService';
 import { calculateAverageScore10 } from '../../utils/gradeUtils';
 import { DEFAULT_COURSE_CREDITS, DEFAULT_MIN_ATTENDANCE_PCT } from '../../constants/academic';
+import { usePagination } from '../../hooks/usePagination';
+import { useStudentResultsPagedQuery } from '../../hooks/queries/useStudentQueries';
+import { Pagination } from '../../components/ui/Pagination';
 
 export default function StudentGradesPage() {
-  const { toast } = useToast();
   const [selectedSemester, setSelectedSemester] = useState('ALL');
-  const [results, setResults] = useState<StudentResult[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-    const load = async () => {
-      try {
-        const resList = await studentService.getMyResults();
-        if (isMounted) {
-          setResults(resList);
-        }
-      } catch {
-        if (isMounted) {
-          toast.error('Không thể tải dữ liệu điểm học tập. Vui lòng thử lại sau.');
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    load();
-    return () => {
-      isMounted = false;
-    };
-  }, [toast]);
+  const pagination = usePagination();
+  const { data: pagedResults, isLoading: loading } = useStudentResultsPagedQuery({
+    page: pagination.page,
+    size: pagination.size,
+  });
+  const results = useMemo(() => pagedResults?.items ?? [], [pagedResults]);
 
   const resultsWithCredits = useMemo(() => {
     return results.map((r) => ({
@@ -274,6 +255,9 @@ export default function StudentGradesPage() {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="px-4 pb-4">
+          <Pagination {...pagination.toPaginationProps(pagedResults)} />
         </div>
       </div>
     </div>
