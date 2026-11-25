@@ -1,8 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, GraduationCap, ShieldAlert, Loader2 } from 'lucide-react';
-import type { CourseSummary, InstructorSummary, CreateClassPayload } from '../../../types/classOffering';
-import { getApiErrorDetails } from '../../../services/axiosClient';
-import { validateClassDates, validateGradeWeights } from '../../../utils/validation';
+import type {
+  CourseSummary,
+  InstructorSummary,
+  CreateClassPayload,
+} from '@/types/classOffering';
+import { useCreateClassForm } from '@/hooks/admin/useCreateClassForm';
+import { ClassGradePolicyFields } from './form/ClassGradePolicyFields';
 
 interface CreateClassModalProps {
   isOpen: boolean;
@@ -12,35 +15,13 @@ interface CreateClassModalProps {
   onSubmit: (payload: CreateClassPayload) => Promise<void>;
 }
 
-interface CreateClassFormData {
-  classCode: string;
-  courseId: string;
-  semester: string;
-  startDate: string;
-  endDate: string;
-  instructorId: string;
-  maxCapacity: number;
-  cancelDeadline: string;
-  minAttendancePct: number;
-  passScore: number;
-  midtermWeight: number;
-  finalWeight: number;
+function fieldClassName(hasError: boolean, extra = ''): string {
+  return `w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${extra} ${
+    hasError
+      ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
+      : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
+  }`;
 }
-
-const initialClassFormData: CreateClassFormData = {
-  classCode: '',
-  courseId: '',
-  semester: 'Học kỳ II (2026 - 2027)',
-  startDate: '',
-  endDate: '',
-  instructorId: '',
-  maxCapacity: 40,
-  cancelDeadline: '',
-  minAttendancePct: 80.0,
-  passScore: 5.0,
-  midtermWeight: 0.3,
-  finalWeight: 0.7,
-};
 
 export function CreateClassModal({
   isOpen,
@@ -49,154 +30,17 @@ export function CreateClassModal({
   onClose,
   onSubmit,
 }: CreateClassModalProps) {
-  const [formData, setFormData] = useState<CreateClassFormData>(initialClassFormData);
   const {
-    classCode,
-    courseId,
-    semester,
-    startDate,
-    endDate,
-    instructorId,
-    maxCapacity,
-    cancelDeadline,
-    minAttendancePct,
-    passScore,
-    midtermWeight,
-    finalWeight,
-  } = formData;
-
-  const setFormField = useCallback(
-    <K extends keyof CreateClassFormData>(key: K, value: CreateClassFormData[K]) => {
-      setFormData((prev) => ({ ...prev, [key]: value }));
-    },
-    []
-  );
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const submittingRef = useRef(false);
-
-  const clearFieldError = (field: string) => {
-    if (fieldErrors[field]) {
-      setFieldErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
-  };
-
-  const resetForm = useCallback(() => {
-    setFormData(initialClassFormData);
-    setError(null);
-    setFieldErrors({});
-    setIsSubmitting(false);
-    submittingRef.current = false;
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen) {
-      resetForm();
-    }
-  }, [isOpen, resetForm]);
-
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
-
-  useEffect(() => {
-    if (courseId) {
-      const selected = courses.find((c) => c.id === courseId);
-      if (selected) {
-        setFormData((prev) => ({
-          ...prev,
-          passScore: selected.passScore ?? prev.passScore,
-          minAttendancePct: selected.minAttendancePct ?? prev.minAttendancePct,
-          midtermWeight: selected.midtermWeight ?? prev.midtermWeight,
-          finalWeight: selected.finalWeight ?? prev.finalWeight,
-          classCode: prev.classCode || `${selected.code}.O21`,
-        }));
-      }
-    }
-  }, [courseId, courses]);
-
-  const selectedCourse = courses.find((c) => c.id === courseId);
-  const qualifiedInstructors = instructors.filter(
-    (inst) =>
-      inst.teachingActive &&
-      (!courseId ||
-        inst.teachableCourses.includes(courseId) ||
-        (selectedCourse && inst.teachableCourses.includes(selectedCourse.code)))
-  );
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSubmitting || submittingRef.current) return;
-    setError(null);
-
-    if (!classCode.trim()) {
-      setError('Vui lòng nhập mã lớp học phần.');
-      return;
-    }
-
-    if (!courseId) {
-      setError('Vui lòng chọn môn học/học phần.');
-      return;
-    }
-
-    if (!startDate || !endDate) {
-      setError('Vui lòng chọn ngày bắt đầu và kết thúc.');
-      return;
-    }
-
-    if (!cancelDeadline) {
-      setError('Vui lòng chọn hạn chót hủy đăng ký.');
-      return;
-    }
-
-    const validationErr = validateClassDates({ startDate, endDate, cancelDeadline });
-    if (validationErr) {
-      setError(validationErr);
-      return;
-    }
-
-    const weightErr = validateGradeWeights(Number(midtermWeight), Number(finalWeight));
-    if (weightErr) {
-      setError(weightErr);
-      return;
-    }
-
-    try {
-      submittingRef.current = true;
-      setIsSubmitting(true);
-      setFieldErrors({});
-      await onSubmit({
-        classCode: classCode.trim().toUpperCase(),
-        courseId,
-        semester,
-        startDate,
-        endDate,
-        instructorId: instructorId ? instructorId : null,
-        maxCapacity: Number(maxCapacity),
-        cancelDeadline,
-        minAttendancePct: Number(minAttendancePct),
-        passScore: Number(passScore),
-        midtermWeight: Number(midtermWeight),
-        finalWeight: Number(finalWeight),
-      });
-      resetForm();
-      onClose();
-    } catch (err: unknown) {
-      const errDetail = getApiErrorDetails(err, 'Lỗi khi tạo lớp học phần');
-      setError(errDetail.message);
-      setFieldErrors(errDetail.fieldErrors);
-    } finally {
-      submittingRef.current = false;
-      setIsSubmitting(false);
-    }
-  };
+    formData,
+    setFormField,
+    clearFieldError,
+    isSubmitting,
+    error,
+    fieldErrors,
+    qualifiedInstructors,
+    handleClose,
+    handleSubmit,
+  } = useCreateClassForm({ isOpen, courses, instructors, onClose, onSubmit });
 
   if (!isOpen) return null;
 
@@ -212,9 +56,7 @@ export function CreateClassModal({
             <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
               <GraduationCap className="h-5 w-5" />
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">Tạo lớp học phần mới</h2>
-            </div>
+            <h2 className="text-lg font-bold text-slate-900">Tạo lớp học phần mới</h2>
           </div>
           <button
             type="button"
@@ -241,16 +83,12 @@ export function CreateClassModal({
               </label>
               <select
                 required
-                value={courseId}
+                value={formData.courseId}
                 onChange={(e) => {
                   setFormField('courseId', e.target.value);
                   clearFieldError('courseId');
                 }}
-                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                  fieldErrors.courseId
-                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
-                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
-                }`}
+                className={fieldClassName(Boolean(fieldErrors.courseId))}
               >
                 <option value="">-- Chọn môn học --</option>
                 {courses.map((c) => (
@@ -272,16 +110,12 @@ export function CreateClassModal({
                 type="text"
                 required
                 placeholder="VD: SE101.O21"
-                value={classCode}
+                value={formData.classCode}
                 onChange={(e) => {
                   setFormField('classCode', e.target.value);
                   clearFieldError('classCode');
                 }}
-                className={`w-full rounded-lg border px-3 py-2 text-sm uppercase focus:outline-none focus:ring-1 ${
-                  fieldErrors.classCode
-                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
-                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
-                }`}
+                className={fieldClassName(Boolean(fieldErrors.classCode), 'uppercase')}
               />
               {fieldErrors.classCode && (
                 <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.classCode}</p>
@@ -297,16 +131,12 @@ export function CreateClassModal({
               <input
                 type="text"
                 required
-                value={semester}
+                value={formData.semester}
                 onChange={(e) => {
                   setFormField('semester', e.target.value);
                   clearFieldError('semester');
                 }}
-                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                  fieldErrors.semester
-                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
-                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
-                }`}
+                className={fieldClassName(Boolean(fieldErrors.semester))}
               />
               {fieldErrors.semester && (
                 <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.semester}</p>
@@ -322,16 +152,12 @@ export function CreateClassModal({
                 min="1"
                 max="500"
                 required
-                value={maxCapacity}
+                value={formData.maxCapacity}
                 onChange={(e) => {
                   setFormField('maxCapacity', Number(e.target.value));
                   clearFieldError('maxCapacity');
                 }}
-                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                  fieldErrors.maxCapacity
-                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
-                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
-                }`}
+                className={fieldClassName(Boolean(fieldErrors.maxCapacity))}
               />
               {fieldErrors.maxCapacity && (
                 <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.maxCapacity}</p>
@@ -344,16 +170,12 @@ export function CreateClassModal({
               Giảng viên phụ trách <span className="text-slate-400 font-normal">(Có thể phân công sau trước khi Mở lớp)</span>
             </label>
             <select
-              value={instructorId}
+              value={formData.instructorId}
               onChange={(e) => {
                 setFormField('instructorId', e.target.value);
                 clearFieldError('instructorId');
               }}
-              className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                fieldErrors.instructorId
-                  ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
-                  : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
-              }`}
+              className={fieldClassName(Boolean(fieldErrors.instructorId))}
             >
               <option value="">-- Chưa gán (Phân công sau) --</option>
               {qualifiedInstructors.map((inst) => (
@@ -375,16 +197,12 @@ export function CreateClassModal({
               <input
                 type="date"
                 required
-                value={startDate}
+                value={formData.startDate}
                 onChange={(e) => {
                   setFormField('startDate', e.target.value);
                   clearFieldError('startDate');
                 }}
-                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                  fieldErrors.startDate
-                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
-                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
-                }`}
+                className={fieldClassName(Boolean(fieldErrors.startDate))}
               />
               {fieldErrors.startDate && (
                 <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.startDate}</p>
@@ -398,16 +216,12 @@ export function CreateClassModal({
               <input
                 type="date"
                 required
-                value={endDate}
+                value={formData.endDate}
                 onChange={(e) => {
                   setFormField('endDate', e.target.value);
                   clearFieldError('endDate');
                 }}
-                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                  fieldErrors.endDate
-                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
-                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
-                }`}
+                className={fieldClassName(Boolean(fieldErrors.endDate))}
               />
               {fieldErrors.endDate && (
                 <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.endDate}</p>
@@ -421,16 +235,12 @@ export function CreateClassModal({
               <input
                 type="date"
                 required
-                value={cancelDeadline}
+                value={formData.cancelDeadline}
                 onChange={(e) => {
                   setFormField('cancelDeadline', e.target.value);
                   clearFieldError('cancelDeadline');
                 }}
-                className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
-                  fieldErrors.cancelDeadline
-                    ? 'border-rose-400 bg-rose-50/30 text-rose-900 focus:border-rose-500 focus:ring-rose-500'
-                    : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'
-                }`}
+                className={fieldClassName(Boolean(fieldErrors.cancelDeadline))}
               />
               {fieldErrors.cancelDeadline && (
                 <p className="mt-1 text-xs font-medium text-rose-600">{fieldErrors.cancelDeadline}</p>
@@ -438,68 +248,14 @@ export function CreateClassModal({
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-600 mb-3">
-              Quy tắc đánh giá & Điểm số
-            </h4>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  Chuyên cần tối thiểu (%)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="1"
-                  value={minAttendancePct}
-                  onChange={(e) => setFormField('minAttendancePct', Number(e.target.value))}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  Điểm qua môn (Hệ 10)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="10"
-                  step="0.5"
-                  value={passScore}
-                  onChange={(e) => setFormField('passScore', Number(e.target.value))}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  Trọng số giữa kỳ (Quy định theo môn)
-                </label>
-                <input
-                  type="number"
-                  disabled
-                  value={midtermWeight}
-                  title="Trọng số được quy định theo môn học và không thể sửa tại lớp học"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed px-2.5 py-1.5 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  Trọng số cuối kỳ (Quy định theo môn)
-                </label>
-                <input
-                  type="number"
-                  disabled
-                  value={finalWeight}
-                  title="Trọng số được quy định theo môn học và không thể sửa tại lớp học"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed px-2.5 py-1.5 text-sm"
-                />
-              </div>
-            </div>
-          </div>
+          <ClassGradePolicyFields
+            minAttendancePct={formData.minAttendancePct}
+            passScore={formData.passScore}
+            midtermWeight={formData.midtermWeight}
+            finalWeight={formData.finalWeight}
+            onMinAttendanceChange={(val) => setFormField('minAttendancePct', val)}
+            onPassScoreChange={(val) => setFormField('passScore', val)}
+          />
 
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
             <button

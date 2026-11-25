@@ -78,3 +78,68 @@ describe('classService.getInstructors', () => {
     });
   });
 });
+
+describe('classService.getClassesPaged', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('requests normalized page params and returns PageResult metadata', async () => {
+    vi.mocked(axiosClient.get).mockResolvedValueOnce({
+      data: {
+        items: [
+          {
+            id: 101,
+            classCode: 'SE101.O21',
+            courseId: 5,
+            courseCode: 'SE101',
+            courseName: 'Nhập môn KTPM',
+            semester: 'HK1-2026',
+            startDate: '2026-09-01',
+            endDate: '2026-12-01',
+            instructorId: null,
+            instructorName: null,
+            maxCapacity: 40,
+            enrolledCount: 10,
+            availableSeats: 30,
+            isFull: false,
+            status: 'OPEN',
+            cancelDeadline: null,
+            cancelReason: null,
+            minAttendancePct: 80,
+            passScore: 5,
+            midtermWeight: 0.3,
+            finalWeight: 0.7,
+            gradingStatus: 'DRAFT',
+            startedAt: null,
+            createdById: 1,
+          },
+        ],
+        page: 1,
+        size: 20,
+        totalElements: 25,
+        totalPages: 2,
+      },
+    });
+
+    const result = await classService.getClassesPaged(
+      { status: 'OPEN', keyword: 'SE101' },
+      { page: 1, size: 20 }
+    );
+
+    expect(axiosClient.get).toHaveBeenCalledWith('/classes', {
+      params: {
+        page: 1,
+        size: 20,
+        status: 'OPEN',
+        keyword: 'SE101',
+      },
+    });
+    expect(result.page).toBe(1);
+    expect(result.size).toBe(20);
+    expect(result.totalElements).toBe(25);
+    expect(result.totalPages).toBe(2);
+    expect(result.items[0].id).toBe('101');
+    expect(result.items[0].classCode).toBe('SE101.O21');
+  });
+});

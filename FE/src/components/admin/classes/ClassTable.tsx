@@ -14,11 +14,13 @@ import {
 } from 'lucide-react';
 import type { ClassOffering, ClassStatus } from '../../../types/classOffering';
 import { formatDate } from '../../../utils/dateFormat';
+import { Pagination, type PaginationProps } from '../../ui/Pagination';
 
 interface ClassTableProps {
   classes: ClassOffering[];
   isLoading: boolean;
   canManage?: boolean;
+  pagination?: PaginationProps;
   onViewDetails: (cls: ClassOffering) => void;
   onEdit: (cls: ClassOffering) => void;
   onAssignInstructor: (cls: ClassOffering) => void;
@@ -34,6 +36,7 @@ export function ClassTable({
   classes,
   isLoading,
   canManage = true,
+  pagination,
   onViewDetails,
   onEdit,
   onAssignInstructor,
@@ -315,6 +318,11 @@ export function ClassTable({
           </tbody>
         </table>
       </div>
+      {pagination && (
+        <div className="px-5 pb-4">
+          <Pagination {...pagination} />
+        </div>
+      )}
     </div>
   );
 }

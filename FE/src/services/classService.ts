@@ -1,4 +1,6 @@
 import { axiosClient } from './axiosClient';
+import { normalizePageRequest, toPageResult } from './apiUtils';
+import { LOOKUP_PAGE_SIZE, type PageRequest, type PageResult } from '../types/pagination';
 import type {
   ClassOffering,
   ClassSession,
@@ -143,20 +145,38 @@ function mapToSession(s: BackendSessionResponse): ClassSession {
   };
 }
 
+function buildClassQueryParams(
+  filter: ClassFilter,
+  pageReq: Required<PageRequest>
+): Record<string, string | number> {
+  const params: Record<string, string | number> = {
+    page: pageReq.page,
+    size: pageReq.size,
+  };
+
+  if (filter.semester && filter.semester !== 'ALL') params.semester = filter.semester;
+  if (filter.courseId && filter.courseId !== 'ALL') params.courseId = Number(filter.courseId);
+  if (filter.status && filter.status !== 'ALL') params.status = filter.status;
+  if (filter.instructorId && filter.instructorId !== 'ALL') params.instructorId = Number(filter.instructorId);
+  if (filter.gradingStatus && filter.gradingStatus !== 'ALL') params.gradingStatus = filter.gradingStatus;
+  if (filter.keyword && filter.keyword.trim()) params.keyword = filter.keyword.trim();
+
+  return params;
+}
+
 export const classService = {
+  async getClassesPaged(
+    filter: ClassFilter = {},
+    pageReq?: PageRequest
+  ): Promise<PageResult<ClassOffering>> {
+    const normalized = normalizePageRequest(pageReq);
+    const params = buildClassQueryParams(filter, normalized);
+    const res = await axiosClient.get<PageResponse<BackendClassResponse>>('/classes', { params });
+    return toPageResult(res.data, mapToClassOffering, normalized.page, normalized.size);
+  },
+
   async getClasses(filter: ClassFilter = {}): Promise<ClassOffering[]> {
-    const params: Record<string, string | number> = {
-      page: 0,
-      size: 100,
-    };
-
-    if (filter.semester && filter.semester !== 'ALL') params.semester = filter.semester;
-    if (filter.courseId && filter.courseId !== 'ALL') params.courseId = Number(filter.courseId);
-    if (filter.status && filter.status !== 'ALL') params.status = filter.status;
-    if (filter.instructorId && filter.instructorId !== 'ALL') params.instructorId = Number(filter.instructorId);
-    if (filter.gradingStatus && filter.gradingStatus !== 'ALL') params.gradingStatus = filter.gradingStatus;
-    if (filter.keyword && filter.keyword.trim()) params.keyword = filter.keyword.trim();
-
+    const params = buildClassQueryParams(filter, { page: 0, size: LOOKUP_PAGE_SIZE });
     const res = await axiosClient.get<PageResponse<BackendClassResponse>>('/classes', { params });
     const items = res.data?.items || [];
     return items.map(mapToClassOffering);

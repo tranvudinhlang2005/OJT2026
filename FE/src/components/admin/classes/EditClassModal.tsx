@@ -3,6 +3,7 @@ import { X, Edit, ShieldAlert, Loader2 } from 'lucide-react';
 import type { ClassOffering, UpdateClassPayload } from '../../../types/classOffering';
 import { getApiErrorDetails } from '../../../services/axiosClient';
 import { validateClassDates, validateGradeWeights } from '../../../utils/validation';
+import { ClassGradePolicyFields } from './form/ClassGradePolicyFields';
 
 interface EditClassModalProps {
   isOpen: boolean;
@@ -326,73 +327,14 @@ export function EditClassModal({
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-600 mb-3">
-              Quy tắc đánh giá & Điểm số
-            </h4>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  Chuyên cần tối thiểu (%)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={minAttendancePct}
-                  onChange={(e) => setMinAttendancePct(Number(e.target.value))}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  Điểm qua môn
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="10"
-                  step="0.5"
-                  value={passScore}
-                  onChange={(e) => setPassScore(Number(e.target.value))}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  Trọng số GK (Cố định)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  disabled
-                  value={midtermWeight}
-                  title="Trọng số được quy định theo môn học và không thể sửa tại lớp học"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed px-2.5 py-1.5 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-medium text-slate-600 mb-1">
-                  Trọng số CK (Cố định)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  disabled
-                  value={finalWeight}
-                  title="Trọng số được quy định theo môn học và không thể sửa tại lớp học"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed px-2.5 py-1.5 text-sm"
-                />
-              </div>
-            </div>
-          </div>
+          <ClassGradePolicyFields
+            minAttendancePct={minAttendancePct}
+            passScore={passScore}
+            midtermWeight={midtermWeight}
+            finalWeight={finalWeight}
+            onMinAttendanceChange={setMinAttendancePct}
+            onPassScoreChange={setPassScore}
+          />
 
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
             <button
